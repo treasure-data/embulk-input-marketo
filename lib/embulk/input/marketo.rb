@@ -2,7 +2,6 @@ require "savon"
 
 module Embulk
   module Input
-
     class Marketo < InputPlugin
       Plugin.register_input("marketo", self)
 
