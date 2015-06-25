@@ -78,7 +78,7 @@ module Embulk
             when "integer"
               "long"
             when "dateTime", "date"
-              "timesptamp"
+              "timestamp"
             when "string", "text", "phone", "currency"
               "string"
             when "boolean"
