@@ -68,7 +68,7 @@ module Embulk
         digest = OpenSSL::Digest.new('sha1')
         hashed_signature = OpenSSL::HMAC.hexdigest(digest, encryption_key, encryption_string)
 
-        { 'requestTimestamp' => timestamp, 'requestSignature' => hashed_signature.to_s}
+        {'requestTimestamp' => timestamp, 'requestSignature' => hashed_signature.to_s}
       end
 
       def self.generate_columns(metadata)
