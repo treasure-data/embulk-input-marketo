@@ -46,6 +46,7 @@ module Embulk
                 endpoint: endpoint,
                 open_timeout: 10,
                 read_timeout: 300,
+                raise_errors: true,
                 namespace_identifier: :ns1,
                 env_namespace: 'SOAP-ENV'
               )
