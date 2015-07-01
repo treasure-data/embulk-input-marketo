@@ -80,6 +80,14 @@ module Embulk
         commit_report = {}
         return commit_report
       end
+
+      def self.logger
+        Embulk.logger
+      end
+
+      def logger
+        self.class.logger
+      end
     end
   end
 end
