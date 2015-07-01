@@ -1,4 +1,4 @@
-require "savon"
+require "embulk/input/marketo_api/soap"
 
 module Embulk
   module Input
@@ -29,46 +29,21 @@ module Embulk
       end
 
       def self.guess(config)
-        client = generate_soap_client(config)
-        metadata_response = client.call(:describe_m_object, message: {object_name: "LeadRecord"})
-        metadata = metadata_response.body[:success_describe_m_object][:result][:metadata][:field_list][:field]
+        client = soap_client(config)
+        metadata = client.lead_metadata
 
         return {"columns" => generate_columns(metadata)}
       end
 
-      def self.generate_soap_client(config)
-        endpoint_url = config.param(:endpoint, :string)
-        wsdl_url = config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL")
-        user_id = config.param(:user_id, :string)
-        encryption_key = config.param(:encryption_key, :string)
-
-        signature = self.generate_signature(endpoint_url, user_id, encryption_key)
-        headers = {
-          'ns1:AuthenticationHeader' => {
-            "mktowsUserId" => user_id,
-          }.merge(signature)
-        }
-
-        client = Savon.client(
-          wsdl: wsdl_url,
-          soap_header: headers,
-          endpoint: endpoint_url,
-          open_timeout: 10,
-          read_timeout: 300,
-          namespace_identifier: :ns1,
-          env_namespace: 'SOAP-ENV'
-        )
-
-        client
-      end
-
-      def self.generate_signature(endpoint, user_id, encryption_key)
-        timestamp = Time.now.to_s
-        encryption_string = timestamp + user_id
-        digest = OpenSSL::Digest.new('sha1')
-        hashed_signature = OpenSSL::HMAC.hexdigest(digest, encryption_key, encryption_string)
-
-        {'requestTimestamp' => timestamp, 'requestSignature' => hashed_signature.to_s}
+      def self.soap_client(config)
+        @soap ||=
+          begin
+            endpoint_url = config.param(:endpoint, :string)
+            wsdl_url = config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL")
+            user_id = config.param(:user_id, :string)
+            encryption_key = config.param(:encryption_key, :string)
+            MarketoApi::Soap.new(endpoint_url, wsdl_url, user_id, encryption_key)
+          end
       end
 
       def self.generate_columns(metadata)
