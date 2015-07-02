@@ -47,11 +47,14 @@ module Embulk
       def self.soap_client(config)
         @soap ||=
           begin
-            endpoint_url = config.param(:endpoint, :string)
-            wsdl_url = config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL")
-            user_id = config.param(:user_id, :string)
-            encryption_key = config.param(:encryption_key, :string)
-            MarketoApi::Soap.new(endpoint_url, wsdl_url, user_id, encryption_key)
+            soap_config = {
+              endpoint_url: config.param(:endpoint, :string),
+              wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
+              user_id: config.param(:user_id, :string),
+              encryption_key: config.param(:encryption_key, :string),
+            }
+
+            MarketoApi.soap_client(soap_config)
           end
       end
 
