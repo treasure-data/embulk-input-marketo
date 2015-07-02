@@ -1,4 +1,4 @@
-require "embulk/input/marketo_api/soap"
+require "embulk/input/marketo_api"
 
 module Embulk
   module Input
@@ -86,7 +86,7 @@ module Embulk
 
         @last_updated_at = task[:last_updated_at]
         @columns = task[:columns]
-        @soap = MarketoApi::Soap.new(endpoint_url, wsdl_url, user_id, encryption_key)
+        @soap = MarketoApi.soap_client(task)
       end
 
       def run
