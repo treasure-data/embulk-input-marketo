@@ -19,6 +19,16 @@ module Embulk
         stub(@plugin).logger { ::Logger.new(File::NULL) }
       end
 
+      def test_transaction
+        control = proc {} # dummy
+        columns = task[:columns].map do |col|
+          Column.new(nil, col["name"], col["type"].to_sym)
+        end
+
+        mock(Marketo).resume(task, columns, 1, &control)
+        Marketo.transaction(config, &control)
+      end
+
       class RunTest < self
         def setup
           setup_soap
@@ -45,19 +55,6 @@ module Embulk
         end
 
         private
-
-        def task
-          {
-            endpoint: "https://marketo.example.com",
-            wsdl_url: "https://marketo.example.com/?wsdl",
-            user_id: "user_id",
-            encryption_key: "TOPSECRET",
-            last_updated_at: last_updated_at,
-            columns: [
-              {"name" => "Name", "type" => "string"},
-            ]
-          }
-        end
 
         def request
           {
@@ -122,11 +119,27 @@ module Embulk
           user_id: "user_id",
           encryption_key: "TOPSECRET",
           last_updated_at: last_updated_at,
+          columns: [
+            {"name" => "Name", "type" => "string"},
+          ]
         }
       end
 
       def last_updated_at
         "2015-07-01 00:00:00+00:00"
+      end
+
+      def task
+        {
+          endpoint_url: "https://marketo.example.com",
+          wsdl_url: "https://marketo.example.com/?wsdl",
+          user_id: "user_id",
+          encryption_key: "TOPSECRET",
+          last_updated_at: last_updated_at,
+          columns: [
+            {"name" => "Name", "type" => "string"},
+          ]
+        }
       end
     end
   end
