@@ -6,7 +6,7 @@ module Embulk
       class SoapTest < Test::Unit::TestCase
         class TestSignature < self
           def setup
-            @signature = soap.signature
+            @signature = soap.__send__(:signature)
           end
 
           def test_sigature_keys
@@ -20,7 +20,7 @@ module Embulk
 
         class TestLeadMetadata < self
           def setup
-            @savon = soap.send(:savon)
+            @savon = soap.__send__(:savon)
           end
 
           def test_savon_call
