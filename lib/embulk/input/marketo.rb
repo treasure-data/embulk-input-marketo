@@ -60,8 +60,8 @@ module Embulk
 
       def self.generate_columns(metadata)
         columns = [
-          {name: "Id", type: "long"},
-          {name: "Email", type: "string"},
+          {name: "id", type: "long"},
+          {name: "email", type: "string"},
         ]
 
         metadata.each do |field|

@@ -108,8 +108,8 @@ module Embulk
 
         def expected_guessed_columns
           [
-            {name: "Id", type: "long"},
-            {name: "Email", type: "string"},
+            {name: "id", type: "long"},
+            {name: "email", type: "string"},
             {name: "FieldName", type: "string"},
           ]
         end
