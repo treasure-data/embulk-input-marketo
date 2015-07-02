@@ -81,12 +81,6 @@ module Embulk
       end
 
       def init
-        # TODO: integrate process to generate SOAP client to one method
-        endpoint_url = task[:endpoint_url]
-        wsdl_url = task[:wsdl_url]
-        user_id = task[:user_id]
-        encryption_key = task[:encryption_key]
-
         @last_updated_at = task[:last_updated_at]
         @columns = task[:columns]
         @soap = MarketoApi.soap_client(task)
