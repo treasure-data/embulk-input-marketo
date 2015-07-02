@@ -1,4 +1,4 @@
-require "embulk/input/marketo_api/soap"
+require "embulk/input/marketo_api"
 
 module Embulk
   module Input
@@ -6,17 +6,25 @@ module Embulk
       Plugin.register_input("marketo", self)
 
       def self.transaction(config, &control)
-        # configuration code:
+        endpoint_url = config.param(:endpoint, :string)
+
         task = {
-          "property1" => config.param("property1", :string),
-          "property2" => config.param("property2", :integer, default: 0),
+          endpoint_url: endpoint_url,
+          wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
+          user_id: config.param(:user_id, :string),
+          encryption_key: config.param(:encryption_key, :string),
+          last_updated_at: config.param(:last_updated_at, :string),
+          columns: config.param(:columns, :array)
         }
 
-        columns = [
-          Column.new(0, "example", :string),
-          Column.new(1, "column", :long),
-          Column.new(2, "value", :double),
-        ]
+        columns = []
+
+        task[:columns].each do |column|
+          name = column["name"]
+          type = column["type"].to_sym
+
+          columns << Column.new(nil, name, type, column["format"])
+        end
 
         resume(task, columns, 1, &control)
       end
@@ -32,17 +40,21 @@ module Embulk
         client = soap_client(config)
         metadata = client.lead_metadata
 
+        # TODO: Add id, email
         return {"columns" => generate_columns(metadata)}
       end
 
       def self.soap_client(config)
         @soap ||=
           begin
-            endpoint_url = config.param(:endpoint, :string)
-            wsdl_url = config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL")
-            user_id = config.param(:user_id, :string)
-            encryption_key = config.param(:encryption_key, :string)
-            MarketoApi::Soap.new(endpoint_url, wsdl_url, user_id, encryption_key)
+            soap_config = {
+              endpoint_url: config.param(:endpoint, :string),
+              wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
+              user_id: config.param(:user_id, :string),
+              encryption_key: config.param(:encryption_key, :string),
+            }
+
+            MarketoApi.soap_client(soap_config)
           end
       end
 
@@ -58,6 +70,8 @@ module Embulk
               "string"
             when "boolean"
               "boolean"
+            when "float"
+              "double"
             else
               "string"
             end
@@ -67,14 +81,22 @@ module Embulk
       end
 
       def init
-        # initialization code:
-        @property1 = task["property1"]
-        @property2 = task["property2"]
+        @last_updated_at = task[:last_updated_at]
+        @columns = task[:columns]
+        @soap = MarketoApi.soap_client(task)
       end
 
       def run
-        page_builder.add(["example-value", 1, 0.1])
-        page_builder.add(["example-value", 2, 0.2])
+        # TODO: preview
+        @soap.each_leads(@last_updated_at) do |lead|
+          values = @columns.map do |column|
+            name = column["name"].to_s
+            (lead[name] || {})[:value]
+          end
+
+          page_builder.add(values)
+        end
+
         page_builder.finish
 
         commit_report = {}
