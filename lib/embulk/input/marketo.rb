@@ -40,7 +40,6 @@ module Embulk
         client = soap_client(config)
         metadata = client.lead_metadata
 
-        # TODO: Add id, email
         return {"columns" => generate_columns(metadata)}
       end
 
@@ -59,7 +58,12 @@ module Embulk
       end
 
       def self.generate_columns(metadata)
-        metadata.map do |field|
+        columns = [
+          {name: "Id", type: "integer"},
+          {name: "Email", type: "string"},
+        ]
+
+        metadata.each do |field|
           type =
             case field[:data_type]
             when "integer"
@@ -76,8 +80,10 @@ module Embulk
               "string"
             end
 
-          {name: field[:name], type: type}
+          columns << {name: field[:name], type: type}
         end
+
+        columns
       end
 
       def init

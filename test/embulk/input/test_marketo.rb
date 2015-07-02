@@ -74,10 +74,11 @@ module Embulk
           stub(Marketo).soap_client(config) { @soap }
         end
 
-        def test_guess
+        def test_include_metadata
           stub(@soap).lead_metadata { metadata }
+
           assert_equal(
-            {"columns" => Marketo.generate_columns(metadata)},
+            {"columns" => expected_guessed_columns},
             Marketo.guess(config)
           )
         end
@@ -102,6 +103,14 @@ module Embulk
               dynamic_field_ref: "leadAttributeList",
               updated_at: DateTime.parse("2000-01-01 22:22:22")
             }
+          ]
+        end
+
+        def expected_guessed_columns
+          [
+            {name: "Id", type: "integer"},
+            {name: "Email", type: "string"},
+            {name: "FieldName", type: "string"},
           ]
         end
       end
