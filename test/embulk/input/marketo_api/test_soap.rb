@@ -20,7 +20,7 @@ module Embulk
 
         class TestLeadMetadata < self
           def setup
-            @savon = soap.send(:savon)
+            @savon = soap.__send__(:savon)
           end
 
           def test_savon_call
