@@ -126,7 +126,7 @@ module Embulk
       end
 
       def last_updated_at
-        "2015-07-01"
+        "2015-07-01 00:00:00+00:00"
       end
     end
   end
