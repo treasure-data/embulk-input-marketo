@@ -60,7 +60,7 @@ module Embulk
 
       def self.generate_columns(metadata)
         columns = [
-          {name: "Id", type: "integer"},
+          {name: "Id", type: "long"},
           {name: "Email", type: "string"},
         ]
 
