@@ -61,7 +61,7 @@ module Embulk
 
         def request
           {
-            lead_selector: {oldest_updated_at: "2015-07-01T00:00:00+09:00"},
+            lead_selector: {oldest_updated_at: Time.parse(last_updated_at).iso8601},
             attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
            batch_size: 100
           }
