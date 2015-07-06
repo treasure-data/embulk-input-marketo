@@ -20,7 +20,7 @@ Required Embulk version >= 0.6.13.
 
 ## Configuration
 
-Below parameters are shown in "Admin" > "Web Servises" page in Marketo.
+Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 
 - **endpoint** SOAP endpoint URL for your account (string, required)
 - **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
