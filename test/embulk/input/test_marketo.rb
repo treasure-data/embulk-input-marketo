@@ -36,6 +36,8 @@ module Embulk
         end
 
         def test_run_through
+          stub(@plugin).preview? { false }
+
           any_instance_of(Savon::Client) do |klass|
             mock(klass).call(:get_multiple_leads, message: request) do
               leads_response
@@ -49,6 +51,23 @@ module Embulk
           mock(@page_builder).add(["manyo"])
           mock(@page_builder).add(["everyleaf"])
           mock(@page_builder).add(["ten-thousand-leaf"])
+          mock(@page_builder).finish
+
+          @plugin.run
+        end
+
+        def test_preview_through
+          stub(@plugin).preview? { true }
+
+          any_instance_of(Savon::Client) do |klass|
+            mock(klass).call(:get_multiple_leads, message: request) do
+              preview_leads_response
+            end
+          end
+
+          Marketo::PREVIEW_COUNT.times do |count|
+            mock(@page_builder).add(["manyo#{count}"])
+          end
           mock(@page_builder).finish
 
           @plugin.run

@@ -3,6 +3,8 @@ require "embulk/input/marketo_api"
 module Embulk
   module Input
     class Marketo < InputPlugin
+      PREVIEW_COUNT = 15
+
       Plugin.register_input("marketo", self)
 
       def self.transaction(config, &control)
@@ -95,6 +97,7 @@ module Embulk
 
       def run
         # TODO: preview
+        count = 0
         @soap.each_lead(@last_updated_at) do |lead|
           values = @columns.map do |column|
             name = column["name"].to_s
@@ -102,6 +105,9 @@ module Embulk
           end
 
           page_builder.add(values)
+
+          count += 1
+          break if preview? && count >= PREVIEW_COUNT
         end
 
         page_builder.finish
@@ -116,6 +122,16 @@ module Embulk
 
       def logger
         self.class.logger
+      end
+
+      private
+
+      def preview?
+        begin
+          org.embulk.spi.Exec.isPreview()
+        rescue java.lang.NullPointerException => e
+          false
+        end
       end
     end
   end
