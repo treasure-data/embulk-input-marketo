@@ -19,7 +19,7 @@ module Embulk
           response.body[:success_describe_m_object][:result][:metadata][:field_list][:field]
         end
 
-        def each_leads(last_updated_at, &block)
+        def each_lead(last_updated_at, &block)
           # http://developers.marketo.com/documentation/soap/getmultipleleads/
 
           last_updated_at = Time.parse(last_updated_at).iso8601

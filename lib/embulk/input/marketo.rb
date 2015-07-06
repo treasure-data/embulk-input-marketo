@@ -95,7 +95,7 @@ module Embulk
 
       def run
         # TODO: preview
-        @soap.each_leads(@last_updated_at) do |lead|
+        @soap.each_lead(@last_updated_at) do |lead|
           values = @columns.map do |column|
             name = column["name"].to_s
             (lead[name] || {})[:value]
