@@ -16,7 +16,7 @@ module Embulk
       def setup_plugin
         @page_builder = Object.new
         @plugin = Marketo.new(task, nil, nil, @page_builder)
-        stub(@plugin).logger { ::Logger.new(File::NULL) }
+        stub(Embulk).logger { ::Logger.new(File::NULL) }
       end
 
       def test_transaction
