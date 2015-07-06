@@ -85,10 +85,6 @@ module Embulk
       end
 
       def test_generate_columns
-        setup_soap
-
-        stub(@soap).lead_metadata { metadata }
-
         assert_equal(expected_guessed_columns, Marketo.generate_columns(metadata))
       end
 
