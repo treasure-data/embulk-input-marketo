@@ -1,9 +1,12 @@
 require "embulk/input/marketo_api/soap"
+require "lead_fixtures"
 
 module Embulk
   module Input
     module MarketoApi
       class SoapTest < Test::Unit::TestCase
+        include LeadFixtures
+
         class TestSignature < self
           def setup
             @signature = soap.__send__(:signature)
@@ -16,6 +19,29 @@ module Embulk
           def test_is_hash
             assert_equal(Hash, @signature.class)
           end
+        end
+
+        def test_each_lead
+          stub(Embulk).logger { ::Logger.new(IO::NULL) }
+          last_updated_at = "2015-07-06"
+
+          request = {
+            lead_selector: {oldest_updated_at: Time.parse(last_updated_at).iso8601},
+            attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
+            batch_size: 1000
+          }
+
+          any_instance_of(Savon::Client) do |klass|
+            mock(klass).call(:get_multiple_leads, message: request) do
+              next_stream_leads_response
+            end
+          end
+
+          proc = proc{ "" }
+          leads_count = next_stream_leads_response.xpath('//leadRecord').length
+          mock(proc).call(anything).times(leads_count)
+
+          soap.each_lead(last_updated_at, &proc)
         end
 
         class TestLeadMetadata < self
