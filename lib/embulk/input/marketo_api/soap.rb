@@ -33,16 +33,16 @@ module Embulk
             batch_size: 100,
           }
 
-          stream_position = fetch_lead(request, &block)
+          stream_position = fetch_leads(request, &block)
 
           while stream_position
-            stream_position = fetch_lead(request.merge(stream_position: stream_position), &block)
+            stream_position = fetch_leads(request.merge(stream_position: stream_position), &block)
           end
         end
 
         private
 
-        def fetch_lead(request = {}, &block)
+        def fetch_leads(request = {}, &block)
           response = savon.call(:get_multiple_leads, message: request)
 
           response.xpath('//leadRecordList/leadRecord').each do |lead|
