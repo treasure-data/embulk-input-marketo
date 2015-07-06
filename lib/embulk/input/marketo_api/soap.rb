@@ -45,6 +45,8 @@ module Embulk
         def fetch_leads(request = {}, &block)
           response = savon.call(:get_multiple_leads, message: request)
 
+          remaining = response.xpath('//remainingCount').text.to_i
+          Embulk.logger.info "Remaining records: #{remaining}"
           response.xpath('//leadRecordList/leadRecord').each do |lead|
             record = {
               "id" => {type: :integer, value: lead.xpath('Id').text.to_i},
@@ -65,7 +67,7 @@ module Embulk
             block.call(record)
           end
 
-          if response.xpath('//remainingCount').text.to_i > 0
+          if remaining > 0
             response.xpath('//newStreamPosition').text
           else
             nil
@@ -81,6 +83,8 @@ module Embulk
                 }.merge(signature)
               }
               Savon.client(
+                log: true,
+                logger: Embulk.logger,
                 wsdl: wsdl,
                 soap_header: headers,
                 endpoint: endpoint,
