@@ -60,7 +60,7 @@ module Embulk
           {
             lead_selector: {oldest_updated_at: Time.parse(last_updated_at).iso8601},
             attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
-           batch_size: 100
+            batch_size: 1000
           }
         end
       end

@@ -30,7 +30,7 @@ module Embulk
             attributes!: {
               lead_selector: {"xsi:type" => "ns1:LastUpdateAtSelector"}
             },
-            batch_size: 100,
+            batch_size: 1000,
           }
 
           stream_position = fetch_leads(request, &block)
@@ -75,26 +75,25 @@ module Embulk
         end
 
         def savon
-          @savon ||=
-            begin
-              headers = {
-                'ns1:AuthenticationHeader' => {
-                  "mktowsUserId" => user_id,
-                }.merge(signature)
-              }
-              Savon.client(
-                log: true,
-                logger: Embulk.logger,
-                wsdl: wsdl,
-                soap_header: headers,
-                endpoint: endpoint,
-                open_timeout: 10,
-                read_timeout: 300,
-                raise_errors: true,
-                namespace_identifier: :ns1,
-                env_namespace: 'SOAP-ENV'
-              )
-            end
+          headers = {
+            'ns1:AuthenticationHeader' => {
+              "mktowsUserId" => user_id,
+            }.merge(signature)
+          }
+          # NOTE: Do not memoize this to use always fresh signature (avoid 20016 error)
+          # ref. https://jira.talendforge.org/secure/attachmentzip/unzip/167201/49761%5B1%5D/Marketo%20Enterprise%20API%202%200.pdf (41 page)
+          Savon.client(
+            log: true,
+            logger: Embulk.logger,
+            wsdl: wsdl,
+            soap_header: headers,
+            endpoint: endpoint,
+            open_timeout: 90,
+            read_timeout: 300,
+            raise_errors: true,
+            namespace_identifier: :ns1,
+            env_namespace: 'SOAP-ENV'
+          )
         end
 
         def signature
