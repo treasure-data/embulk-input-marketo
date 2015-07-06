@@ -40,15 +40,15 @@ module Embulk
         client = soap_client(config)
         metadata = client.lead_metadata
 
-        # TODO: Add id, email
         return {"columns" => generate_columns(metadata)}
       end
 
       def self.soap_client(config)
         @soap ||=
           begin
+            endpoint_url = config.param(:endpoint, :string),
             soap_config = {
-              endpoint_url: config.param(:endpoint, :string),
+              endpoint_url: endpoint_url,
               wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
               user_id: config.param(:user_id, :string),
               encryption_key: config.param(:encryption_key, :string),
@@ -59,7 +59,12 @@ module Embulk
       end
 
       def self.generate_columns(metadata)
-        metadata.map do |field|
+        columns = [
+          {name: "id", type: "long"},
+          {name: "email", type: "string"},
+        ]
+
+        metadata.each do |field|
           type =
             case field[:data_type]
             when "integer"
@@ -76,8 +81,10 @@ module Embulk
               "string"
             end
 
-          {name: field[:name], type: type}
+          columns << {name: field[:name], type: type}
         end
+
+        columns
       end
 
       def init
@@ -88,7 +95,7 @@ module Embulk
 
       def run
         # TODO: preview
-        @soap.each_leads(@last_updated_at) do |lead|
+        @soap.each_lead(@last_updated_at) do |lead|
           values = @columns.map do |column|
             name = column["name"].to_s
             (lead[name] || {})[:value]

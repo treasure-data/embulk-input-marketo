@@ -74,36 +74,18 @@ module Embulk
           stub(Marketo).soap_client(config) { @soap }
         end
 
-        def test_guess
+        def test_include_metadata
           stub(@soap).lead_metadata { metadata }
+
           assert_equal(
-            {"columns" => Marketo.generate_columns(metadata)},
+            {"columns" => expected_guessed_columns},
             Marketo.guess(config)
           )
         end
+      end
 
-        private
-
-        def metadata
-          [
-            {
-              name: "FieldName",
-              description: nil,
-              display_name: "The Name of Field",
-              source_object: "Lead",
-              data_type: "datetime",
-              size: nil,
-              is_readonly: false,
-              is_update_blocked: false,
-              is_name: nil,
-              is_primary_key: false,
-              is_custom: true,
-              is_dynamic: true,
-              dynamic_field_ref: "leadAttributeList",
-              updated_at: DateTime.parse("2000-01-01 22:22:22")
-            }
-          ]
-        end
+      def test_generate_columns
+        assert_equal(expected_guessed_columns, Marketo.generate_columns(metadata))
       end
 
       private
@@ -140,6 +122,35 @@ module Embulk
             {"name" => "Name", "type" => "string"},
           ]
         }
+      end
+
+      def metadata
+        [
+          {
+            name: "FieldName",
+            description: nil,
+            display_name: "The Name of Field",
+            source_object: "Lead",
+            data_type: "datetime",
+            size: nil,
+            is_readonly: false,
+            is_update_blocked: false,
+            is_name: nil,
+            is_primary_key: false,
+            is_custom: true,
+            is_dynamic: true,
+            dynamic_field_ref: "leadAttributeList",
+            updated_at: DateTime.parse("2000-01-01 22:22:22")
+          }
+        ]
+      end
+
+      def expected_guessed_columns
+        [
+          {name: "id", type: "long"},
+          {name: "email", type: "string"},
+          {name: "FieldName", type: "string"},
+        ]
       end
     end
   end
