@@ -33,7 +33,7 @@ Below parameters are shown in "Admin" > "Web Servises" page in Marketo.
 ```yaml
 in:
   type: marketo
-  endpoint: https://sorp-end-point.mktoapi.com/
+  endpoint: https://soap-end-point.mktoapi.com/
   wsdl: https://wsdl-url.mktoapi.com/?WSDL
   user_id: user_ABC123
   encryption_key: TOPSECRET
