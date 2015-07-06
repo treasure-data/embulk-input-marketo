@@ -88,7 +88,7 @@ module Embulk
                 wsdl: wsdl,
                 soap_header: headers,
                 endpoint: endpoint,
-                open_timeout: 10,
+                open_timeout: 90,
                 read_timeout: 300,
                 raise_errors: true,
                 namespace_identifier: :ns1,
