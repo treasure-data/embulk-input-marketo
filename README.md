@@ -23,7 +23,7 @@ Required Embulk version >= 0.6.13.
 Below parameters are shown in "Admin" > "Web Servises" page in Marketo.
 
 - **endpoint** SOAP endpoint URL for your account (string, required)
-- **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "&WSDL")
+- **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
 - **user_id** Your user id (string, reqiured)
 - **encryption_key** Your encryption key (string, reqiured)
 - **last_updated_at** Target datetime when a lead is updated at (string, required)
