@@ -82,7 +82,6 @@ module Embulk
         end
 
         def run
-          # TODO: preview
           count = 0
           @soap.each_lead(@last_updated_at) do |lead|
             values = @columns.map do |column|
