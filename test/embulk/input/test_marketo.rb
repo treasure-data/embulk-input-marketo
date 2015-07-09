@@ -1,6 +1,6 @@
 require "prepare_embulk"
 require "lead_fixtures"
-require "embulk/input/marketo"
+require "embulk/input/marketo/lead"
 
 module Embulk
   module Input
