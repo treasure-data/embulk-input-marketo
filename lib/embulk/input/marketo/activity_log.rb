@@ -1,10 +1,11 @@
-require "embulk/input/marketo_api"
+require "embulk/input/marketo/base"
 
 module Embulk
   module Input
     module Marketo
-      class Lead < InputPlugin
+      class Lead < Base
         Plugin.register_input("marketo/activity_log", self)
+
       end
     end
   end
