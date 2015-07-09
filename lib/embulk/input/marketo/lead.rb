@@ -6,7 +6,7 @@ module Embulk
       class Lead < InputPlugin
         PREVIEW_COUNT = 15
 
-        Plugin.register_input("marketo", self)
+        Plugin.register_input("marketo/lead", self)
 
         def self.transaction(config, &control)
           endpoint_url = config.param(:endpoint, :string)
