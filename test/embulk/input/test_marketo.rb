@@ -4,7 +4,8 @@ require "embulk/input/marketo/lead"
 
 module Embulk
   module Input
-    class MarketoTest < Test::Unit::TestCase
+    module Marketo
+    class LeadTest < Test::Unit::TestCase
       include LeadFixtures
 
       def setup_soap
@@ -15,7 +16,7 @@ module Embulk
 
       def setup_plugin
         @page_builder = Object.new
-        @plugin = Marketo.new(task, nil, nil, @page_builder)
+        @plugin = Lead.new(task, nil, nil, @page_builder)
         stub(Embulk).logger { ::Logger.new(File::NULL) }
       end
 
@@ -25,8 +26,8 @@ module Embulk
           Column.new(nil, col["name"], col["type"].to_sym)
         end
 
-        mock(Marketo).resume(task, columns, 1, &control)
-        Marketo.transaction(config, &control)
+        mock(Lead).resume(task, columns, 1, &control)
+        Lead.transaction(config, &control)
       end
 
       class RunTest < self
@@ -65,7 +66,7 @@ module Embulk
             end
           end
 
-          Marketo::PREVIEW_COUNT.times do |count|
+          Lead::PREVIEW_COUNT.times do |count|
             mock(@page_builder).add(["manyo#{count}"])
           end
           mock(@page_builder).finish
@@ -90,7 +91,7 @@ module Embulk
         def setup_soap
           @soap = MarketoApi::Soap.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
 
-          stub(Marketo).soap_client(config) { @soap }
+          stub(Lead).soap_client(config) { @soap }
         end
 
         def test_include_metadata
@@ -98,13 +99,13 @@ module Embulk
 
           assert_equal(
             {"columns" => expected_guessed_columns},
-            Marketo.guess(config)
+            Lead.guess(config)
           )
         end
       end
 
       def test_generate_columns
-        assert_equal(expected_guessed_columns, Marketo.generate_columns(metadata))
+        assert_equal(expected_guessed_columns, Lead.generate_columns(metadata))
       end
 
       private
@@ -171,6 +172,7 @@ module Embulk
           {name: "FieldName", type: "string"},
         ]
       end
+    end
     end
   end
 end

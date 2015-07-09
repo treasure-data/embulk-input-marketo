@@ -2,7 +2,8 @@ require "embulk/input/marketo_api"
 
 module Embulk
   module Input
-    class Marketo < InputPlugin
+    module Marketo
+    class Lead < InputPlugin
       PREVIEW_COUNT = 15
 
       Plugin.register_input("marketo", self)
@@ -133,6 +134,7 @@ module Embulk
           false
         end
       end
+    end
     end
   end
 end
