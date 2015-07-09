@@ -3,138 +3,138 @@ require "embulk/input/marketo_api"
 module Embulk
   module Input
     module Marketo
-    class Lead < InputPlugin
-      PREVIEW_COUNT = 15
+      class Lead < InputPlugin
+        PREVIEW_COUNT = 15
 
-      Plugin.register_input("marketo", self)
+        Plugin.register_input("marketo", self)
 
-      def self.transaction(config, &control)
-        endpoint_url = config.param(:endpoint, :string)
+        def self.transaction(config, &control)
+          endpoint_url = config.param(:endpoint, :string)
 
-        task = {
-          endpoint_url: endpoint_url,
-          wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
-          user_id: config.param(:user_id, :string),
-          encryption_key: config.param(:encryption_key, :string),
-          last_updated_at: config.param(:last_updated_at, :string),
-          columns: config.param(:columns, :array)
-        }
+          task = {
+            endpoint_url: endpoint_url,
+            wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
+            user_id: config.param(:user_id, :string),
+            encryption_key: config.param(:encryption_key, :string),
+            last_updated_at: config.param(:last_updated_at, :string),
+            columns: config.param(:columns, :array)
+          }
 
-        columns = []
+          columns = []
 
-        task[:columns].each do |column|
-          name = column["name"]
-          type = column["type"].to_sym
+          task[:columns].each do |column|
+            name = column["name"]
+            type = column["type"].to_sym
 
-          columns << Column.new(nil, name, type, column["format"])
+            columns << Column.new(nil, name, type, column["format"])
+          end
+
+          resume(task, columns, 1, &control)
         end
 
-        resume(task, columns, 1, &control)
-      end
+        def self.resume(task, columns, count, &control)
+          commit_reports = yield(task, columns, count)
 
-      def self.resume(task, columns, count, &control)
-        commit_reports = yield(task, columns, count)
+          next_config_diff = {}
+          return next_config_diff
+        end
 
-        next_config_diff = {}
-        return next_config_diff
-      end
+        def self.guess(config)
+          client = soap_client(config)
+          metadata = client.lead_metadata
 
-      def self.guess(config)
-        client = soap_client(config)
-        metadata = client.lead_metadata
+          return {"columns" => generate_columns(metadata)}
+        end
 
-        return {"columns" => generate_columns(metadata)}
-      end
+        def self.soap_client(config)
+          @soap ||=
+            begin
+              endpoint_url = config.param(:endpoint, :string),
+              soap_config = {
+                endpoint_url: endpoint_url,
+                wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
+                user_id: config.param(:user_id, :string),
+                encryption_key: config.param(:encryption_key, :string),
+              }
 
-      def self.soap_client(config)
-        @soap ||=
-          begin
-            endpoint_url = config.param(:endpoint, :string),
-            soap_config = {
-              endpoint_url: endpoint_url,
-              wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
-              user_id: config.param(:user_id, :string),
-              encryption_key: config.param(:encryption_key, :string),
-            }
+              MarketoApi.soap_client(soap_config)
+            end
+        end
 
-            MarketoApi.soap_client(soap_config)
+        def self.generate_columns(metadata)
+          columns = [
+            {name: "id", type: "long"},
+            {name: "email", type: "string"},
+          ]
+
+          metadata.each do |field|
+            type =
+              case field[:data_type]
+              when "integer"
+                "long"
+              when "dateTime", "date"
+                "timestamp"
+              when "string", "text", "phone", "currency"
+                "string"
+              when "boolean"
+                "boolean"
+              when "float"
+                "double"
+              else
+                "string"
+              end
+
+            columns << {name: field[:name], type: type}
           end
-      end
 
-      def self.generate_columns(metadata)
-        columns = [
-          {name: "id", type: "long"},
-          {name: "email", type: "string"},
-        ]
+          columns
+        end
 
-        metadata.each do |field|
-          type =
-            case field[:data_type]
-            when "integer"
-              "long"
-            when "dateTime", "date"
-              "timestamp"
-            when "string", "text", "phone", "currency"
-              "string"
-            when "boolean"
-              "boolean"
-            when "float"
-              "double"
-            else
-              "string"
+        def init
+          @last_updated_at = task[:last_updated_at]
+          @columns = task[:columns]
+          @soap = MarketoApi.soap_client(task)
+        end
+
+        def run
+          # TODO: preview
+          count = 0
+          @soap.each_lead(@last_updated_at) do |lead|
+            values = @columns.map do |column|
+              name = column["name"].to_s
+              (lead[name] || {})[:value]
             end
 
-          columns << {name: field[:name], type: type}
-        end
+            page_builder.add(values)
 
-        columns
-      end
-
-      def init
-        @last_updated_at = task[:last_updated_at]
-        @columns = task[:columns]
-        @soap = MarketoApi.soap_client(task)
-      end
-
-      def run
-        # TODO: preview
-        count = 0
-        @soap.each_lead(@last_updated_at) do |lead|
-          values = @columns.map do |column|
-            name = column["name"].to_s
-            (lead[name] || {})[:value]
+            count += 1
+            break if preview? && count >= PREVIEW_COUNT
           end
 
-          page_builder.add(values)
+          page_builder.finish
 
-          count += 1
-          break if preview? && count >= PREVIEW_COUNT
+          commit_report = {}
+          return commit_report
         end
 
-        page_builder.finish
+        def self.logger
+          Embulk.logger
+        end
 
-        commit_report = {}
-        return commit_report
-      end
+        def logger
+          self.class.logger
+        end
 
-      def self.logger
-        Embulk.logger
-      end
+        private
 
-      def logger
-        self.class.logger
-      end
-
-      private
-
-      def preview?
-        begin
-          org.embulk.spi.Exec.isPreview()
-        rescue java.lang.NullPointerException => e
-          false
+        def preview?
+          begin
+            org.embulk.spi.Exec.isPreview()
+          rescue java.lang.NullPointerException => e
+            false
+          end
         end
       end
-    end
     end
   end
 end
