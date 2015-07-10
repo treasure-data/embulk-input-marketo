@@ -102,6 +102,100 @@ module Embulk
           end
         end
 
+        class TestActivityLogMetadata < self
+          def setup
+            @savon = soap.__send__(:savon)
+            stub(soap).savon { @savon } # Pin savon instance for each call soap.savon for mocking/stubbing
+          end
+
+          def test_savon_call
+            mock(@savon).call(:get_lead_changes, message: request) {
+              Struct.new(:body).new(body)
+            }
+            soap.activity_log_metadata(last_updated_at)
+          end
+
+          def test_return_metadata
+            stub(@savon).call(:get_lead_changes, message: request) {
+              Struct.new(:body).new(body)
+            }
+            assert_equal(metadata, soap.activity_log_metadata(last_updated_at))
+          end
+
+          private
+
+          def request
+            {
+              :start_position => {
+                :oldest_created_at => last_updated_at
+              },
+              :batch_size => 1000,
+            }
+          end
+
+          def last_updated_at
+            "2015-07-01 00:00:00+00:00"
+          end
+
+          def body
+            {
+              success_get_lead_changes: {
+                result: {
+                  lead_change_record_list: {
+                    lead_change_record: records
+                  }
+                }
+              }
+            }
+          end
+
+          def metadata
+            [
+              {
+                id: "12",
+                activity_date_time: "2015-06-25T00:12:00+00:00",
+                activity_type: "Visit Webpage",
+                mktg_asset_name: "webpage.example.com/person/1/edit",
+                mkt_person_id: "34",
+                "Webpage ID" => "56",
+                "Webpage URL" => "/person/1/edit",
+                "Referrer URL" => "https://webpage.example.com",
+                "Client IP Address" => "127.0.0.1",
+                "User Agent" => "UserAgent",
+                "Message Id" => "78",
+                "Created At" => "2015-07-06 19:00:02",
+                "Lead ID" => "90"
+              }
+            ]
+           end
+
+          def records
+            [
+              {
+                id: "12",
+                activity_date_time: "2015-06-25T00:12:00+00:00",
+                activity_type: "Visit Webpage",
+                mktg_asset_name: "webpage.example.com/person/1/edit",
+                activity_attributes:
+                  {
+                    attribute:
+                      [
+                        {attr_name: "Webpage ID", attr_type: nil, attr_value: "56"},
+                        {attr_name: "Webpage URL", attr_type: nil, attr_value: "/person/1/edit"},
+                        {attr_name: "Referrer URL", attr_type: nil, attr_value: "https://webpage.example.com"},
+                        {attr_name: "Client IP Address", attr_type: nil, attr_value: "127.0.0.1"},
+                        {attr_name: "User Agent", attr_type: nil, attr_value: "UserAgent"},
+                        {attr_name: "Message Id", attr_type: nil, attr_value: "78"},
+                        {attr_name: "Created At", attr_type: nil, attr_value: "2015-07-06 19:00:02"},
+                        {attr_name: "Lead ID", attr_type: nil, attr_value: "90"}
+                      ]
+                  },
+                mkt_person_id: "34"
+              }
+            ]
+          end
+        end
+
         private
 
         def soap
@@ -120,4 +214,3 @@ module Embulk
     end
   end
 end
-
