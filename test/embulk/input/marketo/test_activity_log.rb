@@ -27,19 +27,20 @@ module Embulk
 
           def records
             [
-              {id: "12",
-               activity_date_time: "2015-06-25T00:12:00+00:00",
-               activity_type: "Visit Webpage",
-               mktg_asset_name: "webpage.example.com/person/1/edit",
-               mkt_person_id: "34",
-               "Webpage ID" => "56",
-               "Webpage URL" => "/person/1/edit",
-               "Referrer URL" => "https://webpage.example.com",
-               "Client IP Address" => "127.0.0.1",
-               "User Agent" => "UserAgent",
-               "Message Id" => "78",
-               "Created At" => "2015-07-06 19:00:02",
-               "Lead ID" => "90"
+              {
+                id: "12",
+                activity_date_time: "2015-06-25T00:12:00+00:00",
+                activity_type: "Visit Webpage",
+                mktg_asset_name: "webpage.example.com/person/1/edit",
+                mkt_person_id: "34",
+                "Webpage ID" => "56",
+                "Webpage URL" => "/person/1/edit",
+                "Referrer URL" => "https://webpage.example.com",
+                "Client IP Address" => "127.0.0.1",
+                "User Agent" => "UserAgent",
+                "Message Id" => "78",
+                "Created At" => "2015-07-06 19:00:02",
+                "Lead ID" => "90"
               }
             ]
           end
