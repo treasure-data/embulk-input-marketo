@@ -42,10 +42,10 @@ module Embulk
 
         def activity_log_metadata(last_updated_at)
           request = {
-            :start_position => {
-              :oldest_created_at => last_updated_at
+            start_position: {
+              oldest_created_at: last_updated_at
             },
-            :batch_size => 1000,
+            batch_size: 1000,
           }
 
           records = []
