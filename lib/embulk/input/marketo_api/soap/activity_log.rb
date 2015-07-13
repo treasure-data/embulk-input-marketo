@@ -12,7 +12,7 @@ module Embulk
               activity_logs << record
             end
 
-            activity_logs
+            Guess::SchemaGuess.from_hash_records(activity_logs)
           end
 
           def each(last_updated_at, options={}, &block)

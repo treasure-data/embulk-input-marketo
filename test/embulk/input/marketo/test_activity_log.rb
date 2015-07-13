@@ -15,7 +15,7 @@ module Embulk
           end
 
           def test_include_metadata
-            stub(@soap).activity_log_metadata(last_updated_at, batch_size: ActivityLog::PREVIEW_COUNT) { records }
+            stub(@soap).activity_log_metadata(last_updated_at, batch_size: ActivityLog::PREVIEW_COUNT) { Guess::SchemaGuess.from_hash_records(records) }
 
             assert_equal(
               {"columns" => expected_guessed_columns},
