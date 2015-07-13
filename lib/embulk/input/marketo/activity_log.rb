@@ -14,9 +14,9 @@ module Embulk
           client = soap_client(config)
           last_updated_at = config.param(:last_updated_at, :string)
 
-          metadata = client.activity_log_metadata(last_updated_at)
+          sample_records = client.activity_log_metadata(last_updated_at)
 
-          schema = Guess::SchemaGuess.from_hash_records(metadata)
+          schema = Guess::SchemaGuess.from_hash_records(sample_records)
 
           columns = schema.map do |c|
             column = {name: c.name, type: c.type}
