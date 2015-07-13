@@ -40,6 +40,40 @@ module Embulk
           end
         end
 
+        def activity_log_metadata(last_updated_at)
+          request = {
+            start_position: {
+              oldest_created_at: last_updated_at
+            },
+            batch_size: 1000,
+          }
+
+          records = []
+          response = savon.call(:get_lead_changes, message: request)
+
+          activities = response.body[:success_get_lead_changes][:result][:lead_change_record_list][:lead_change_record]
+          activities.each do |activity|
+            record = {
+              id: activity[:id],
+              activity_date_time: activity[:activity_date_time],
+              activity_type: activity[:activity_type],
+              mktg_asset_name: activity[:mktg_asset_name],
+              mkt_person_id: activity[:mkt_person_id],
+            }
+
+            activity[:activity_attributes][:attribute].each do |attributes|
+              name = attributes[:attr_name]
+              value = attributes[:attr_value]
+
+              record[name] = value
+            end
+
+            records << record
+          end
+
+          records
+        end
+
         private
 
         def fetch_leads(request = {}, &block)

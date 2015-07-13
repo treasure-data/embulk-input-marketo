@@ -1,9 +1,9 @@
-require "embulk/input/marketo_api"
+require "embulk/input/marketo/base"
 
 module Embulk
   module Input
     module Marketo
-      class Lead < InputPlugin
+      class Lead < Base
         PREVIEW_COUNT = 15
 
         Plugin.register_input("marketo/lead", self)
@@ -46,21 +46,6 @@ module Embulk
           return {"columns" => generate_columns(metadata)}
         end
 
-        def self.soap_client(config)
-          @soap ||=
-            begin
-              endpoint_url = config.param(:endpoint, :string),
-              soap_config = {
-                endpoint_url: endpoint_url,
-                wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
-                user_id: config.param(:user_id, :string),
-                encryption_key: config.param(:encryption_key, :string),
-              }
-
-              MarketoApi.soap_client(soap_config)
-            end
-        end
-
         def self.generate_columns(metadata)
           columns = [
             {name: "id", type: "long"},
@@ -97,7 +82,6 @@ module Embulk
         end
 
         def run
-          # TODO: preview
           count = 0
           @soap.each_lead(@last_updated_at) do |lead|
             values = @columns.map do |column|
