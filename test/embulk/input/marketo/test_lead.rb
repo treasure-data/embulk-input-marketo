@@ -9,9 +9,9 @@ module Embulk
         include LeadFixtures
 
         def setup_soap
-          @soap = MarketoApi::Soap.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
+          @soap = MarketoApi::Soap::Lead.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
 
-          stub(MarketoApi).soap_client(task) { @soap }
+          stub(Lead).soap_client(task) { @soap }
         end
 
         def setup_plugin
@@ -89,7 +89,7 @@ module Embulk
           setup :setup_soap
 
           def setup_soap
-            @soap = MarketoApi::Soap.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
+            @soap = MarketoApi::Soap::Lead.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
 
             stub(Lead).soap_client(config) { @soap }
           end

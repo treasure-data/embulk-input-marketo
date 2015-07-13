@@ -9,7 +9,7 @@ module Embulk
           setup :setup_soap
 
           def setup_soap
-            @soap = MarketoApi::Soap.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
+            @soap = MarketoApi::Soap::ActivityLog.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
 
             stub(ActivityLog).soap_client(config) { @soap }
           end

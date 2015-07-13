@@ -4,6 +4,9 @@ module Embulk
   module Input
     module Marketo
       class Base < InputPlugin
+
+        def self.target
+        end
         def self.soap_client(config)
           @soap ||=
             begin
@@ -15,8 +18,12 @@ module Embulk
                 encryption_key: config.param(:encryption_key, :string),
               }
 
-              MarketoApi.soap_client(soap_config)
+              MarketoApi.soap_client(soap_config, target)
             end
+        end
+
+        def target
+          self.class.target
         end
       end
     end

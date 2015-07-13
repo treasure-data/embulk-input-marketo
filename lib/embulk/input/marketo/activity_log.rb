@@ -6,6 +6,10 @@ module Embulk
       class ActivityLog < Base
         Plugin.register_input("marketo/activity_log", self)
 
+        def self.target
+          :activity_log
+        end
+
         def self.guess(config)
           client = soap_client(config)
           last_updated_at = config.param(:last_updated_at, :string)

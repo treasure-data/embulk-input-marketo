@@ -8,6 +8,10 @@ module Embulk
 
         Plugin.register_input("marketo/lead", self)
 
+        def self.target
+          :lead
+        end
+
         def self.transaction(config, &control)
           endpoint_url = config.param(:endpoint, :string)
 
