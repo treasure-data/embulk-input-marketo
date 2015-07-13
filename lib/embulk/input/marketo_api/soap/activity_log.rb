@@ -5,7 +5,7 @@ module Embulk
     module MarketoApi
         module Soap
         class ActivityLog < Base
-          def activity_log_metadata(last_updated_at, options={})
+          def metadata(last_updated_at, options={})
             activity_logs = []
 
             fetch_by_last_updated_at(last_updated_at, options) do |record|
