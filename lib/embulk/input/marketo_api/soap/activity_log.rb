@@ -3,7 +3,7 @@ require "embulk/input/marketo_api/soap/base"
 module Embulk
   module Input
     module MarketoApi
-        module Soap
+      module Soap
         class ActivityLog < Base
           def metadata(last_updated_at, options={})
             activity_logs = []
