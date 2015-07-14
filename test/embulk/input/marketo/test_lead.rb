@@ -95,7 +95,7 @@ module Embulk
           end
 
           def test_include_metadata
-            stub(@soap).lead_metadata { metadata }
+            stub(@soap).metadata { metadata }
 
             assert_equal(
               {"columns" => expected_guessed_columns},

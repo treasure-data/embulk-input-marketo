@@ -5,7 +5,7 @@ module Embulk
     module MarketoApi
       module Soap
         class Lead < Base
-          def lead_metadata
+          def metadata
             # http://developers.marketo.com/documentation/soap/describemobject/
             response = savon.call(:describe_m_object, message: {object_name: "LeadRecord"})
             response.body[:success_describe_m_object][:result][:metadata][:field_list][:field]

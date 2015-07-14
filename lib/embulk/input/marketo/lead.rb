@@ -14,7 +14,7 @@ module Embulk
 
         def self.guess(config)
           client = soap_client(config)
-          metadata = client.lead_metadata
+          metadata = client.metadata
 
           return {"columns" => generate_columns(metadata)}
         end

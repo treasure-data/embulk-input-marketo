@@ -55,14 +55,14 @@ module Embulk
               mock(@savon).call(:describe_m_object, message: {object_name: "LeadRecord"}) {
                 Struct.new(:body).new(body)
               }
-              soap.lead_metadata
+              soap.metadata
             end
 
             def test_return_fields
               stub(@savon).call(:describe_m_object, message: {object_name: "LeadRecord"}) {
                 Struct.new(:body).new(body)
               }
-              assert_equal(fields, soap.lead_metadata)
+              assert_equal(fields, soap.metadata)
             end
 
             private
