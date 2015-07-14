@@ -16,7 +16,7 @@ module Embulk
 
             last_updated_at = Time.parse(last_updated_at).iso8601
 
-            # TODO: generate request in #fetch_lead
+            # TODO: generate request in #fetch
             # TODO: use PREVIEW_COUNT as batch_size in preview
             request = {
               lead_selector: {
@@ -28,16 +28,16 @@ module Embulk
               batch_size: 1000,
             }
 
-            stream_position = fetch_leads(request, &block)
+            stream_position = fetch(request, &block)
 
             while stream_position
-              stream_position = fetch_leads(request.merge(stream_position: stream_position), &block)
+              stream_position = fetch(request.merge(stream_position: stream_position), &block)
             end
           end
 
           private
 
-          def fetch_leads(request = {}, &block)
+          def fetch(request = {}, &block)
             response = savon.call(:get_multiple_leads, message: request)
 
             remaining = response.xpath('//remainingCount').text.to_i
