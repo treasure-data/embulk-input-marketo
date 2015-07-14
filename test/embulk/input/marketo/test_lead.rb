@@ -20,16 +20,6 @@ module Embulk
           stub(Embulk).logger { ::Logger.new(File::NULL) }
         end
 
-        def test_transaction
-          control = proc {} # dummy
-          columns = task[:columns].map do |col|
-            Column.new(nil, col["name"], col["type"].to_sym)
-          end
-
-          mock(Lead).resume(task, columns, 1, &control)
-          Lead.transaction(config, &control)
-        end
-
         class RunTest < self
           def setup
             setup_soap
