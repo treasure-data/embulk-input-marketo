@@ -22,7 +22,7 @@ module Embulk
             end
           end
 
-          def test_each_lead
+          def test_each
             stub(Embulk).logger { ::Logger.new(IO::NULL) }
             last_updated_at = "2015-07-06"
 
@@ -42,7 +42,7 @@ module Embulk
             leads_count = next_stream_leads_response.xpath('//leadRecord').length
             mock(proc).call(anything).times(leads_count)
 
-            soap.each_lead(last_updated_at, &proc)
+            soap.each(last_updated_at, &proc)
           end
 
           class TestLeadMetadata < self

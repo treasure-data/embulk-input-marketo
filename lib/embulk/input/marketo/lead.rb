@@ -50,7 +50,7 @@ module Embulk
 
         def run
           count = 0
-          @soap.each_lead(@last_updated_at) do |lead|
+          @soap.each(@last_updated_at) do |lead|
             values = @columns.map do |column|
               name = column["name"].to_s
               (lead[name] || {})[:value]
