@@ -9,6 +9,10 @@ module ActivityLogFixtures
     activity_logs(next_stream_response)
   end
 
+  def preview_activity_logs_response
+    activity_logs(preview_response)
+  end
+
   def activity_logs(body)
     Struct.new(:body).new({
       success_get_lead_changes: {
@@ -110,6 +114,41 @@ module ActivityLogFixtures
             mkt_person_id: "100",
           },
         ]
+      }
+    }
+  end
+
+  def preview_response
+    records = (1..15).map do |i|
+      {
+        id: i,
+        activity_date_time: DateTime.parse("2015-07-14T00:00:11+00:00"),
+        activity_type: "at#{i}",
+        mktg_asset_name: "score#{i}",
+        activity_attributes: {
+          attribute: [
+            {
+              attr_name: "Attribute Name",
+              attr_type: nil,
+              attr_value: "Attribute#{i}",
+            },
+            {
+              attr_name: "Old Value",
+              attr_type: nil,
+              attr_value: "404",
+            },
+          ],
+        },
+        mkt_person_id: "100",
+      }
+    end
+
+    {
+      return_count: 15,
+      remaining_count: 0,
+      new_start_position: {},
+      lead_change_record_list: {
+        lead_change_record: records
       }
     }
   end
