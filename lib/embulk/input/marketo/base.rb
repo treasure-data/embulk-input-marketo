@@ -58,7 +58,7 @@ module Embulk
         def init
           @last_updated_at = task[:last_updated_at]
           @columns = task[:columns]
-          @soap = MarketoApi.soap_client(task, self.class.target)
+          @soap = MarketoApi.soap_client(task, target)
         end
 
         def self.logger
