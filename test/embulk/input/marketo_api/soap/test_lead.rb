@@ -31,7 +31,7 @@ module Embulk
             soap.each(last_updated_at, &proc)
           end
 
-          class TestLeadMetadata < self
+          class TestMetadata < self
             def setup
               @savon = soap.__send__(:savon)
               stub(soap).savon { @savon } # Pin savon instance for each call soap.savon for mocking/stubbing
