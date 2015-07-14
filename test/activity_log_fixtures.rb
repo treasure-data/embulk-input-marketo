@@ -48,7 +48,7 @@ module ActivityLogFixtures
                 },
               ],
               campaign: "Everyleaf campaign",
-              mkt_pferson_id: "100",
+              mkt_person_id: "100",
             },
           },
           {
@@ -70,7 +70,7 @@ module ActivityLogFixtures
                 },
               ],
               campaign: "manyo",
-              mkt_pferson_id: "90",
+              mkt_person_id: "90",
             },
           },
         ]
@@ -109,7 +109,7 @@ module ActivityLogFixtures
                 },
               ],
               campaign: "Everyleaf campaign",
-              mkt_pferson_id: "100",
+              mkt_person_id: "100",
             },
           },
         ]
