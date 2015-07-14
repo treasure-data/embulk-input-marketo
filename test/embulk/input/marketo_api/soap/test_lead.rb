@@ -8,20 +8,6 @@ module Embulk
         class LeadTest < Test::Unit::TestCase
           include LeadFixtures
 
-          class TestSignature < self
-            def setup
-              @signature = soap.__send__(:signature)
-            end
-
-            def test_sigature_keys
-              assert_equal(%w(requestTimestamp requestSignature).sort, @signature.keys.sort)
-            end
-
-            def test_is_hash
-              assert_equal(Hash, @signature.class)
-            end
-          end
-
           def test_each
             stub(Embulk).logger { ::Logger.new(IO::NULL) }
             last_updated_at = "2015-07-06"
