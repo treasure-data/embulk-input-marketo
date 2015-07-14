@@ -8,9 +8,11 @@ module Embulk
         class ActivityLogTest < Test::Unit::TestCase
           include ActivityLogFixtures
 
-          def test_each
+          def setup
             stub(Embulk).logger { ::Logger.new(IO::NULL) }
+          end
 
+          def test_each
             request = {
               start_position: {
                 oldest_created_at: Time.parse(last_updated_at).iso8601,
@@ -34,6 +36,8 @@ module Embulk
 
           class TestMetadata < self
             def setup
+              super
+
               @savon = soap.__send__(:savon)
               stub(soap).savon { @savon } # Pin savon instance for each call soap.savon for mocking/stubbing
             end
