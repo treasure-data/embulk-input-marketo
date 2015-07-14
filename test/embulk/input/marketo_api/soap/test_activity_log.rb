@@ -73,8 +73,8 @@ module Embulk
                 {index: 1, name: "activity_date_time", type: :timestamp, format: "%Y-%m-%d %H:%M:%S %z"},
                 {index: 2, name: "activity_type", type: :string},
                 {index: 3, name: "mktg_asset_name", type: :string},
-                {index: 4, name: "mkt_person_id", type: :string},
-                {index: 5, name: nil, type: :string},
+                {index: 4, name: "mkt_person_id", type: :long},
+                {index: 5, name: "Attribute Name", type: :string},
                 {index: 6, name: "Old Value", type: :long},
               ]
 

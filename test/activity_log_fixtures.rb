@@ -37,9 +37,9 @@ module ActivityLogFixtures
             activity_attributes: {
               attribute: [
                 {
-                  attrName: "Attribute Name",
-                  attrType: nil,
-                  attrValue: "Attribute1",
+                  attr_name: "Attribute Name",
+                  attr_type: nil,
+                  attr_value: "Attribute1",
                 },
                 {
                   attr_name: "Old Value",
@@ -47,9 +47,8 @@ module ActivityLogFixtures
                   attr_value: "402",
                 },
               ],
-              campaign: "Everyleaf campaign",
-              mkt_person_id: "100",
             },
+            mkt_person_id: "100",
           },
           {
             id: "2",
@@ -59,9 +58,9 @@ module ActivityLogFixtures
             activity_attributes: {
               attribute: [
                 {
-                  attrName: "Attribute Name",
-                  attrType: nil,
-                  attrValue: "Attribute2",
+                  attr_name: "Attribute Name",
+                  attr_type: nil,
+                  attr_value: "Attribute2",
                 },
                 {
                   attr_name: "Old Value",
@@ -69,9 +68,8 @@ module ActivityLogFixtures
                   attr_value: "403",
                 },
               ],
-              campaign: "manyo",
-              mkt_person_id: "90",
             },
+            mkt_person_id: "90",
           },
         ]
       }
@@ -98,9 +96,9 @@ module ActivityLogFixtures
             activity_attributes: {
               attribute: [
                 {
-                  attrName: "Attribute Name",
-                  attrType: nil,
-                  attrValue: "Attribute3",
+                  attr_name: "Attribute Name",
+                  attr_type: nil,
+                  attr_value: "Attribute3",
                 },
                 {
                   attr_name: "Old Value",
@@ -108,9 +106,8 @@ module ActivityLogFixtures
                   attr_value: "404",
                 },
               ],
-              campaign: "Everyleaf campaign",
-              mkt_person_id: "100",
             },
+            mkt_person_id: "100",
           },
         ]
       }
