@@ -6,7 +6,11 @@
 
 # Marketo input plugin for Embulk
 
-embulk-input-marketo is the Embulk input plugin for [Marketo](http://www.marketo.com/).
+embulk-input-marketo is the gem preparing Embulk input plugins for [Marketo](http://www.marketo.com/).
+
+- Lead
+- Activity log
+
 This plugin uses Marketo SOAP API.
 
 ## Overview
@@ -20,6 +24,8 @@ Required Embulk version >= 0.6.13.
 
 ## Configuration
 
+### API
+
 Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 
 - **endpoint** SOAP endpoint URL for your account (string, required)
@@ -28,18 +34,26 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 - **encryption_key** Your encryption key (string, reqiured)
 - **last_updated_at** Limit datetime that a lead has been updated (this plugin fetches leads updated after this datetime) (string, required)
 
+### Selecting plugin type
+
+You should specify the plugin type as `marketo/type` for `type` configuration.
+
+If you want to Lead plugin, you should specify "marketo/lead", or If you want to Activity log plugin, you should specify "marketo/activity_log".
+
+
 ## Example
+
+(For lead)
 
 ```yaml
 in:
-  type: marketo
+  type: marketo/lead
   endpoint: https://soap-end-point.mktoapi.com/
   wsdl: https://wsdl-url.mktoapi.com/?WSDL
   user_id: user_ABC123
   encryption_key: TOPSECRET
   last_updated_at: "2015-06-30"
 ```
-
 
 ## Build
 
