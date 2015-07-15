@@ -8,26 +8,20 @@ module Embulk
       class LeadTest < Test::Unit::TestCase
         include LeadFixtures
 
-        def setup_soap
-          @soap = MarketoApi::Soap.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
+        def test_target
+          assert_equal(:lead, Lead.target)
+        end
 
-          stub(MarketoApi).soap_client(task) { @soap }
+        def setup_soap
+          @soap = MarketoApi::Soap::Lead.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
+
+          stub(Lead).soap_client(task) { @soap }
         end
 
         def setup_plugin
           @page_builder = Object.new
           @plugin = Lead.new(task, nil, nil, @page_builder)
           stub(Embulk).logger { ::Logger.new(File::NULL) }
-        end
-
-        def test_transaction
-          control = proc {} # dummy
-          columns = task[:columns].map do |col|
-            Column.new(nil, col["name"], col["type"].to_sym)
-          end
-
-          mock(Lead).resume(task, columns, 1, &control)
-          Lead.transaction(config, &control)
         end
 
         class RunTest < self
@@ -89,13 +83,13 @@ module Embulk
           setup :setup_soap
 
           def setup_soap
-            @soap = MarketoApi::Soap.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
+            @soap = MarketoApi::Soap::Lead.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
 
             stub(Lead).soap_client(config) { @soap }
           end
 
           def test_include_metadata
-            stub(@soap).lead_metadata { metadata }
+            stub(@soap).metadata { metadata }
 
             assert_equal(
               {"columns" => expected_guessed_columns},
