@@ -42,9 +42,7 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 
 ### Selecting plugin type
 
-You should specify the plugin type as `marketo/type` for `type` configuration.
-
-If you want to Lead plugin, you should specify "marketo/lead", or If you want to Activity log plugin, you should specify "marketo/activity_log".
+You should specify `type: marketo/lead` or `type: marketo/activity_log` on your demand.
 
 
 ## Example
