@@ -49,7 +49,7 @@ If you want to Lead plugin, you should specify "marketo/lead", or If you want to
 
 ## Example
 
-(For lead)
+For lead, you have `partial-config.yml` like below:
 
 ```yaml
 in:
@@ -59,10 +59,11 @@ in:
   user_id: user_ABC123
   encryption_key: TOPSECRET
   last_updated_at: "2015-06-30"
+out:
+  type: stdout
 ```
 
-## Build
+You can run `embulk guess partial-config.yml -o lead-config.yml` and got `lead-config.yml`. `lead-config.yml` includes a schema for Lead.
 
-```
-$ rake
-```
+Next, you can run `embulk preview lead-config.yml` for preview and `embulk run lead-config.yml` for run.
+
