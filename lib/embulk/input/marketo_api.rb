@@ -11,8 +11,10 @@ module Embulk
         case target
         when :activity_log
           MarketoApi::Soap::ActivityLog.new(*arguments)
-        else
+        when :lead
           MarketoApi::Soap::Lead.new(*arguments)
+        else
+          raise "unknown target: #{target}"
         end
       end
     end
