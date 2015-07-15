@@ -8,6 +8,10 @@ module Embulk
       class ActivityLogTest < Test::Unit::TestCase
         include ActivityLogFixtures
 
+        def test_target
+          assert_equal(:activity_log, ActivityLog.target)
+        end
+
         class GuessTest < self
           setup :setup_soap
 

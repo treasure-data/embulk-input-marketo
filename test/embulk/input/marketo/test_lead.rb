@@ -8,6 +8,10 @@ module Embulk
       class LeadTest < Test::Unit::TestCase
         include LeadFixtures
 
+        def test_target
+          assert_equal(:lead, Lead.target)
+        end
+
         def setup_soap
           @soap = MarketoApi::Soap::Lead.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
 

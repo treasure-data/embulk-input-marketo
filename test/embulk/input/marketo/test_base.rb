@@ -5,6 +5,12 @@ module Embulk
   module Input
     module Marketo
       class BaseTest < Test::Unit::TestCase
+        def test_target
+          assert_raise(NotImplementedError) do
+            Base.target
+          end
+        end
+
         def test_transaction
           control = proc {} # dummy
           columns = task[:columns].map do |col|

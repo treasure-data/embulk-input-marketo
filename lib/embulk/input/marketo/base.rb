@@ -7,6 +7,7 @@ module Embulk
         PREVIEW_COUNT = 15
 
         def self.target
+          raise NotImplementedError
         end
 
         def self.transaction(config, &control)
