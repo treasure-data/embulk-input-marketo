@@ -32,7 +32,7 @@ module Embulk
             request = {
               start_position: {
                 oldest_created_at: last_updated_at,
-                },
+              },
             }
 
             fetch(request, options, &block)
