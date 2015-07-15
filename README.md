@@ -22,6 +22,12 @@ Required Embulk version >= 0.6.13.
 * **Cleanup supported**: no
 * **Guess supported**: yes
 
+## Install
+
+```
+$ embulk gem install embulk-input-marketo
+```
+
 ## Configuration
 
 ### API
