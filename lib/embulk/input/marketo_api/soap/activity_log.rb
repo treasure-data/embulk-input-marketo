@@ -58,6 +58,8 @@ module Embulk
             Embulk.logger.info "Remaining records: #{remaining}"
 
             activities_list = response.body[:success_get_lead_changes][:result][:lead_change_record_list]
+            return [] if activities_list.nil?
+
             activities = activities_list[:lead_change_record].sort { |activity| activity[:activity_date_time] }
 
             activities.each do |activity|

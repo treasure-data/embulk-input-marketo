@@ -110,6 +110,20 @@ module Embulk
             @plugin.run
           end
 
+          def test_run_with_no_response
+            stub(@plugin).preview? { false }
+
+            any_instance_of(Savon::Client) do |klass|
+              mock(klass).call(:get_lead_changes, message: request) do
+                none_activity_log_response
+              end
+            end
+
+            mock(@page_builder).finish
+
+            @plugin.run
+          end
+
           def test_preview_through
             stub(@plugin).preview? { true }
 

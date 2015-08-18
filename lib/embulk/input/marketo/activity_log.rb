@@ -33,7 +33,7 @@ module Embulk
 
           count = 0
 
-          activities = @soap.each(@last_updated_at, batch_size: batch_size) do |activity_log|
+          activity_logs = @soap.each(@last_updated_at, batch_size: batch_size) do |activity_log|
             values = @columns.map do |column|
               name = column["name"].to_s
               activity_log[name]
@@ -47,8 +47,8 @@ module Embulk
           page_builder.finish
 
           commit_report = {}
-          if !preview?
-            last_updated_at = activities.last[:activity_date_time].to_s
+          if !preview? && !activity_logs.empty?
+            last_updated_at = activity_logs.last[:activity_date_time].to_s
             commit_report = {last_updated_at: last_updated_at}
           end
 

@@ -43,8 +43,23 @@ module Embulk
             assert_equal([formatted_activity], soap.each(last_updated_at, &proc))
           end
 
+          def test_each_with_no_response
+            request = {
+              start_position: {
+                oldest_created_at: Time.parse(last_updated_at).iso8601,
+              },
+              batch_size: 100
+            }
 
-            soap.each(last_updated_at, &proc)
+            any_instance_of(Savon::Client) do |klass|
+              mock(klass).call(:get_lead_changes, message: request) do
+                none_activity_log_response
+              end
+            end
+
+            proc = proc{ "" }
+
+            assert_equal([], soap.each(last_updated_at, &proc))
           end
 
           class TestMetadata < self
