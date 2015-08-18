@@ -27,11 +27,11 @@ module Embulk
             end
 
             proc = proc{ "" }
-            activities = next_stream_activity_logs_response[:body][:success_get_lead_changes][:result][:lead_change_record_list][:lead_change_record]
-            activity = activities.last
+            activity_logs = next_stream_activity_logs_response[:body][:success_get_lead_changes][:result][:lead_change_record_list][:lead_change_record]
+            last_activity_log = activity_logs.last
 
-            mock(proc).call(anything).times(activities.size)
-            assert_equal(activity[:activity_date_time], soap.each(last_updated_at, &proc))
+            mock(proc).call(anything).times(activity_logs.size)
+            assert_equal(last_activity_log[:activity_date_time], soap.each(last_updated_at, &proc))
           end
 
           def test_each_with_no_response
