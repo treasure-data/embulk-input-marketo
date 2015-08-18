@@ -16,11 +16,13 @@ module Embulk
           end
 
           def each(last_updated_at, options={}, &block)
-            offset = fetch_by_last_updated_at(last_updated_at, options, &block)
+            response = fetch_by_last_updated_at(last_updated_at, options, &block)
 
-            while offset
-              offset = fetch_by_offset(offset, options, &block)
+            while response.is_a?(String) do
+              response = fetch_by_offset(response, options, &block)
             end
+
+            response
           end
 
           private
@@ -79,7 +81,7 @@ module Embulk
             if remaining > 0
               response.body[:success_get_lead_changes][:result][:new_start_position][:offset]
             else
-              nil
+              activities
             end
           end
         end

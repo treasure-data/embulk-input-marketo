@@ -27,9 +27,22 @@ module Embulk
             end
 
             proc = proc{ "" }
-            activity_log_count = next_stream_activity_logs_response[:body][:success_get_lead_changes][:result][:lead_change_record_list][:lead_change_record].size
+            activities = next_stream_activity_logs_response[:body][:success_get_lead_changes][:result][:lead_change_record_list][:lead_change_record]
+            activity = activities.last
+            formatted_activity = activity.merge(
+              {
+                activity_date_time: activity[:activity_date_time],
+                activity_type: activity[:activity_type],
+                id: activity[:id],
+                mkt_person_id: activity[:mkt_person_id],
+                mktg_asset_name: activity[:mktg_asset_name],
+              }
+            )
 
-            mock(proc).call(anything).times(activity_log_count)
+            mock(proc).call(anything).times(activities.size)
+            assert_equal([formatted_activity], soap.each(last_updated_at, &proc))
+          end
+
 
             soap.each(last_updated_at, &proc)
           end
