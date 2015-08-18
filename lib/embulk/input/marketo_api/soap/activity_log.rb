@@ -17,12 +17,12 @@ module Embulk
 
           def each(last_updated_at, options={}, &block)
             response = fetch_by_last_updated_at(last_updated_at, options, &block)
-
-            while response.is_a?(String) do
-              response = fetch_by_offset(response, options, &block)
+            while response[:remaining_count] > 0 do
+              offset = response[:offset]
+              response = fetch_by_offset(offset, options, &block)
             end
 
-            response
+            response[:last_updated_at]
           end
 
           private
@@ -58,7 +58,10 @@ module Embulk
             Embulk.logger.info "Remaining records: #{remaining}"
 
             activities_list = response.body[:success_get_lead_changes][:result][:lead_change_record_list]
-            return [] if activities_list.nil?
+
+            if activities_list.nil?
+              return {remaining_count: 0, offset: nil, last_updated_at: nil}
+            end
 
             activities = activities_list[:lead_change_record].sort { |activity| activity[:activity_date_time] }
 
@@ -82,11 +85,11 @@ module Embulk
               block.call(record)
             end
 
-            if remaining > 0
-              response.body[:success_get_lead_changes][:result][:new_start_position][:offset]
-            else
-              activities
-            end
+            {
+              remaining_count: remaining,
+              offset: response.body[:success_get_lead_changes][:result][:new_start_position][:offset],
+              last_updated_at: activities.last[:activity_date_time]
+            }
           end
         end
       end
