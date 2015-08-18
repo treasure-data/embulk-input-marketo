@@ -60,6 +60,7 @@ module Embulk
             activities_list = response.body[:success_get_lead_changes][:result][:lead_change_record_list]
 
             if activities_list.nil?
+              Embulk.logger.info "No record is fetched."
               return {remaining_count: 0, offset: nil, last_updated_at: nil}
             end
 
