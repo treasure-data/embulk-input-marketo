@@ -1,6 +1,6 @@
 ## 0.1.1 - 2015-08-19
 
-* [enhanement] Support scheduled execution [#20](https://github.com/treasure-data/embulk-input-marketo/pull/20)
+* [enhanement] Support scheduled execution [#20](https://github.com/treasure-data/embulk-input-marketo/pull/20) [[Reported by @muga](https://github.com/treasure-data/embulk-input-marketo/issues/18). Thanks!]
 * [maintenance] Use everyleaf-embulk_helper [#19](https://github.com/treasure-data/embulk-input-marketo/pull/19)
 
 ## 0.1.0 - 2015-07-15
