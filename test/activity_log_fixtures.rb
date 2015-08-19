@@ -13,6 +13,10 @@ module ActivityLogFixtures
     activity_logs(preview_response)
   end
 
+  def none_activity_log_response
+    activity_logs(none_response)
+  end
+
   def activity_logs(body)
     Struct.new(:body).new({
       success_get_lead_changes: {
@@ -149,6 +153,18 @@ module ActivityLogFixtures
       new_start_position: {},
       lead_change_record_list: {
         lead_change_record: records
+      }
+    }
+  end
+
+  def none_response
+    {
+      result: {
+        return_count: 0,
+        remaining_count: 0,
+        new_start_position: {
+        },
+        lead_change_record_list: nil
       }
     }
   end

@@ -37,7 +37,9 @@ module Embulk
         def self.resume(task, columns, count, &control)
           commit_reports = yield(task, columns, count)
 
-          next_config_diff = {}
+          # NOTE: If this plugin supports to run by multi threads, this
+          # implementation is terrible.
+          next_config_diff = commit_reports.first
           return next_config_diff
         end
 

@@ -27,11 +27,30 @@ module Embulk
             end
 
             proc = proc{ "" }
-            activity_log_count = next_stream_activity_logs_response[:body][:success_get_lead_changes][:result][:lead_change_record_list][:lead_change_record].size
+            activity_logs = next_stream_activity_logs_response[:body][:success_get_lead_changes][:result][:lead_change_record_list][:lead_change_record]
+            last_activity_log = activity_logs.last
 
-            mock(proc).call(anything).times(activity_log_count)
+            mock(proc).call(anything).times(activity_logs.size)
+            assert_equal(last_activity_log[:activity_date_time], soap.each(last_updated_at, &proc))
+          end
 
-            soap.each(last_updated_at, &proc)
+          def test_each_with_no_response
+            request = {
+              start_position: {
+                oldest_created_at: Time.parse(last_updated_at).iso8601,
+              },
+              batch_size: 100
+            }
+
+            any_instance_of(Savon::Client) do |klass|
+              mock(klass).call(:get_lead_changes, message: request) do
+                none_activity_log_response
+              end
+            end
+
+            proc = proc{ "" }
+
+            assert_nil(soap.each(last_updated_at, &proc))
           end
 
           class TestMetadata < self
