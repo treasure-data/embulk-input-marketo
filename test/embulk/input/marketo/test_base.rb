@@ -32,6 +32,29 @@ module Embulk
           assert_equal(next_config_diff, actual)
         end
 
+        class SoapClientTest < self
+          def setup
+            stub(Base).target { :lead }
+            @client = Base.soap_client(config)
+          end
+
+          def test_endpoint
+            assert_equal(settings[:endpoint], @client.endpoint)
+          end
+
+          def test_wsdl
+            assert_equal(settings[:wsdl], @client.wsdl)
+          end
+
+          def test_user_id
+            assert_equal(settings[:user_id], @client.user_id)
+          end
+
+          def test_encryption_key
+            assert_equal(settings[:encryption_key], @client.encryption_key)
+          end
+        end
+
         private
 
         def config
