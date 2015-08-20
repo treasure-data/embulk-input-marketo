@@ -46,7 +46,7 @@ module Embulk
         def self.soap_client(config)
           @soap ||=
             begin
-              endpoint_url = config.param(:endpoint, :string),
+              endpoint_url = config.param(:endpoint, :string)
               soap_config = {
                 endpoint_url: endpoint_url,
                 wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
