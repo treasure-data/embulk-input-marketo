@@ -7,7 +7,7 @@ module Embulk
         class Lead < Base
           def metadata
             # http://developers.marketo.com/documentation/soap/describemobject/
-            response = savon.call(:describe_m_object, message: {object_name: "LeadRecord"})
+            response = savon_call(:describe_m_object, message: {object_name: "LeadRecord"})
             response.body[:success_describe_m_object][:result][:metadata][:field_list][:field]
           end
 
@@ -38,7 +38,7 @@ module Embulk
           private
 
           def fetch(request = {}, &block)
-            response = savon.call(:get_multiple_leads, message: request)
+            response = savon_call(:get_multiple_leads, message: request)
 
             remaining = response.xpath('//remainingCount').text.to_i
             Embulk.logger.info "Remaining records: #{remaining}"

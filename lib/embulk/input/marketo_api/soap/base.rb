@@ -38,6 +38,12 @@ module Embulk
             )
           end
 
+          def savon_call(*args)
+            catch_unretryable_error do
+              savon.call(*args)
+            end
+          end
+
           def signature
             timestamp = Time.now.to_s
             encryption_string = timestamp + user_id
@@ -47,6 +53,36 @@ module Embulk
               'requestTimestamp' => timestamp,
               'requestSignature' => hashed_signature.to_s
             }
+          end
+
+          def catch_unretryable_error(&block)
+            yield
+          rescue Savon::SOAPFault => e
+            Embulk.logger.debug "#{e.class}: #{e.to_hash}"
+            if e.to_hash[:fault][:faultcode].to_str == "SOAP-ENV:Client"
+              raise ConfigError, e.message
+            end
+          rescue Savon::HTTPError => e
+            # NOTE: Marketo API always return error as HTTP 500
+            # ref. https://jira.talendforge.org/secure/attachmentzip/unzip/167201/49761%5B1%5D/Marketo%20Enterprise%20API%202%200.pdf
+            Embulk.logger.debug "#{e.class}: #{e.http.body}"
+            soap_code = e.http.body[%r|<code>(.*?)</code>|, 1]
+            soap_message = e.http.body[%r|<message>(.*?)</message>|, 1]
+            case soap_code
+            when "10001", "20011"
+              # Internal Error
+              raise e
+            when "20015"
+              # Request Limit Exceeded
+              raise e
+            else
+              # unretryable error such as Authentication Failed, Invalid Request, etc.
+              raise ConfigError, soap_message
+            end
+          rescue SocketError => e
+            # maybe endpoint/wsdl domain was wrong
+            Embulk.logger.debug "SocketError: endpoint=#{endpoint} wsdl=#{wsdl}"
+            raise ConfigError, "SocketError: #{e.message} (endpoint is '#{endpoint}')"
           end
         end
       end
