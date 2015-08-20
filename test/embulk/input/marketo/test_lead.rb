@@ -68,6 +68,65 @@ module Embulk
             @plugin.run
           end
 
+          class SavonCallTest < self
+            def test_soap_error
+              assert_raise(Embulk::ConfigError) do
+                @soap.send(:catch_unretryable_error) do
+                  raise Savon::SOAPFault.new(nil, Nori.new(default_nori_options), xml)
+                end
+              end
+            end
+
+            def test_http_error_on_client
+              assert_raise(Embulk::ConfigError) do
+                @soap.send(:catch_unretryable_error) do
+                  raise Savon::HTTPError.new(HTTPI::Response.new(500, {}, xml("20000")))
+                end
+              end
+            end
+
+            def test_http_error_on_server
+              assert_raise(Savon::HTTPError) do
+                @soap.send(:catch_unretryable_error) do
+                  # Internal Error
+                  raise Savon::HTTPError.new(HTTPI::Response.new(500, {}, xml("10001")))
+                end
+              end
+            end
+
+            def test_socket_error
+              stub(@soap).endpoint { "http://192.0.2.0/" }
+
+              assert_raise(Embulk::ConfigError) do
+                @plugin.run
+              end
+            end
+
+            def xml(code = nil, message = nil)
+              <<-XML
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"><SOAP-ENV:Body><SOAP-ENV:Fault>
+<faultcode>SOAP-ENV:Client</faultcode>
+<faultstring>#{message || "20014 - Authentication failed"}</faultstring>
+<detail>
+<ns1:serviceException xmlns:ns1="http://www.marketo.com/mktows/">
+<name>mktServiceException</name>
+<message>#{message || "Authentication failed (20014)"}</message>
+<code>#{code || "20014"}</code>
+</ns1:serviceException></detail></SOAP-ENV:Fault></SOAP-ENV:Body></SOAP-ENV:Envelope>
+              XML
+            end
+
+            def default_nori_options
+              # https://github.com/savonrb/savon/blob/v2.11.1/lib/savon/options.rb#L75-L94
+              {
+                :strip_namespaces          => true,
+                :convert_tags_to  => lambda { |tag| tag.snakecase.to_sym},
+                :convert_attributes_to     => lambda { |k,v| [k,v] },
+              }
+            end
+          end
+
           private
 
           def request
