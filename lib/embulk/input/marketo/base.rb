@@ -6,6 +6,8 @@ module Embulk
       class Base < InputPlugin
         PREVIEW_COUNT = 15
 
+        attr_reader :soap
+
         def self.target
           raise NotImplementedError
         end

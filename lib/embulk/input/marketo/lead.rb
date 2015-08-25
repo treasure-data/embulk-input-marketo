@@ -88,7 +88,7 @@ module Embulk
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
 
-          @soap.each(since_at, until_at, options) do |lead|
+          soap.each(since_at, until_at, options) do |lead|
             values = @columns.map do |column|
               name = column["name"].to_s
               (lead[name] || {})[:value]

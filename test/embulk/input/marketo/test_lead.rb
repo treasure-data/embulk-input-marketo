@@ -53,6 +53,15 @@ module Embulk
             @plugin.run
           end
 
+          def test_run_commit_report
+            # do not requests
+            stub(@page_builder).finish
+            stub(@plugin.soap).each { }
+
+            commit_report = @plugin.run
+            assert_equal until_at, commit_report[:since_at]
+          end
+
           def test_preview_through
             stub(@plugin).preview? { true }
 
