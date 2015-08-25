@@ -12,6 +12,31 @@ module Embulk
           :lead
         end
 
+        def self.transaction(config, &control)
+          endpoint_url = config.param(:endpoint, :string)
+
+          task = {
+            endpoint_url: endpoint_url,
+            wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
+            user_id: config.param(:user_id, :string),
+            encryption_key: config.param(:encryption_key, :string),
+            until_at: config.param(:until_at, :string, default: nil),
+            since_at: config.param(:since_at, :string, default: nil),
+            columns: config.param(:columns, :array)
+          }
+
+          columns = []
+
+          task[:columns].each do |column|
+            name = column["name"]
+            type = column["type"].to_sym
+
+            columns << Column.new(nil, name, type, column["format"])
+          end
+
+          resume(task, columns, 1, &control)
+        end
+
         def self.guess(config)
           client = soap_client(config)
           metadata = client.metadata
@@ -50,7 +75,9 @@ module Embulk
 
         def run
           count = 0
-          @soap.each(@last_updated_at) do |lead|
+          since_at = task[:since_at]
+          until_at = task[:until_at] || Time.now.to_s
+          @soap.each(since_at, until_at) do |lead|
             values = @columns.map do |column|
               name = column["name"].to_s
               (lead[name] || {})[:value]
@@ -64,7 +91,7 @@ module Embulk
 
           page_builder.finish
 
-          commit_report = {}
+          commit_report = {since_at: until_at}
           return commit_report
         end
       end
