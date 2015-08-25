@@ -53,7 +53,15 @@ module Embulk
           @soap.each(@last_updated_at) do |lead|
             values = @columns.map do |column|
               name = column["name"].to_s
-              (lead[name] || {})[:value]
+              value = (lead[name] || {})[:value]
+              next unless value
+
+              case column["type"]
+              when "timestamp"
+                Time.parse(value)
+              else
+                value
+              end
             end
 
             page_builder.add(values)
