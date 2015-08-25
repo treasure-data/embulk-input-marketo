@@ -57,7 +57,7 @@ module Embulk
             stub(@plugin).preview? { true }
 
             any_instance_of(Savon::Client) do |klass|
-              mock(klass).call(:get_multiple_leads, message: request) do
+              mock(klass).call(:get_multiple_leads, message: request.merge(batch_size: Lead::PREVIEW_COUNT)) do
                 preview_leads_response
               end
             end

@@ -15,7 +15,7 @@ module Embulk
             response.body[:success_describe_m_object][:result][:metadata][:field_list][:field]
           end
 
-          def each(since_at, until_at = nil, &block)
+          def each(since_at, until_at = nil, options = {}, &block)
             until_at ||= Time.now
 
             generate_time_range(since_at, until_at).each do |range|
@@ -27,7 +27,7 @@ module Embulk
                 attributes!: {
                   lead_selector: {"xsi:type" => "ns1:LastUpdateAtSelector"}
                 },
-                batch_size: BATCH_SIZE_DEFAULT,
+                batch_size: options[:batch_size] || BATCH_SIZE_DEFAULT,
               }
               Embulk.logger.info "fetching '#{range[:from]}' to '#{range[:to]}'"
 

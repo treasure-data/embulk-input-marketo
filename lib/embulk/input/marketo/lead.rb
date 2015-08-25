@@ -85,7 +85,10 @@ module Embulk
           count = 0
           since_at = task[:since_at]
           until_at = task[:until_at]
-          @soap.each(since_at, until_at) do |lead|
+          options = {}
+          options[:batch_size] = PREVIEW_COUNT if preview?
+
+          @soap.each(since_at, until_at, options) do |lead|
             values = @columns.map do |column|
               name = column["name"].to_s
               (lead[name] || {})[:value]
