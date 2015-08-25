@@ -18,7 +18,7 @@ This plugin uses Marketo SOAP API.
 Required Embulk version >= 0.6.13.
 
 * **Plugin type**: input
-* **Resume supported**: no
+* **Resume supported**: yes for `marketo/lead`, no for `marketo/activity_log`
 * **Cleanup supported**: no
 * **Guess supported**: yes
 
@@ -34,12 +34,22 @@ $ embulk gem install embulk-input-marketo
 
 Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 
+### market/lead
+
 - **endpoint** SOAP endpoint URL for your account (string, required)
 - **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
 - **user_id** Your user id (string, reqiured)
 - **encryption_key** Your encryption key (string, reqiured)
 - **since_at** Fetch leads since this time (string, required)
 - **until_at** Fetch leads until this time (string, default: Time.now)
+
+### market/activity_log
+
+- **endpoint** SOAP endpoint URL for your account (string, required)
+- **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
+- **user_id** Your user id (string, reqiured)
+- **encryption_key** Your encryption key (string, reqiured)
+- **last_updated_at** Limit datetime that a lead has been updated (this plugin fetches leads updated after this datetime) (string, required)
 
 ### Selecting plugin type
 
@@ -57,7 +67,7 @@ in:
   wsdl: https://wsdl-url.mktoapi.com/?WSDL
   user_id: user_ABC123
   encryption_key: TOPSECRET
-  last_updated_at: "2015-06-30"
+  since_at: "2015-06-30"
 out:
   type: stdout
 ```
