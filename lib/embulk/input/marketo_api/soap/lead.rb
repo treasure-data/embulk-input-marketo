@@ -25,7 +25,7 @@ module Embulk
               attributes!: {
                 lead_selector: {"xsi:type" => "ns1:LastUpdateAtSelector"}
               },
-              batch_size: 1000,
+              batch_size: 250,
             }
 
             stream_position = fetch(request, &block)
