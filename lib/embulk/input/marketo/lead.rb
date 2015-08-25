@@ -15,13 +15,17 @@ module Embulk
         def self.transaction(config, &control)
           endpoint_url = config.param(:endpoint, :string)
 
+          if config.param(:last_updated_at, :string, default: nil)
+            Embulk.logger.warn "config: last_updated_at is deprecated. Use since_at/until_at"
+          end
+
           task = {
             endpoint_url: endpoint_url,
             wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
             user_id: config.param(:user_id, :string),
             encryption_key: config.param(:encryption_key, :string),
-            until_at: config.param(:until_at, :string, default: nil),
-            since_at: config.param(:since_at, :string, default: nil),
+            since_at: config.param(:since_at, :string),
+            until_at: config.param(:until_at, :string, default: Time.now.to_s),
             columns: config.param(:columns, :array)
           }
 
@@ -38,6 +42,10 @@ module Embulk
         end
 
         def self.guess(config)
+          if config.param(:last_updated_at, :string, default: nil)
+            Embulk.logger.warn "config: last_updated_at is deprecated. Use since_at/until_at"
+          end
+
           client = soap_client(config)
           metadata = client.metadata
 
@@ -76,7 +84,7 @@ module Embulk
         def run
           count = 0
           since_at = task[:since_at]
-          until_at = task[:until_at] || Time.now.to_s
+          until_at = task[:until_at]
           @soap.each(since_at, until_at) do |lead|
             values = @columns.map do |column|
               name = column["name"].to_s

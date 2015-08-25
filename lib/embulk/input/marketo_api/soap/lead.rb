@@ -15,8 +15,7 @@ module Embulk
             response.body[:success_describe_m_object][:result][:metadata][:field_list][:field]
           end
 
-          def each(since_at = nil, until_at = nil, &block)
-            since_at ||= get_oldest_data
+          def each(since_at, until_at = nil, &block)
             until_at ||= Time.now
 
             generate_time_range(since_at, until_at).each do |range|
@@ -41,26 +40,6 @@ module Embulk
           end
 
           private
-
-          def get_oldest_data
-            Time.parse("2010-01-01") # NOTE: return fixed date currently, see below NOTE
-
-            # NOTE: below code will timeout (over 300 seconds)
-            #       if we want to detect oldest lead from API, we should find other way
-            #
-            # request = {
-            #   lead_selector: {
-            #     oldest_updated_at: Time.parse("2010-01-01").iso8601,
-            #   },
-            #   attributes!: {
-            #     lead_selector: {"xsi:type" => "ns1:LastUpdateAtSelector"}
-            #   },
-            #   batch_size: 1,
-            # }
-            # fetch(request) do |lead|
-            #   p lead
-            # end
-          end
 
           def fetch(request = {}, &block)
             start = Time.now

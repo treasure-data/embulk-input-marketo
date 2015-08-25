@@ -38,7 +38,8 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 - **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
 - **user_id** Your user id (string, reqiured)
 - **encryption_key** Your encryption key (string, reqiured)
-- **last_updated_at** Limit datetime that a lead has been updated (this plugin fetches leads updated after this datetime) (string, required)
+- **since_at** Fetch leads since this time (string, required)
+- **until_at** Fetch leads until this time (string, default: Time.now)
 
 ### Selecting plugin type
 
