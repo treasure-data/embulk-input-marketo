@@ -1,3 +1,4 @@
+require "embulk/input/marketo/timeslice"
 require "embulk/input/marketo_api"
 
 module Embulk

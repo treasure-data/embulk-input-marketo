@@ -5,6 +5,8 @@ module Embulk
     module MarketoApi
       module Soap
         class Lead < Base
+          include Timeslice
+
           # NOTE: batch_size is allowed at 1000, but that takes 2 minutes in 1 request.
           #       We use 250 for the default (about 30 seconds)
           BATCH_SIZE_DEFAULT = 250
