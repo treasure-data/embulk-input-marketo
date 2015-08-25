@@ -23,15 +23,6 @@ module Embulk
               since_at = "2015-07-06"
               timerange = soap.send(:generate_time_range, since_at)
 
-              request = {
-                lead_selector: {
-                  oldest_updated_at: timerange.first[:from].iso8601,
-                  latest_updated_at: timerange.first[:to].iso8601,
-                },
-                attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
-                batch_size: Lead::BATCH_SIZE_DEFAULT,
-              }
-
               stub(soap).fetch { nil }
               mock(soap).fetch(anything).times(timerange.length)
 
