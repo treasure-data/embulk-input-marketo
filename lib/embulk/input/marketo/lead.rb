@@ -30,7 +30,7 @@ module Embulk
               case field[:data_type]
               when "integer"
                 "long"
-              when "dateTime", "date"
+              when "datetime", "date"
                 "timestamp"
               when "string", "text", "phone", "currency"
                 "string"

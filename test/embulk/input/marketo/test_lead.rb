@@ -222,7 +222,7 @@ module Embulk
           [
             {name: "id", type: "long"},
             {name: "email", type: "string"},
-            {name: "FieldName", type: "string"},
+            {name: "FieldName", type: "timestamp"},
           ]
         end
       end
