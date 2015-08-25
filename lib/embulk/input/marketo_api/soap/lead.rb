@@ -16,6 +16,7 @@ module Embulk
           end
 
           def each(since_at, until_at = nil, options = {}, &block)
+            # http://developers.marketo.com/documentation/soap/getmultipleleads/
             until_at ||= Time.now
 
             generate_time_range(since_at, until_at).each do |range|
