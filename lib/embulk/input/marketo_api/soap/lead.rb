@@ -5,6 +5,10 @@ module Embulk
     module MarketoApi
       module Soap
         class Lead < Base
+          # NOTE: batch_size is allowed at 1000, but that takes 2 minutes in 1 request.
+          #       We use 250 for the default (about 30 seconds)
+          BATCH_SIZE_DEFAULT = 250
+
           def metadata
             # http://developers.marketo.com/documentation/soap/describemobject/
             response = savon_call(:describe_m_object, message: {object_name: "LeadRecord"})
@@ -24,7 +28,7 @@ module Embulk
                 attributes!: {
                   lead_selector: {"xsi:type" => "ns1:LastUpdateAtSelector"}
                 },
-                batch_size: 250,
+                batch_size: BATCH_SIZE_DEFAULT,
               }
               Embulk.logger.info "fetching '#{range[:from]}' to '#{range[:to]}'"
 

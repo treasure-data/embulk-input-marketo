@@ -1,5 +1,6 @@
 require "prepare_embulk"
 require "lead_fixtures"
+require "mute_logger"
 require "embulk/input/marketo/lead"
 
 module Embulk
@@ -7,6 +8,7 @@ module Embulk
     module Marketo
       class LeadTest < Test::Unit::TestCase
         include LeadFixtures
+        include MuteLogger
 
         def test_target
           assert_equal(:lead, Lead.target)
@@ -21,7 +23,7 @@ module Embulk
         def setup_plugin
           @page_builder = Object.new
           @plugin = Lead.new(task, nil, nil, @page_builder)
-          stub(Embulk).logger { ::Logger.new(File::NULL) }
+          mute_logger
         end
 
         class RunTest < self
@@ -131,9 +133,12 @@ module Embulk
 
           def request
             {
-              lead_selector: {oldest_updated_at: Time.parse(last_updated_at).iso8601},
+              lead_selector: {
+                oldest_updated_at: timerange.first[:from].iso8601,
+                latest_updated_at: timerange.first[:to].iso8601,
+              },
               attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
-              batch_size: 1000
+              batch_size: MarketoApi::Soap::Lead::BATCH_SIZE_DEFAULT,
             }
           end
         end
@@ -173,7 +178,8 @@ module Embulk
             wsdl: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            last_updated_at: last_updated_at,
+            since_at: since_at,
+            until_at: until_at,
             columns: [
               {"name" => "Name", "type" => "string"},
             ]
@@ -184,13 +190,27 @@ module Embulk
           "2015-07-01 00:00:00+00:00"
         end
 
+        def since_at
+          "2015-07-01 00:00:00+00:00"
+        end
+
+        def until_at
+          "2015-07-01 00:00:05+00:00"
+        end
+
+        def timerange
+          soap = MarketoApi::Soap::Lead.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
+          soap.send(:generate_time_range, since_at, until_at)
+        end
+
         def task
           {
             endpoint_url: "https://marketo.example.com",
             wsdl_url: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            last_updated_at: last_updated_at,
+            since_at: since_at,
+            until_at: until_at,
             columns: [
               {"name" => "Name", "type" => "string"},
             ]

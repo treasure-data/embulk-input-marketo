@@ -29,7 +29,7 @@ module Embulk
                   latest_updated_at: timerange.first[:to].iso8601,
                 },
                 attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
-                batch_size: 250
+                batch_size: Lead::BATCH_SIZE_DEFAULT,
               }
 
               stub(soap).fetch { nil }
@@ -48,7 +48,7 @@ module Embulk
                   latest_updated_at: timerange.first[:to].iso8601,
                 },
                 attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
-                batch_size: 250
+                batch_size: Lead::BATCH_SIZE_DEFAULT,
               }
 
               stub(soap).fetch { nil }
