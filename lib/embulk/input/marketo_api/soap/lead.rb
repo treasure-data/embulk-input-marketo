@@ -49,9 +49,11 @@ module Embulk
             response = savon_call(:get_multiple_leads, message: request)
             Embulk.logger.info "fetched in #{Time.now - start} seconds"
 
+            records = response.xpath('//leadRecordList/leadRecord')
             remaining = response.xpath('//remainingCount').text.to_i
-            Embulk.logger.info "Remaining records: #{remaining}"
-            response.xpath('//leadRecordList/leadRecord').each do |lead|
+            Embulk.logger.info "Fetched records in the range: #{records.size}"
+            Embulk.logger.info "Remaining records in the range: #{remaining}"
+            records.each do |lead|
               record = {
                 "id" => {type: :integer, value: lead.xpath('Id').text.to_i},
                 "email" => {type: :string, value: lead.xpath('Email').text}
