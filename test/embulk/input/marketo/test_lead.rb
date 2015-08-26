@@ -26,6 +26,27 @@ module Embulk
           mute_logger
         end
 
+        def test_invalid_since_at_until_at
+          control = proc {} # dummy
+
+          settings = {
+            endpoint: "https://marketo.example.com",
+            wsdl: "https://marketo.example.com/?wsdl",
+            user_id: "user_id",
+            encryption_key: "TOPSECRET",
+            columns: [
+              {"name" => "Name", "type" => "string"},
+            ],
+            since_at: Time.now + 3600,
+            until_at: Time.now,
+          }
+          config = DataSource[settings.to_a]
+
+          assert_raise(ConfigError) do
+            Lead.transaction(config, &control)
+          end
+        end
+
         class RunTest < self
           def setup
             setup_soap
