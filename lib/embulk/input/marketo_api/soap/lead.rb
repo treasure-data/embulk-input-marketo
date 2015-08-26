@@ -32,7 +32,7 @@ module Embulk
                 },
                 batch_size: options[:batch_size] || BATCH_SIZE_DEFAULT,
               }
-              Embulk.logger.info "fetching '#{range[:from]}' to '#{range[:to]}'"
+              Embulk.logger.info "Fetching from '#{range[:from]}' to '#{range[:to]}'..."
 
               stream_position = fetch(request, &block)
 
