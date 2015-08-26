@@ -47,7 +47,7 @@ module Embulk
           def fetch(request = {}, &block)
             start = Time.now
             response = savon_call(:get_multiple_leads, message: request)
-            Embulk.logger.info "fetched in #{Time.now - start} seconds"
+            Embulk.logger.info "Fetched in #{Time.now - start} seconds"
 
             records = response.xpath('//leadRecordList/leadRecord')
             remaining = response.xpath('//remainingCount').text.to_i
