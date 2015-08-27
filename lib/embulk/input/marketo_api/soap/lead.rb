@@ -17,11 +17,11 @@ module Embulk
             response.body[:success_describe_m_object][:result][:metadata][:field_list][:field]
           end
 
-          def each(since_at, until_at, options = {}, &block)
+          def each(from_datetime, until_at, options = {}, &block)
             # http://developers.marketo.com/documentation/soap/getmultipleleads/
             until_at ||= Time.now
 
-            generate_time_range(since_at, until_at).each do |range|
+            generate_time_range(from_datetime, until_at).each do |range|
               request = {
                 lead_selector: {
                   oldest_updated_at: range[:from].iso8601,

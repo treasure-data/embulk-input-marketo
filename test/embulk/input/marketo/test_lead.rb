@@ -26,7 +26,7 @@ module Embulk
           mute_logger
         end
 
-        def test_invalid_since_at_until_at
+        def test_invalid_from_datetime_until_at
           control = proc {} # dummy
 
           settings = {
@@ -37,7 +37,7 @@ module Embulk
             columns: [
               {"name" => "Name", "type" => "string"},
             ],
-            since_at: Time.now + 3600,
+            from_datetime: Time.now + 3600,
             until_at: Time.now,
           }
           config = DataSource[settings.to_a]
@@ -80,7 +80,7 @@ module Embulk
             stub(@plugin.soap).each { }
 
             commit_report = @plugin.run
-            assert_equal until_at, commit_report[:since_at]
+            assert_equal until_at, commit_report[:from_datetime]
           end
 
           def test_preview_through
@@ -208,7 +208,7 @@ module Embulk
             wsdl: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            since_at: since_at,
+            from_datetime: from_datetime,
             until_at: until_at,
             columns: [
               {"name" => "Name", "type" => "string"},
@@ -216,7 +216,7 @@ module Embulk
           }
         end
 
-        def since_at
+        def from_datetime
           "2015-07-01 00:00:00+00:00"
         end
 
@@ -226,7 +226,7 @@ module Embulk
 
         def timerange
           soap = MarketoApi::Soap::Lead.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
-          soap.send(:generate_time_range, since_at, until_at)
+          soap.send(:generate_time_range, from_datetime, until_at)
         end
 
         def task
@@ -235,7 +235,7 @@ module Embulk
             wsdl_url: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            since_at: since_at,
+            from_datetime: from_datetime,
             until_at: until_at,
             columns: [
               {"name" => "Name", "type" => "string"},

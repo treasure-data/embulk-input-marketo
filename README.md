@@ -42,7 +42,7 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 - **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
 - **user_id** Your user id (string, reqiured)
 - **encryption_key** Your encryption key (string, reqiured)
-- **since_at** Fetch leads since this time (string, required)
+- **from_datetime** Fetch leads since this time (string, required)
 - **until_at** Fetch leads until this time (string, default: Time.now)
 
 ### market/activity_log
@@ -69,7 +69,7 @@ in:
   wsdl: https://wsdl-url.mktoapi.com/?WSDL
   user_id: user_ABC123
   encryption_key: TOPSECRET
-  since_at: "2015-06-30"
+  from_datetime: "2015-06-30"
 out:
   type: stdout
 ```
