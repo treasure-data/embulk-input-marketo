@@ -1,5 +1,6 @@
 require "prepare_embulk"
 require "lead_fixtures"
+require "mute_logger"
 require "embulk/input/marketo/lead"
 
 module Embulk
@@ -7,6 +8,7 @@ module Embulk
     module Marketo
       class LeadTest < Test::Unit::TestCase
         include LeadFixtures
+        include MuteLogger
 
         def test_target
           assert_equal(:lead, Lead.target)
@@ -21,7 +23,28 @@ module Embulk
         def setup_plugin
           @page_builder = Object.new
           @plugin = Lead.new(task, nil, nil, @page_builder)
-          stub(Embulk).logger { ::Logger.new(File::NULL) }
+          mute_logger
+        end
+
+        def test_invalid_from_datetime_to_datetime
+          control = proc {} # dummy
+
+          settings = {
+            endpoint: "https://marketo.example.com",
+            wsdl: "https://marketo.example.com/?wsdl",
+            user_id: "user_id",
+            encryption_key: "TOPSECRET",
+            columns: [
+              {"name" => "Name", "type" => "string"},
+            ],
+            from_datetime: Time.now + 3600,
+            to_datetime: Time.now,
+          }
+          config = DataSource[settings.to_a]
+
+          assert_raise(ConfigError) do
+            Lead.transaction(config, &control)
+          end
         end
 
         class RunTest < self
@@ -51,11 +74,20 @@ module Embulk
             @plugin.run
           end
 
+          def test_run_commit_report
+            # do not requests
+            stub(@page_builder).finish
+            stub(@plugin.soap).each { }
+
+            commit_report = @plugin.run
+            assert_equal to_datetime, commit_report[:from_datetime]
+          end
+
           def test_preview_through
             stub(@plugin).preview? { true }
 
             any_instance_of(Savon::Client) do |klass|
-              mock(klass).call(:get_multiple_leads, message: request) do
+              mock(klass).call(:get_multiple_leads, message: request.merge(batch_size: Lead::PREVIEW_COUNT)) do
                 preview_leads_response
               end
             end
@@ -131,9 +163,12 @@ module Embulk
 
           def request
             {
-              lead_selector: {oldest_updated_at: Time.parse(last_updated_at).iso8601},
+              lead_selector: {
+                oldest_updated_at: timerange.first[:from].iso8601,
+                latest_updated_at: timerange.first[:to].iso8601,
+              },
               attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
-              batch_size: 1000
+              batch_size: MarketoApi::Soap::Lead::BATCH_SIZE_DEFAULT,
             }
           end
         end
@@ -173,15 +208,25 @@ module Embulk
             wsdl: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            last_updated_at: last_updated_at,
+            from_datetime: from_datetime,
+            to_datetime: to_datetime,
             columns: [
               {"name" => "Name", "type" => "string"},
             ]
           }
         end
 
-        def last_updated_at
+        def from_datetime
           "2015-07-01 00:00:00+00:00"
+        end
+
+        def to_datetime
+          "2015-07-01 00:00:05+00:00"
+        end
+
+        def timerange
+          soap = MarketoApi::Soap::Lead.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
+          soap.send(:generate_time_range, from_datetime, to_datetime)
         end
 
         def task
@@ -190,7 +235,8 @@ module Embulk
             wsdl_url: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            last_updated_at: last_updated_at,
+            from_datetime: from_datetime,
+            to_datetime: to_datetime,
             columns: [
               {"name" => "Name", "type" => "string"},
             ]

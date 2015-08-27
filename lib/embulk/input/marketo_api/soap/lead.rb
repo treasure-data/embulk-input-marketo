@@ -5,44 +5,55 @@ module Embulk
     module MarketoApi
       module Soap
         class Lead < Base
+          include Timeslice
+
+          # NOTE: batch_size is allowed at 1000, but that takes 2 minutes in 1 request.
+          #       We use 250 for the default (about 30 seconds)
+          BATCH_SIZE_DEFAULT = 250
+
           def metadata
             # http://developers.marketo.com/documentation/soap/describemobject/
             response = savon_call(:describe_m_object, message: {object_name: "LeadRecord"})
             response.body[:success_describe_m_object][:result][:metadata][:field_list][:field]
           end
 
-          def each(last_updated_at, &block)
+          def each(from_datetime, to_datetime, options = {}, &block)
             # http://developers.marketo.com/documentation/soap/getmultipleleads/
+            to_datetime ||= Time.now
 
-            last_updated_at = Time.parse(last_updated_at).iso8601
+            generate_time_range(from_datetime, to_datetime).each do |range|
+              request = {
+                lead_selector: {
+                  oldest_updated_at: range[:from].iso8601,
+                  latest_updated_at: range[:to].iso8601,
+                },
+                attributes!: {
+                  lead_selector: {"xsi:type" => "ns1:LastUpdateAtSelector"}
+                },
+                batch_size: options[:batch_size] || BATCH_SIZE_DEFAULT,
+              }
+              Embulk.logger.info "Fetching from '#{range[:from]}' to '#{range[:to]}'..."
 
-            # TODO: generate request in #fetch
-            # TODO: use PREVIEW_COUNT as batch_size in preview
-            request = {
-              lead_selector: {
-                oldest_updated_at: last_updated_at,
-              },
-              attributes!: {
-                lead_selector: {"xsi:type" => "ns1:LastUpdateAtSelector"}
-              },
-              batch_size: 1000,
-            }
+              stream_position = fetch(request, &block)
 
-            stream_position = fetch(request, &block)
-
-            while stream_position
-              stream_position = fetch(request.merge(stream_position: stream_position), &block)
+              while stream_position
+                stream_position = fetch(request.merge(stream_position: stream_position), &block)
+              end
             end
           end
 
           private
 
           def fetch(request = {}, &block)
+            start = Time.now
             response = savon_call(:get_multiple_leads, message: request)
+            Embulk.logger.info "Fetched in #{Time.now - start} seconds"
 
+            records = response.xpath('//leadRecordList/leadRecord')
             remaining = response.xpath('//remainingCount').text.to_i
-            Embulk.logger.info "Remaining records: #{remaining}"
-            response.xpath('//leadRecordList/leadRecord').each do |lead|
+            Embulk.logger.info "Fetched records in the range: #{records.size}"
+            Embulk.logger.info "Remaining records in the range: #{remaining}"
+            records.each do |lead|
               record = {
                 "id" => {type: :integer, value: lead.xpath('Id').text.to_i},
                 "email" => {type: :string, value: lead.xpath('Email').text}

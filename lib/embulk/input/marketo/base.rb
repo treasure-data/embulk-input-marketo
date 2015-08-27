@@ -1,3 +1,4 @@
+require "embulk/input/marketo/timeslice"
 require "embulk/input/marketo_api"
 
 module Embulk
@@ -5,6 +6,8 @@ module Embulk
     module Marketo
       class Base < InputPlugin
         PREVIEW_COUNT = 15
+
+        attr_reader :soap
 
         def self.target
           raise NotImplementedError

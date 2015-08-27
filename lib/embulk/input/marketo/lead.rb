@@ -4,19 +4,14 @@ module Embulk
   module Input
     module Marketo
       class Lead < Base
+        include Timeslice
+
         PREVIEW_COUNT = 15
 
         Plugin.register_input("marketo/lead", self)
 
         def self.target
           :lead
-        end
-
-        def self.guess(config)
-          client = soap_client(config)
-          metadata = client.metadata
-
-          return {"columns" => generate_columns(metadata)}
         end
 
         def self.generate_columns(metadata)
@@ -50,7 +45,12 @@ module Embulk
 
         def run
           count = 0
-          @soap.each(@last_updated_at) do |lead|
+          from_datetime = task[:from_datetime]
+          to_datetime = task[:to_datetime]
+          options = {}
+          options[:batch_size] = PREVIEW_COUNT if preview?
+
+          soap.each(from_datetime, to_datetime, options) do |lead|
             values = @columns.map do |column|
               name = column["name"].to_s
               value = (lead[name] || {})[:value]
@@ -72,7 +72,7 @@ module Embulk
 
           page_builder.finish
 
-          commit_report = {}
+          commit_report = {from_datetime: to_datetime}
           return commit_report
         end
       end
