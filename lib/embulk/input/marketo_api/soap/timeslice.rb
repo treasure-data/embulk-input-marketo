@@ -5,7 +5,7 @@ module Embulk
         module Timeslice
           private
 
-          def generate_time_range(from, to = nil)
+          def generate_time_range(from, to)
             # e.g. from = 2010-01-01 15:00, to = 2010-01-03 09:30
             # convert to such array:
             # [
