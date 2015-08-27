@@ -21,19 +21,19 @@ module Embulk
 
             def test_each_invoke_fetch
               from_datetime = "2015-07-06"
-              until_at = "2015-07-07"
-              timerange = soap.send(:generate_time_range, from_datetime, until_at)
+              to_datetime = "2015-07-07"
+              timerange = soap.send(:generate_time_range, from_datetime, to_datetime)
 
               stub(soap).fetch { nil }
               mock(soap).fetch(anything).times(timerange.length)
 
-              soap.each(from_datetime, until_at) { }
+              soap.each(from_datetime, to_datetime) { }
             end
 
             def test_each_invoke_fetch_with_specified_time
               from_datetime = "2015-07-06"
-              until_at = "2015-07-07"
-              timerange = soap.send(:generate_time_range, from_datetime, until_at)
+              to_datetime = "2015-07-07"
+              timerange = soap.send(:generate_time_range, from_datetime, to_datetime)
 
               request = {
                 lead_selector: {
@@ -47,12 +47,12 @@ module Embulk
               stub(soap).fetch { nil }
               mock(soap).fetch(request)
 
-              soap.each(from_datetime, until_at) { }
+              soap.each(from_datetime, to_datetime) { }
             end
 
             def test_each_fetch_next_page
               from_datetime = "2015-07-06 00:00:00"
-              until_at = "2015-07-06 00:00:01"
+              to_datetime = "2015-07-06 00:00:01"
 
               any_instance_of(Savon::Client) do |klass|
                 mock(klass).call(:get_multiple_leads, anything) do
@@ -64,7 +64,7 @@ module Embulk
               leads_count = next_stream_leads_response.xpath('//leadRecord').length
               mock(proc).call(anything).times(leads_count)
 
-              soap.each(from_datetime, until_at, &proc)
+              soap.each(from_datetime, to_datetime, &proc)
             end
           end
 

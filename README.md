@@ -36,14 +36,14 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 
 ### market/lead
 
-**NOTE: If you use feature of scheduled execution (resume) with marketo/read, you should not specify until\_at because this plugin can't place new until_at (can't know the date to run with new config.**
+**NOTE: If you use feature of scheduled execution (resume) with marketo/read, you should not specify until\_at because this plugin can't place new to_datetime (can't know the date to run with new config.**
 
 - **endpoint** SOAP endpoint URL for your account (string, required)
 - **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
 - **user_id** Your user id (string, reqiured)
 - **encryption_key** Your encryption key (string, reqiured)
 - **from_datetime** Fetch leads since this time (string, required)
-- **until_at** Fetch leads until this time (string, default: Time.now)
+- **to_datetime** Fetch leads until this time (string, default: Time.now)
 
 ### market/activity_log
 

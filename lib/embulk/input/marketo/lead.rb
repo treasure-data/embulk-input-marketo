@@ -46,11 +46,11 @@ module Embulk
         def run
           count = 0
           from_datetime = task[:from_datetime]
-          until_at = task[:until_at]
+          to_datetime = task[:to_datetime]
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
 
-          soap.each(from_datetime, until_at, options) do |lead|
+          soap.each(from_datetime, to_datetime, options) do |lead|
             values = @columns.map do |column|
               name = column["name"].to_s
               (lead[name] || {})[:value]
@@ -64,7 +64,7 @@ module Embulk
 
           page_builder.finish
 
-          commit_report = {from_datetime: until_at}
+          commit_report = {from_datetime: to_datetime}
           return commit_report
         end
       end

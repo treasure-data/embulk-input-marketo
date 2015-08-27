@@ -9,7 +9,7 @@ module Embulk
         module ClassMethods
           def guess(config)
             if config.param(:last_updated_at, :string, default: nil)
-              Embulk.logger.warn "config: last_updated_at is deprecated. Use from_datetime/until_at"
+              Embulk.logger.warn "config: last_updated_at is deprecated. Use from_datetime/to_datetime"
             end
 
             client = soap_client(config)
@@ -22,14 +22,14 @@ module Embulk
             endpoint_url = config.param(:endpoint, :string)
 
             if config.param(:last_updated_at, :string, default: nil)
-              Embulk.logger.warn "config: last_updated_at is deprecated. Use from_datetime/until_at"
+              Embulk.logger.warn "config: last_updated_at is deprecated. Use from_datetime/to_datetime"
             end
 
             from_datetime = config.param(:from_datetime, :string)
-            until_at = config.param(:until_at, :string, default: Time.now.to_s)
+            to_datetime = config.param(:to_datetime, :string, default: Time.now.to_s)
 
-            if Time.parse(from_datetime) > Time.parse(until_at)
-              raise ConfigError, "config: from_datetime '#{from_datetime}' is later than '#{until_at}'."
+            if Time.parse(from_datetime) > Time.parse(to_datetime)
+              raise ConfigError, "config: from_datetime '#{from_datetime}' is later than '#{to_datetime}'."
             end
 
             task = {
@@ -38,7 +38,7 @@ module Embulk
               user_id: config.param(:user_id, :string),
               encryption_key: config.param(:encryption_key, :string),
               from_datetime: from_datetime,
-              until_at: until_at,
+              to_datetime: to_datetime,
               columns: config.param(:columns, :array)
             }
 

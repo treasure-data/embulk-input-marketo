@@ -26,7 +26,7 @@ module Embulk
           mute_logger
         end
 
-        def test_invalid_from_datetime_until_at
+        def test_invalid_from_datetime_to_datetime
           control = proc {} # dummy
 
           settings = {
@@ -38,7 +38,7 @@ module Embulk
               {"name" => "Name", "type" => "string"},
             ],
             from_datetime: Time.now + 3600,
-            until_at: Time.now,
+            to_datetime: Time.now,
           }
           config = DataSource[settings.to_a]
 
@@ -80,7 +80,7 @@ module Embulk
             stub(@plugin.soap).each { }
 
             commit_report = @plugin.run
-            assert_equal until_at, commit_report[:from_datetime]
+            assert_equal to_datetime, commit_report[:from_datetime]
           end
 
           def test_preview_through
@@ -209,7 +209,7 @@ module Embulk
             user_id: "user_id",
             encryption_key: "TOPSECRET",
             from_datetime: from_datetime,
-            until_at: until_at,
+            to_datetime: to_datetime,
             columns: [
               {"name" => "Name", "type" => "string"},
             ]
@@ -220,13 +220,13 @@ module Embulk
           "2015-07-01 00:00:00+00:00"
         end
 
-        def until_at
+        def to_datetime
           "2015-07-01 00:00:05+00:00"
         end
 
         def timerange
           soap = MarketoApi::Soap::Lead.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
-          soap.send(:generate_time_range, from_datetime, until_at)
+          soap.send(:generate_time_range, from_datetime, to_datetime)
         end
 
         def task
@@ -236,7 +236,7 @@ module Embulk
             user_id: "user_id",
             encryption_key: "TOPSECRET",
             from_datetime: from_datetime,
-            until_at: until_at,
+            to_datetime: to_datetime,
             columns: [
               {"name" => "Name", "type" => "string"},
             ]
