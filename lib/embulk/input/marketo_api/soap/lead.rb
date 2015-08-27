@@ -17,7 +17,7 @@ module Embulk
             response.body[:success_describe_m_object][:result][:metadata][:field_list][:field]
           end
 
-          def each(since_at, until_at = nil, options = {}, &block)
+          def each(since_at, until_at, options = {}, &block)
             # http://developers.marketo.com/documentation/soap/getmultipleleads/
             until_at ||= Time.now
 

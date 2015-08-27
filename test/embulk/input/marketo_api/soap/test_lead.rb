@@ -21,17 +21,19 @@ module Embulk
 
             def test_each_invoke_fetch
               since_at = "2015-07-06"
-              timerange = soap.send(:generate_time_range, since_at)
+              until_at = "2015-07-07"
+              timerange = soap.send(:generate_time_range, since_at, until_at)
 
               stub(soap).fetch { nil }
               mock(soap).fetch(anything).times(timerange.length)
 
-              soap.each(since_at) { }
+              soap.each(since_at, until_at) { }
             end
 
             def test_each_invoke_fetch_with_specified_time
               since_at = "2015-07-06"
-              timerange = soap.send(:generate_time_range, since_at)
+              until_at = "2015-07-07"
+              timerange = soap.send(:generate_time_range, since_at, until_at)
 
               request = {
                 lead_selector: {
@@ -45,7 +47,7 @@ module Embulk
               stub(soap).fetch { nil }
               mock(soap).fetch(request)
 
-              soap.each(since_at) { }
+              soap.each(since_at, until_at) { }
             end
 
             def test_each_fetch_next_page
