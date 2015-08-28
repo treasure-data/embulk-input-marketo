@@ -32,7 +32,7 @@ module Embulk
               soap_header: headers,
               endpoint: endpoint,
               open_timeout: 90,
-              read_timeout: 300,
+              read_timeout: 90,
               raise_errors: true,
               namespace_identifier: :ns1,
               env_namespace: 'SOAP-ENV'
