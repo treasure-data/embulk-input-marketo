@@ -36,7 +36,15 @@ module Embulk
           last_updated_at = @soap.each(@last_updated_at, batch_size: batch_size) do |activity_log|
             values = @columns.map do |column|
               name = column["name"].to_s
-              activity_log[name]
+              value = activity_log[name]
+              next unless value
+
+              case column["type"]
+              when "timestamp"
+                Time.parse(value)
+              else
+                value
+              end
             end
 
             page_builder.add(values)
