@@ -6,8 +6,6 @@ module Embulk
       class Lead < Base
         include Timeslice
 
-        PREVIEW_COUNT = 15
-
         Plugin.register_input("marketo/lead", self)
 
         def self.target
