@@ -1,5 +1,4 @@
 require "savon"
-require "embulk/input/marketo_api/soap/timeslice"
 
 module Embulk
   module Input

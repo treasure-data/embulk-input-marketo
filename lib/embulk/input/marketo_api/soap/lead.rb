@@ -5,8 +5,6 @@ module Embulk
     module MarketoApi
       module Soap
         class Lead < Base
-          include Timeslice
-
           # NOTE: batch_size is allowed at 1000, but that takes 2 minutes in 1 request.
           #       We use 250 for the default (about 30 seconds)
           BATCH_SIZE_DEFAULT = 250
@@ -17,32 +15,24 @@ module Embulk
             response.body[:success_describe_m_object][:result][:metadata][:field_list][:field]
           end
 
-          def each(from_datetime, to_datetime, options = {}, &block)
+          def each(range, options = {}, &block)
             # http://developers.marketo.com/documentation/soap/getmultipleleads/
-            to_datetime ||= Time.now
+            request = {
+              lead_selector: {
+                oldest_updated_at: range[:from].iso8601,
+                latest_updated_at: range[:to].iso8601,
+              },
+              attributes!: {
+                lead_selector: {"xsi:type" => "ns1:LastUpdateAtSelector"}
+              },
+              batch_size: options[:batch_size] || BATCH_SIZE_DEFAULT,
+            }
+            Embulk.logger.info "Fetching from '#{range[:from]}' to '#{range[:to]}'..."
 
-            timeslice(from_datetime, to_datetime, options[:worker_count]).each_with_index do |ranges, i|
-              next if options[:worker_index] != i
-              Embulk.logger.info "This task try to fetch #{ranges.first[:from]}..#{ranges.last[:to]}"
-              ranges.each do |range|
-                request = {
-                  lead_selector: {
-                    oldest_updated_at: range[:from].iso8601,
-                    latest_updated_at: range[:to].iso8601,
-                  },
-                  attributes!: {
-                    lead_selector: {"xsi:type" => "ns1:LastUpdateAtSelector"}
-                  },
-                  batch_size: options[:batch_size] || BATCH_SIZE_DEFAULT,
-                }
-                Embulk.logger.info "Fetching from '#{range[:from]}' to '#{range[:to]}'..."
+            stream_position = fetch(request, &block)
 
-                stream_position = fetch(request, &block)
-
-                while stream_position
-                  stream_position = fetch(request.merge(stream_position: stream_position), &block)
-                end
-              end
+            while stream_position
+              stream_position = fetch(request.merge(stream_position: stream_position), &block)
             end
           end
 

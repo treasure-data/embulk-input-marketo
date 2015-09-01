@@ -42,32 +42,35 @@ module Embulk
         end
 
         def run
-          count = 0
           from_datetime = task[:from_datetime]
-          to_datetime = task[:to_datetime]
+          to_datetime = task[:to_datetime] || Time.now
+          ranges = task_target(from_datetime, to_datetime, task[:workers], index)
+          Embulk.logger.info "This task try to fetch #{ranges.first[:from]}..#{ranges.last[:to]}"
+
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
-          options[:worker_count] = task[:workers]
-          options[:worker_index] = index
 
-          soap.each(from_datetime, to_datetime, options) do |lead|
-            values = @columns.map do |column|
-              name = column["name"].to_s
-              value = (lead[name] || {})[:value]
-              next unless value
+          count = 0
+          ranges.each do |range|
+            soap.each(range, options) do |lead|
+              values = @columns.map do |column|
+                name = column["name"].to_s
+                value = (lead[name] || {})[:value]
+                next unless value
 
-              case column["type"]
-              when "timestamp"
-                Time.parse(value)
-              else
-                value
+                case column["type"]
+                when "timestamp"
+                  Time.parse(value)
+                else
+                  value
+                end
               end
+
+              page_builder.add(values)
+
+              count += 1
+              break if preview? && count >= PREVIEW_COUNT
             end
-
-            page_builder.add(values)
-
-            count += 1
-            break if preview? && count >= PREVIEW_COUNT
           end
 
           page_builder.finish
