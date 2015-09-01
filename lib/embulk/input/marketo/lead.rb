@@ -45,6 +45,8 @@ module Embulk
           from_datetime = task[:from_datetime]
           to_datetime = task[:to_datetime] || Time.now
           ranges = task_target(from_datetime, to_datetime, task[:workers], index)
+          return {from_datetime: to_datetime} unless ranges
+
           Embulk.logger.info "This task try to fetch #{ranges.first[:from]}..#{ranges.last[:to]}"
 
           options = {}
@@ -71,7 +73,9 @@ module Embulk
 
           page_builder.finish
 
-          commit_report = {from_datetime: to_datetime}
+          commit_report = {
+            from_datetime: to_datetime
+          }
           return commit_report
         end
       end

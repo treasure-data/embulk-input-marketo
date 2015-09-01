@@ -100,6 +100,14 @@ module Embulk
 
             resume(task, columns, task[:workers], &control)
           end
+
+          def resume(task, columns, count, &control)
+            commit_reports = yield(task, columns, count)
+
+            # all task returns same report as {from_datetime: to_datetime}
+            return commit_reports.first
+          end
+
         end
       end
     end
