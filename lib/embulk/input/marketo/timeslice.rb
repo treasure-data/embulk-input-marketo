@@ -51,6 +51,7 @@ module Embulk
               columns << Column.new(nil, name, type, column["format"])
             end
 
+            # TODO tasks should be executed concurrently.
             resume(task, columns, 1, &control)
           end
         end
