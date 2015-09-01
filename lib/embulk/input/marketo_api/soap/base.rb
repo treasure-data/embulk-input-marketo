@@ -35,13 +35,13 @@ module Embulk
               read_timeout: 90,
               raise_errors: true,
               namespace_identifier: :ns1,
-              env_namespace: 'SOAP-ENV'
+              env_namespace: 'SOAP-ENV',
             )
           end
 
-          def savon_call(*args)
+          def savon_call(operation, locals={})
             catch_unretryable_error do
-              savon.call(*args)
+              savon.call(operation, locals.merge(advanced_typecasting: false))
             end
           end
 
