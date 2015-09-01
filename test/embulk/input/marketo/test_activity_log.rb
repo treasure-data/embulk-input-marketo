@@ -141,6 +141,26 @@ module Embulk
             @plugin.run
           end
 
+          def test_wrong_type
+            any_instance_of(Savon::Client) do |klass|
+              stub(klass).call(:get_lead_changes, message: request) do
+                next_stream_activity_logs_response
+              end
+            end
+            stub(@page_builder).add {}
+            stub(@page_builder).finish {}
+
+            task = task()
+            task[:columns] = [
+              {"name" => "Old Value", "type" => :timestamp}
+            ]
+            @plugin = ActivityLog.new(task, nil, nil, @page_builder)
+
+            assert_raise(Embulk::ConfigError) do
+              @plugin.run
+            end
+          end
+
           private
 
           def request

@@ -64,7 +64,11 @@ module Embulk
 
                 case column["type"]
                 when "timestamp"
-                  Time.parse(value)
+                  begin
+                    Time.parse(value)
+                  rescue => e
+                    raise ConfigError, "Can't parse as Time '#{value}' (column is #{column["name"]})"
+                  end
                 else
                   value
                 end

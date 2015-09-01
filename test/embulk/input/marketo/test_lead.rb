@@ -50,6 +50,49 @@ module Embulk
           end
         end
 
+        def test_invalid_datetime_given
+          control = proc {} # dummy
+
+          settings = {
+            endpoint_url: "https://marketo.example.com",
+            wsdl_url: "https://marketo.example.com/?wsdl",
+            user_id: "user_id",
+            encryption_key: "TOPSECRET",
+            from_datetime: "invalid time from",
+            to_datetime: "invalid time to",
+            columns: [
+              {"name" => "Name", "type" => "string"},
+            ]
+          }
+          config = DataSource[settings.to_a]
+
+          assert_raise(ConfigError) do
+            Lead.transaction(config, &control)
+          end
+        end
+
+        def test_wrong_type
+          control = proc {} # dummy
+
+          settings = {
+            endpoint_url: "https://marketo.example.com",
+            wsdl_url: "https://marketo.example.com/?wsdl",
+            user_id: "user_id",
+            encryption_key: "TOPSECRET",
+            from_datetime: "invalid time from",
+            to_datetime: "invalid time to",
+            columns: [
+              {"name" => "Name", "type" => "timestamp"},
+            ]
+          }
+
+          config = DataSource[settings.to_a]
+
+          assert_raise(ConfigError) do
+            Lead.transaction(config, &control)
+          end
+        end
+
         class RunTest < self
           def setup
             setup_soap
