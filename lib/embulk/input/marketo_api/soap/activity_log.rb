@@ -64,7 +64,7 @@ module Embulk
               return {remaining_count: 0, offset: nil, last_updated_at: nil}
             end
 
-            activities = activities_list[:lead_change_record].sort_by { |activity| Time.parse(activity[:activity_date_time].to_s) }
+            activities = activities_list[:lead_change_record].sort_by { |activity| Time.parse(activity[:activity_date_time]) }
 
             activities.each do |activity|
               record = {
