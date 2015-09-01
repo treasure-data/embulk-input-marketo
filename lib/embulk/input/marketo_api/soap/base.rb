@@ -79,10 +79,10 @@ module Embulk
               # unretryable error such as Authentication Failed, Invalid Request, etc.
               raise ConfigError, soap_message
             end
-          rescue SocketError => e
+          rescue SocketError, Errno::ECONNREFUSED => e
             # maybe endpoint/wsdl domain was wrong
-            Embulk.logger.debug "SocketError: endpoint=#{endpoint} wsdl=#{wsdl}"
-            raise ConfigError, "SocketError: #{e.message} (endpoint is '#{endpoint}')"
+            Embulk.logger.debug "Connection error: endpoint=#{endpoint} wsdl=#{wsdl}"
+            raise ConfigError, "Connection error: #{e.message} (endpoint is '#{endpoint}')"
           end
         end
       end
