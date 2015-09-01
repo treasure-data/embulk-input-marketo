@@ -291,6 +291,70 @@ module Embulk
               is_dynamic: true,
               dynamic_field_ref: "leadAttributeList",
               updated_at: DateTime.parse("2000-01-01 22:22:22")
+            },
+            {
+              name: "FieldInt",
+              description: nil,
+              display_name: "The Name of Field",
+              source_object: "Lead",
+              data_type: "integer",
+              size: nil,
+              is_readonly: false,
+              is_update_blocked: false,
+              is_name: nil,
+              is_primary_key: false,
+              is_custom: true,
+              is_dynamic: true,
+              dynamic_field_ref: "leadAttributeList",
+              updated_at: DateTime.parse("2000-01-01 22:22:22")
+            },
+            {
+              name: "FieldBoolean",
+              description: nil,
+              display_name: "The Name of Field",
+              source_object: "Lead",
+              data_type: "boolean",
+              size: nil,
+              is_readonly: false,
+              is_update_blocked: false,
+              is_name: nil,
+              is_primary_key: false,
+              is_custom: true,
+              is_dynamic: true,
+              dynamic_field_ref: "leadAttributeList",
+              updated_at: DateTime.parse("2000-01-01 22:22:22")
+            },
+            {
+              name: "FieldFloat",
+              description: nil,
+              display_name: "The Name of Field",
+              source_object: "Lead",
+              data_type: "float",
+              size: nil,
+              is_readonly: false,
+              is_update_blocked: false,
+              is_name: nil,
+              is_primary_key: false,
+              is_custom: true,
+              is_dynamic: true,
+              dynamic_field_ref: "leadAttributeList",
+              updated_at: DateTime.parse("2000-01-01 22:22:22")
+            },
+            {
+              name: "FieldString",
+              description: nil,
+              display_name: "The Name of Field",
+              source_object: "Lead",
+              data_type: "string",
+              size: nil,
+              is_readonly: false,
+              is_update_blocked: false,
+              is_name: nil,
+              is_primary_key: false,
+              is_custom: true,
+              is_dynamic: true,
+              dynamic_field_ref: "leadAttributeList",
+              updated_at: DateTime.parse("2000-01-01 22:22:22")
             }
           ]
         end
@@ -300,6 +364,10 @@ module Embulk
             {name: "id", type: "long"},
             {name: "email", type: "string"},
             {name: "FieldName", type: "timestamp"},
+            {name: "FieldInt", type: "long"},
+            {name: "FieldBoolean", type: "boolean"},
+            {name: "FieldFloat", type: "double"},
+            {name: "FieldString", type: "string"},
           ]
         end
       end
