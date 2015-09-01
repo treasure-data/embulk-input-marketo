@@ -39,8 +39,7 @@ module Embulk
             )
           end
 
-          def savon_call(*args)
-            operation, locals = args
+          def savon_call(operation, locals={})
             catch_unretryable_error do
               savon.call(operation, locals.merge(advanced_typecasting: false))
             end
