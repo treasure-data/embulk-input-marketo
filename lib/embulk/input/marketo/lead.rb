@@ -50,7 +50,6 @@ module Embulk
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
 
-          count = 0
           ranges.each do |range|
             soap.each(range, options) do |lead|
               values = @columns.map do |column|
@@ -67,9 +66,6 @@ module Embulk
               end
 
               page_builder.add(values)
-
-              count += 1
-              break if preview? && count >= PREVIEW_COUNT
             end
           end
 
