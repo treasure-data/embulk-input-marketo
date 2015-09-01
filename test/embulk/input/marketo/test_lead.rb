@@ -101,7 +101,7 @@ module Embulk
             @plugin.run
           end
 
-          class TestGenerateTime < self
+          class TestGenerateTimeRange < self
             def setup
               super
               mute_logger
