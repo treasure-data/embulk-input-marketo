@@ -10,6 +10,15 @@ module Embulk
           timeslice(from, to, count)[task_index]
         end
 
+        def timeslice(from, to, count)
+          range = generate_time_range(from, to)
+          each_size = (range.count.to_f / count).ceil
+          slices = range.each_slice(each_size).to_a.first(count)
+          remain = range - slices.flatten
+          slices.last.concat(remain)
+          slices
+        end
+
         def generate_time_range(from, to)
           # e.g. from = 2010-01-01 15:00, to = 2010-01-03 09:30
           # convert to such array:
@@ -41,15 +50,6 @@ module Embulk
             since = next_since
           end
           result
-        end
-
-        def timeslice(from, to, count)
-          range = generate_time_range(from, to)
-          each_size = (range.count.to_f / count).ceil
-          slices = range.each_slice(each_size).to_a.first(count)
-          remain = range - slices.flatten
-          slices.last.concat(remain)
-          slices
         end
 
         module ClassMethods
