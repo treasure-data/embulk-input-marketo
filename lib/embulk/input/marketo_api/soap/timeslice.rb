@@ -37,6 +37,15 @@ module Embulk
             end
             result
           end
+
+          def timeslice(from, to, count)
+            range = generate_time_range(from, to)
+            each_size = (range.count.to_f / count).ceil
+            slices = range.each_slice(each_size).to_a.first(count)
+            remain = range - slices.flatten
+            slices.last.concat(remain)
+            slices
+          end
         end
       end
     end

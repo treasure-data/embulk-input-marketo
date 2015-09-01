@@ -47,6 +47,8 @@ module Embulk
           to_datetime = task[:to_datetime]
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
+          options[:worker_count] = task[:workers]
+          options[:worker_index] = index
 
           soap.each(from_datetime, to_datetime, options) do |lead|
             values = @columns.map do |column|

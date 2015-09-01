@@ -39,6 +39,7 @@ module Embulk
               encryption_key: config.param(:encryption_key, :string),
               from_datetime: from_datetime,
               to_datetime: to_datetime,
+              workers: config.param(:workers, :integer, default: 5), # prime number is better for shuffling fetch time range in each task
               columns: config.param(:columns, :array)
             }
 
@@ -51,8 +52,7 @@ module Embulk
               columns << Column.new(nil, name, type, column["format"])
             end
 
-            # TODO tasks should be executed concurrently.
-            resume(task, columns, 1, &control)
+            resume(task, columns, task[:workers], &control)
           end
         end
       end
