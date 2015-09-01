@@ -44,6 +44,7 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 - **encryption_key** Your encryption key (string, reqiured)
 - **from_datetime** Fetch leads since this time (string, required)
 - **to_datetime** Fetch leads until this time (string, default: Time.now)
+- **workers** Number of workers to access API (integer, default: 5)
 
 ### market/activity_log
 
