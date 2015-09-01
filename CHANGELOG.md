@@ -1,3 +1,9 @@
+## 0.2.1 - 2015-09-01
+
+* [fixed] activity_log: Avoid to cast values unexpectedly [#29](https://github.com/treasure-data/embulk-input-marketo/pull/29)
+* [maintenance] Add a minor comment [#28](https://github.com/treasure-data/embulk-input-marketo/pull/28) [Requested by @muga. Thanks!!]
+* [maintenance] Fix minor issues [#27](https://github.com/treasure-data/embulk-input-marketo/pull/27) [[Reviewed by @muga.](https://github.com/treasure-data/embulk-input-marketo/pull/25#issuecomment-135570967) Thanks!!]
+
 ## 0.2.0 - 2015-08-27
 
 This version breaks backword compatibility of marketo/lead. Please check README.md to modify your config.
