@@ -101,36 +101,6 @@ module Embulk
             @plugin.run
           end
 
-          class TestGenerateTimeRange < self
-            def setup
-              super
-              mute_logger
-            end
-
-            data do
-              {
-                "8/1 to 8/2" => ["2015-08-01 00:00:00", "2015-08-02 00:00:00", 24],
-                "over the days" => ["2015-08-01 19:00:00", "2015-08-03 05:00:00", 34],
-                "odd times" => ["2015-08-01 11:11:11", "2015-08-01 22:22:22", 12],
-              }
-            end
-            def test_generate_time_range_by_1hour(data)
-              from, to, count = data
-              range = @plugin.send(:generate_time_range, from, to)
-              assert_equal count, range.length
-            end
-
-            def test_if_to_is_nil_use_time_now
-              from = "2000-01-01"
-              now = Time.now
-              stub(Time).now { now }
-
-              range = @plugin.send(:generate_time_range, from, nil)
-              assert_equal now, range.last[:to]
-            end
-          end
-
-
           class SavonCallTest < self
             def test_soap_error
               assert_raise(Embulk::ConfigError) do
@@ -187,6 +157,37 @@ module Embulk
                 :convert_tags_to  => lambda { |tag| tag.snakecase.to_sym},
                 :convert_attributes_to     => lambda { |k,v| [k,v] },
               }
+            end
+          end
+
+          class TestTimeslice < self
+            class TestGenerateTimeRange < self
+              def setup
+                super
+                mute_logger
+              end
+
+              data do
+                {
+                  "8/1 to 8/2" => ["2015-08-01 00:00:00", "2015-08-02 00:00:00", 24],
+                  "over the days" => ["2015-08-01 19:00:00", "2015-08-03 05:00:00", 34],
+                  "odd times" => ["2015-08-01 11:11:11", "2015-08-01 22:22:22", 12],
+                }
+              end
+              def test_generate_time_range_by_1hour(data)
+                from, to, count = data
+                range = @plugin.send(:generate_time_range, from, to)
+                assert_equal count, range.length
+              end
+
+              def test_if_to_is_nil_use_time_now
+                from = "2000-01-01"
+                now = Time.now
+                stub(Time).now { now }
+
+                range = @plugin.send(:generate_time_range, from, nil)
+                assert_equal now, range.last[:to]
+              end
             end
           end
 
