@@ -47,8 +47,6 @@ module Embulk
           ranges = task_target(from_datetime, to_datetime, task[:workers], index)
           return {from_datetime: to_datetime} unless ranges
 
-          Embulk.logger.info "This task try to fetch #{ranges.first[:from]}..#{ranges.last[:to]}"
-
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
 
