@@ -176,7 +176,7 @@ module Embulk
               end
               def test_generate_time_range_by_1hour(data)
                 from, to, count = data
-                range = @plugin.send(:generate_time_range, from, to)
+                range = Lead.generate_time_range(from, to)
                 assert_equal count, range.length
               end
 
@@ -185,7 +185,7 @@ module Embulk
                 now = Time.now
                 stub(Time).now { now }
 
-                range = @plugin.send(:generate_time_range, from, nil)
+                range = Lead.generate_time_range(from, nil)
                 assert_equal now, range.last[:to]
               end
             end
@@ -198,24 +198,24 @@ module Embulk
               raw_expect = [
                 [
                   {from: "2015-08-02 20:00:00", to: "2015-08-02 21:00:00"},
-                  {from: "2015-08-03 00:00:00", to: "2015-08-03 01:00:00"},
-                  {from: "2015-08-03 04:00:00", to: "2015-08-03 05:00:00"},
-                  {from: "2015-08-03 08:00:00", to: "2015-08-03 08:08:08"}
-                ],
-                [
                   {from: "2015-08-02 21:00:00", to: "2015-08-02 22:00:00"},
-                  {from: "2015-08-03 01:00:00", to: "2015-08-03 02:00:00"},
-                  {from: "2015-08-03 05:00:00", to: "2015-08-03 06:00:00"}
-                ],
-                [
                   {from: "2015-08-02 22:00:00", to: "2015-08-02 23:00:00"},
-                  {from: "2015-08-03 02:00:00", to: "2015-08-03 03:00:00"},
-                  {from: "2015-08-03 06:00:00", to: "2015-08-03 07:00:00"}
+                  {from: "2015-08-02 23:00:00", to: "2015-08-03 00:00:00"},
                 ],
                 [
-                  {from: "2015-08-02 23:00:00", to: "2015-08-03 00:00:00"},
+                  {from: "2015-08-03 00:00:00", to: "2015-08-03 01:00:00"},
+                  {from: "2015-08-03 01:00:00", to: "2015-08-03 02:00:00"},
+                  {from: "2015-08-03 02:00:00", to: "2015-08-03 03:00:00"},
                   {from: "2015-08-03 03:00:00", to: "2015-08-03 04:00:00"},
-                  {from: "2015-08-03 07:00:00", to: "2015-08-03 08:00:00"}
+                ],
+                [
+                  {from: "2015-08-03 04:00:00", to: "2015-08-03 05:00:00"},
+                  {from: "2015-08-03 05:00:00", to: "2015-08-03 06:00:00"},
+                  {from: "2015-08-03 06:00:00", to: "2015-08-03 07:00:00"},
+                  {from: "2015-08-03 07:00:00", to: "2015-08-03 08:00:00"},
+                ],
+                [
+                  {from: "2015-08-03 08:00:00", to: "2015-08-03 08:08:08"},
                 ]
               ]
 
@@ -224,7 +224,7 @@ module Embulk
                   {from: Time.parse(range[:from]), to: Time.parse(range[:to])}
                 end
               end
-              assert_equal(expect, @plugin.timeslice(from, to, count))
+              assert_equal(expect, Lead.timeslice(from, to, count))
             end
           end
 
@@ -294,7 +294,7 @@ module Embulk
         end
 
         def timerange
-          @plugin.send(:generate_time_range, from_datetime, to_datetime)
+          Lead.generate_time_range(from_datetime, to_datetime)
         end
 
         def task
