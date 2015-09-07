@@ -41,16 +41,22 @@ module Embulk
           columns
         end
 
+        def init
+          @last_updated_at = task[:last_updated_at]
+          @columns = task[:columns]
+          @ranges = task[:timeslice][index]
+          @soap = MarketoApi.soap_client(task, target)
+        end
+
         def run
           from_datetime = task[:from_datetime]
           to_datetime = task[:to_datetime] || Time.now
-          ranges = task_target(from_datetime, to_datetime, task[:workers], index)
-          return {from_datetime: to_datetime} unless ranges
+          return {from_datetime: to_datetime} unless @ranges
 
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
 
-          ranges.each do |range|
+          @ranges.each do |range|
             soap.each(range, options) do |lead|
               values = @columns.map do |column|
                 name = column["name"].to_s

@@ -2,6 +2,8 @@ module Embulk
   module Input
     module Marketo
       module Timeslice
+        TIMESLICE_COUNT_PER_TASK = 24
+
         def self.included(klass)
           klass.extend ClassMethods
         end
@@ -32,6 +34,7 @@ module Embulk
               raise ConfigError, "config: from_datetime '#{from_datetime}' is later than '#{to_datetime}'."
             end
 
+            timeslice = timeslice(from_datetime, to_datetime, TIMESLICE_COUNT_PER_TASK)
             task = {
               endpoint_url: endpoint_url,
               wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
@@ -39,7 +42,7 @@ module Embulk
               encryption_key: config.param(:encryption_key, :string),
               from_datetime: from_datetime,
               to_datetime: to_datetime,
-              workers: config.param(:workers, :integer, default: 5), # prime number is better for shuffling fetch time range in each task
+              timeslice: timeslice,
               columns: config.param(:columns, :array)
             }
 
@@ -52,7 +55,7 @@ module Embulk
               columns << Column.new(nil, name, type, column["format"])
             end
 
-            resume(task, columns, task[:workers], &control)
+            resume(task, columns, timeslice.size, &control)
           end
 
           def timeslice(from, to, count)

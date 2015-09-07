@@ -22,8 +22,10 @@ module Embulk
 
         def setup_plugin
           @page_builder = Object.new
+          any_instance_of(Embulk::Input::Marketo::Lead) do |klass|
+            stub(klass).index { 0 }
+          end
           @plugin = Lead.new(task, nil, nil, @page_builder)
-          stub(@plugin).index { 0 }
           mute_logger
         end
 
@@ -308,7 +310,7 @@ module Embulk
             encryption_key: "TOPSECRET",
             from_datetime: from_datetime,
             to_datetime: to_datetime,
-            workers: 1,
+            timeslice: Lead.timeslice(from_datetime, to_datetime, Lead::TIMESLICE_COUNT_PER_TASK),
             columns: [
               {"name" => "Name", "type" => "string"},
             ]
