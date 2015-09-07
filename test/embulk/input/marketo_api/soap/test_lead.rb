@@ -21,14 +21,14 @@ module Embulk
 
             def test_each_invoke_fetch_with_specified_time
               timerange = {
-                from: Time.parse("2015-07-06 00:00:00"),
-                to: Time.parse("2015-07-06 12:00:00"),
+                "from" => Time.parse("2015-07-06 00:00:00"),
+                "to" => Time.parse("2015-07-06 12:00:00"),
               }
 
               request = {
                 lead_selector: {
-                  oldest_updated_at: timerange[:from].iso8601,
-                  latest_updated_at: timerange[:to].iso8601,
+                  oldest_updated_at: timerange["from"].iso8601,
+                  latest_updated_at: timerange["to"].iso8601,
                 },
                 attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
                 batch_size: Lead::BATCH_SIZE_DEFAULT,
@@ -41,8 +41,8 @@ module Embulk
 
             def test_each_fetch_next_page
               timerange = {
-                from: Time.parse("2015-07-06 23:30:00"),
-                to: Time.parse("2015-07-07 00:00:00"),
+                "from" => Time.parse("2015-07-06 23:30:00"),
+                "to" => Time.parse("2015-07-07 00:00:00"),
               }
 
               any_instance_of(Savon::Client) do |klass|

@@ -186,7 +186,7 @@ module Embulk
                 stub(Time).now { now }
 
                 range = Lead.generate_time_range(from, nil)
-                assert_equal now, range.last[:to]
+                assert_equal now, range.last["to"]
               end
             end
 
@@ -221,7 +221,10 @@ module Embulk
 
               expect = raw_expect.map do |slice|
                 slice.map do |range|
-                  {from: Time.parse(range[:from]), to: Time.parse(range[:to])}
+                  {
+                    "from" => Time.parse(range[:from]),
+                    "to" => Time.parse(range[:to])
+                  }
                 end
               end
               assert_equal(expect, Lead.timeslice(from, to, count))
@@ -233,8 +236,8 @@ module Embulk
           def request
             {
               lead_selector: {
-                oldest_updated_at: timerange.first[:from].iso8601,
-                latest_updated_at: timerange.first[:to].iso8601,
+                oldest_updated_at: timerange.first["from"].iso8601,
+                latest_updated_at: timerange.first["to"].iso8601,
               },
               attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
               batch_size: MarketoApi::Soap::Lead::BATCH_SIZE_DEFAULT,

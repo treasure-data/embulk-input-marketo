@@ -17,17 +17,23 @@ module Embulk
 
           def each(range, options = {}, &block)
             # http://developers.marketo.com/documentation/soap/getmultipleleads/
+            from = range["from"]
+            to = range["to"]
+
+            from = Time.parse(from) unless from.is_a?(Time)
+            to = Time.parse(to) unless to.is_a?(Time)
+
             request = {
               lead_selector: {
-                oldest_updated_at: range[:from].iso8601,
-                latest_updated_at: range[:to].iso8601,
+                oldest_updated_at: from.iso8601,
+                latest_updated_at: to.iso8601,
               },
               attributes!: {
                 lead_selector: {"xsi:type" => "ns1:LastUpdateAtSelector"}
               },
               batch_size: options[:batch_size] || BATCH_SIZE_DEFAULT,
             }
-            Embulk.logger.info "Fetching from '#{range[:from]}' to '#{range[:to]}'..."
+            Embulk.logger.info "Fetching from '#{from}' to '#{to}'..."
 
             stream_position = fetch(request, &block)
 
