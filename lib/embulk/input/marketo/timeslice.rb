@@ -34,7 +34,7 @@ module Embulk
               raise ConfigError, "config: from_datetime '#{from_datetime}' is later than '#{to_datetime}'."
             end
 
-            timeslice = timeslice(from_datetime, to_datetime, TIMESLICE_COUNT_PER_TASK)
+            ranges = timeslice(from_datetime, to_datetime, TIMESLICE_COUNT_PER_TASK)
             task = {
               endpoint_url: endpoint_url,
               wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
@@ -42,7 +42,7 @@ module Embulk
               encryption_key: config.param(:encryption_key, :string),
               from_datetime: from_datetime,
               to_datetime: to_datetime,
-              timeslice: timeslice,
+              ranges: ranges,
               columns: config.param(:columns, :array)
             }
 
