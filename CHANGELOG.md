@@ -1,3 +1,7 @@
+## 0.2.2 - 2015-09-08
+
+* [fixed] Fix handling for activity_date_time [#32](https://github.com/treasure-data/embulk-input-marketo/pull/32)
+
 ## 0.2.1 - 2015-09-01
 
 * [fixed] activity_log: Avoid to cast values unexpectedly [#29](https://github.com/treasure-data/embulk-input-marketo/pull/29)
