@@ -69,8 +69,7 @@ module Embulk
             activities.each do |activity|
               record = {
                 "id" => activity[:id],
-                # embulk can't treat DateTime
-                "activity_date_time" => Time.parse(activity[:activity_date_time]),
+                "activity_date_time" => activity[:activity_date_time],
                 "activity_type" => activity[:activity_type],
                 "mktg_asset_name" => activity[:mktg_asset_name],
                 "mkt_person_id" => activity[:mkt_person_id],

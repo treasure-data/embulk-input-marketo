@@ -31,7 +31,7 @@ module ActivityLogFixtures
       remaining_count: "1",
       new_start_position: {
         latest_created_at: true,
-        oldest_created_at: "2015-07-14T00:13:13+00:00",
+        oldest_created_at: "2015-07-14T00:13:13+0000",
         activity_created_at: true,
         offset: offset,
       },
@@ -39,7 +39,7 @@ module ActivityLogFixtures
         lead_change_record: [
           {
             id: "1",
-            activity_date_time: "2015-07-14T00:00:09+00:00",
+            activity_date_time: "2015-07-14T00:00:09+0000",
             activity_type: "at1",
             mktg_asset_name: "score1",
             activity_attributes: {
@@ -60,7 +60,7 @@ module ActivityLogFixtures
           },
           {
             id: "2",
-            activity_date_time: "2015-07-14T00:00:10+00:00",
+            activity_date_time: "2015-07-14T00:00:10+0000",
             activity_type: "at2",
             mktg_asset_name: "score2",
             activity_attributes: {
@@ -98,7 +98,7 @@ module ActivityLogFixtures
         lead_change_record: [
           {
             id: "3",
-            activity_date_time: "2015-07-14T00:00:11+00:00",
+            activity_date_time: "2015-07-14T00:00:11+0000",
             activity_type: "at3",
             mktg_asset_name: "score3",
             activity_attributes: {
@@ -126,7 +126,7 @@ module ActivityLogFixtures
     records = (1..15).map do |i|
       {
         id: i,
-        activity_date_time: "2015-07-14T00:00:11+00:00",
+        activity_date_time: "2015-07-14T00:00:11+0000",
         activity_type: "at#{i}",
         mktg_asset_name: "score#{i}",
         activity_attributes: {

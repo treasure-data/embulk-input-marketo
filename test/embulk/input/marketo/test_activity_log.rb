@@ -102,9 +102,9 @@ module Embulk
               end
             end
 
-            mock(@page_builder).add(["1", Time.parse("2015-07-14 09:00:09 +0900"), "at1", "score1", "100", "Attribute1", "402"])
-            mock(@page_builder).add(["2", Time.parse("2015-07-14 09:00:10 +0900"), "at2", "score2", "90", "Attribute2", "403"])
-            mock(@page_builder).add(["3", Time.parse("2015-07-14 09:00:11 +0900"), "at3", "score3", "100", "Attribute3", "404"])
+            mock(@page_builder).add(["1", "2015-07-14T00:00:09+0000", "at1", "score1", "100", "Attribute1", "402"])
+            mock(@page_builder).add(["2", "2015-07-14T00:00:10+0000", "at2", "score2", "90", "Attribute2", "403"])
+            mock(@page_builder).add(["3", "2015-07-14T00:00:11+0000", "at3", "score3", "100", "Attribute3", "404"])
             mock(@page_builder).finish
 
             @plugin.run
@@ -134,7 +134,7 @@ module Embulk
             end
 
             1.upto(ActivityLog::PREVIEW_COUNT) do |count|
-              mock(@page_builder).add([count, Time.parse("2015-07-14 09:00:11 +0900"), "at#{count}", "score#{count}", "100", "Attribute#{count}", "404"])
+              mock(@page_builder).add([count, "2015-07-14T00:00:11+0000", "at#{count}", "score#{count}", "100", "Attribute#{count}", "404"])
             end
             mock(@page_builder).finish
 
