@@ -39,7 +39,7 @@ module Embulk
               value = activity_log[name]
               next unless value
 
-              case column["type"]
+              case column["type"].to_s
               when "timestamp"
                 Time.parse(value)
               else
