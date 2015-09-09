@@ -51,7 +51,6 @@ module Embulk
         def run
           from_datetime = task[:from_datetime]
           to_datetime = task[:to_datetime] || Time.now
-          return {from_datetime: to_datetime} unless @ranges
 
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
