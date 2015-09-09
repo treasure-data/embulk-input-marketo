@@ -1,3 +1,8 @@
+## 0.2.3 - 2015-09-14
+
+* [enhancement] Catch config error [#33](https://github.com/treasure-data/embulk-input-marketo/pull/33)
+* [enhancement] Concurrent worker [#31](https://github.com/treasure-data/embulk-input-marketo/pull/31)
+
 ## 0.2.2 - 2015-09-08
 
 * [fixed] Fix handling for activity_date_time [#32](https://github.com/treasure-data/embulk-input-marketo/pull/32)
