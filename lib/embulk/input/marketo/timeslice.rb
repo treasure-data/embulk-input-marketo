@@ -30,6 +30,15 @@ module Embulk
             from_datetime = config.param(:from_datetime, :string)
             to_datetime = config.param(:to_datetime, :string, default: Time.now.to_s)
 
+            # check from/to format to parse
+            begin
+              Time.parse(from_datetime)
+              Time.parse(to_datetime)
+            rescue => e
+              # possibly Time.parse fail
+              raise ConfigError, e.message
+            end
+
             if Time.parse(from_datetime) > Time.parse(to_datetime)
               raise ConfigError, "config: from_datetime '#{from_datetime}' is later than '#{to_datetime}'."
             end
