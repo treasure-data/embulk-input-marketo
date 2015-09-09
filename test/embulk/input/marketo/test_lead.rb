@@ -54,8 +54,8 @@ module Embulk
           control = proc {} # dummy
 
           settings = {
-            endpoint_url: "https://marketo.example.com",
-            wsdl_url: "https://marketo.example.com/?wsdl",
+            endpoint: "https://marketo.example.com",
+            wsdl: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
             from_datetime: "invalid time from",
@@ -75,8 +75,8 @@ module Embulk
           control = proc {} # dummy
 
           settings = {
-            endpoint_url: "https://marketo.example.com",
-            wsdl_url: "https://marketo.example.com/?wsdl",
+            endpoint: "https://marketo.example.com",
+            wsdl: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
             from_datetime: "invalid time from",
