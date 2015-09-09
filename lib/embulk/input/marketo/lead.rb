@@ -41,36 +41,44 @@ module Embulk
           columns
         end
 
+        def init
+          @last_updated_at = task[:last_updated_at]
+          @columns = task[:columns]
+          @ranges = task[:ranges][index]
+          @soap = MarketoApi.soap_client(task, target)
+        end
+
         def run
-          count = 0
           from_datetime = task[:from_datetime]
-          to_datetime = task[:to_datetime]
+          to_datetime = task[:to_datetime] || Time.now
+
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
 
-          soap.each(from_datetime, to_datetime, options) do |lead|
-            values = @columns.map do |column|
-              name = column["name"].to_s
-              value = (lead[name] || {})[:value]
-              next unless value
+          @ranges.each do |range|
+            soap.each(range, options) do |lead|
+              values = @columns.map do |column|
+                name = column["name"].to_s
+                value = (lead[name] || {})[:value]
+                next unless value
 
-              case column["type"]
-              when "timestamp"
-                Time.parse(value)
-              else
-                value
+                case column["type"]
+                when "timestamp"
+                  Time.parse(value)
+                else
+                  value
+                end
               end
+
+              page_builder.add(values)
             end
-
-            page_builder.add(values)
-
-            count += 1
-            break if preview? && count >= PREVIEW_COUNT
           end
 
           page_builder.finish
 
-          commit_report = {from_datetime: to_datetime}
+          commit_report = {
+            from_datetime: to_datetime
+          }
           return commit_report
         end
       end

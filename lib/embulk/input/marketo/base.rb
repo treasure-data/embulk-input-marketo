@@ -67,14 +67,6 @@ module Embulk
           @soap = MarketoApi.soap_client(task, target)
         end
 
-        def self.logger
-          Embulk.logger
-        end
-
-        def logger
-          self.class.logger
-        end
-
         private
 
         def preview?

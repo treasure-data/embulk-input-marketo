@@ -19,40 +19,31 @@ module Embulk
               super
             end
 
-            def test_each_invoke_fetch
-              from_datetime = "2015-07-06"
-              to_datetime = "2015-07-07"
-              timerange = soap.send(:generate_time_range, from_datetime, to_datetime)
-
-              stub(soap).fetch { nil }
-              mock(soap).fetch(anything).times(timerange.length)
-
-              soap.each(from_datetime, to_datetime) { }
-            end
-
             def test_each_invoke_fetch_with_specified_time
-              from_datetime = "2015-07-06"
-              to_datetime = "2015-07-07"
-              timerange = soap.send(:generate_time_range, from_datetime, to_datetime)
+              timerange = {
+                "from" => Time.parse("2015-07-06 00:00:00"),
+                "to" => Time.parse("2015-07-06 12:00:00"),
+              }
 
               request = {
                 lead_selector: {
-                  oldest_updated_at: timerange.first[:from].iso8601,
-                  latest_updated_at: timerange.first[:to].iso8601,
+                  oldest_updated_at: timerange["from"].iso8601,
+                  latest_updated_at: timerange["to"].iso8601,
                 },
                 attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
                 batch_size: Lead::BATCH_SIZE_DEFAULT,
               }
 
-              stub(soap).fetch { nil }
               mock(soap).fetch(request)
 
-              soap.each(from_datetime, to_datetime) { }
+              soap.each(timerange) { }
             end
 
             def test_each_fetch_next_page
-              from_datetime = "2015-07-06 00:00:00"
-              to_datetime = "2015-07-06 00:00:01"
+              timerange = {
+                "from" => Time.parse("2015-07-06 23:30:00"),
+                "to" => Time.parse("2015-07-07 00:00:00"),
+              }
 
               any_instance_of(Savon::Client) do |klass|
                 mock(klass).call(:get_multiple_leads, anything) do
@@ -64,35 +55,7 @@ module Embulk
               leads_count = next_stream_leads_response.xpath('//leadRecord').length
               mock(proc).call(anything).times(leads_count)
 
-              soap.each(from_datetime, to_datetime, &proc)
-            end
-          end
-
-          class TestGenerateTime < self
-            def setup
-              mute_logger
-            end
-
-            data do
-              {
-                "8/1 to 8/2" => ["2015-08-01 00:00:00", "2015-08-02 00:00:00", 24],
-                "over the days" => ["2015-08-01 19:00:00", "2015-08-03 05:00:00", 34],
-                "odd times" => ["2015-08-01 11:11:11", "2015-08-01 22:22:22", 12],
-              }
-            end
-            def test_generate_time_range_by_1hour(data)
-              from, to, count = data
-              range = soap.send(:generate_time_range, from, to)
-              assert_equal count, range.length
-            end
-
-            def test_if_to_is_nil_use_time_now
-              from = "2000-01-01"
-              now = Time.now
-              stub(Time).now { now }
-
-              range = soap.send(:generate_time_range, from, nil)
-              assert_equal now, range.last[:to]
+              soap.each(timerange, {}, &proc)
             end
           end
 

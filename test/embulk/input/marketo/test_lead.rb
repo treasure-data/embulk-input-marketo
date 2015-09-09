@@ -22,6 +22,9 @@ module Embulk
 
         def setup_plugin
           @page_builder = Object.new
+          any_instance_of(Embulk::Input::Marketo::Lead) do |klass|
+            stub(klass).index { 0 }
+          end
           @plugin = Lead.new(task, nil, nil, @page_builder)
           mute_logger
         end
@@ -159,13 +162,84 @@ module Embulk
             end
           end
 
+          class TestTimeslice < self
+            class TestGenerateTimeRange < self
+              def setup
+                super
+                mute_logger
+              end
+
+              data do
+                {
+                  "8/1 to 8/2" => ["2015-08-01 00:00:00", "2015-08-02 00:00:00", 24],
+                  "over the days" => ["2015-08-01 19:00:00", "2015-08-03 05:00:00", 34],
+                  "odd times" => ["2015-08-01 11:11:11", "2015-08-01 22:22:22", 12],
+                }
+              end
+              def test_generate_time_range_by_1hour(data)
+                from, to, count = data
+                range = Lead.generate_time_range(from, to)
+                assert_equal count, range.length
+              end
+
+              def test_if_to_is_nil_use_time_now
+                from = "2000-01-01"
+                now = Time.now
+                stub(Time).now { now }
+
+                range = Lead.generate_time_range(from, nil)
+                assert_equal now, range.last["to"]
+              end
+            end
+
+            def test_timeslice
+              from = "2015-08-02 20:00:00"
+              to = "2015-08-03 08:08:08"
+              count = 4
+
+              raw_expect = [
+                [
+                  {from: "2015-08-02 20:00:00", to: "2015-08-02 21:00:00"},
+                  {from: "2015-08-02 21:00:00", to: "2015-08-02 22:00:00"},
+                  {from: "2015-08-02 22:00:00", to: "2015-08-02 23:00:00"},
+                  {from: "2015-08-02 23:00:00", to: "2015-08-03 00:00:00"},
+                ],
+                [
+                  {from: "2015-08-03 00:00:00", to: "2015-08-03 01:00:00"},
+                  {from: "2015-08-03 01:00:00", to: "2015-08-03 02:00:00"},
+                  {from: "2015-08-03 02:00:00", to: "2015-08-03 03:00:00"},
+                  {from: "2015-08-03 03:00:00", to: "2015-08-03 04:00:00"},
+                ],
+                [
+                  {from: "2015-08-03 04:00:00", to: "2015-08-03 05:00:00"},
+                  {from: "2015-08-03 05:00:00", to: "2015-08-03 06:00:00"},
+                  {from: "2015-08-03 06:00:00", to: "2015-08-03 07:00:00"},
+                  {from: "2015-08-03 07:00:00", to: "2015-08-03 08:00:00"},
+                ],
+                [
+                  {from: "2015-08-03 08:00:00", to: "2015-08-03 08:08:08"},
+                ]
+              ]
+
+              expect = raw_expect.map do |slice|
+                slice.map do |range|
+                  {
+                    "from" => Time.parse(range[:from]),
+                    "to" => Time.parse(range[:to])
+                  }
+                end
+              end
+              assert_equal(expect, Lead.timeslice(from, to, count))
+            end
+          end
+
           private
 
           def request
             {
               lead_selector: {
-                oldest_updated_at: timerange.first[:from].iso8601,
-                latest_updated_at: timerange.first[:to].iso8601,
+                oldest_updated_at: timerange.first["from"].iso8601,
+                latest_updated_at: timerange.first["to"].iso8601,
               },
               attributes!: {lead_selector: {"xsi:type"=>"ns1:LastUpdateAtSelector"}},
               batch_size: MarketoApi::Soap::Lead::BATCH_SIZE_DEFAULT,
@@ -225,8 +299,7 @@ module Embulk
         end
 
         def timerange
-          soap = MarketoApi::Soap::Lead.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
-          soap.send(:generate_time_range, from_datetime, to_datetime)
+          Lead.generate_time_range(from_datetime, to_datetime)
         end
 
         def task
@@ -237,6 +310,7 @@ module Embulk
             encryption_key: "TOPSECRET",
             from_datetime: from_datetime,
             to_datetime: to_datetime,
+            ranges: Lead.timeslice(from_datetime, to_datetime, Lead::TIMESLICE_COUNT_PER_TASK),
             columns: [
               {"name" => "Name", "type" => "string"},
             ]
@@ -260,6 +334,70 @@ module Embulk
               is_dynamic: true,
               dynamic_field_ref: "leadAttributeList",
               updated_at: DateTime.parse("2000-01-01 22:22:22")
+            },
+            {
+              name: "FieldInt",
+              description: nil,
+              display_name: "The Name of Field",
+              source_object: "Lead",
+              data_type: "integer",
+              size: nil,
+              is_readonly: false,
+              is_update_blocked: false,
+              is_name: nil,
+              is_primary_key: false,
+              is_custom: true,
+              is_dynamic: true,
+              dynamic_field_ref: "leadAttributeList",
+              updated_at: DateTime.parse("2000-01-01 22:22:22")
+            },
+            {
+              name: "FieldBoolean",
+              description: nil,
+              display_name: "The Name of Field",
+              source_object: "Lead",
+              data_type: "boolean",
+              size: nil,
+              is_readonly: false,
+              is_update_blocked: false,
+              is_name: nil,
+              is_primary_key: false,
+              is_custom: true,
+              is_dynamic: true,
+              dynamic_field_ref: "leadAttributeList",
+              updated_at: DateTime.parse("2000-01-01 22:22:22")
+            },
+            {
+              name: "FieldFloat",
+              description: nil,
+              display_name: "The Name of Field",
+              source_object: "Lead",
+              data_type: "float",
+              size: nil,
+              is_readonly: false,
+              is_update_blocked: false,
+              is_name: nil,
+              is_primary_key: false,
+              is_custom: true,
+              is_dynamic: true,
+              dynamic_field_ref: "leadAttributeList",
+              updated_at: DateTime.parse("2000-01-01 22:22:22")
+            },
+            {
+              name: "FieldString",
+              description: nil,
+              display_name: "The Name of Field",
+              source_object: "Lead",
+              data_type: "string",
+              size: nil,
+              is_readonly: false,
+              is_update_blocked: false,
+              is_name: nil,
+              is_primary_key: false,
+              is_custom: true,
+              is_dynamic: true,
+              dynamic_field_ref: "leadAttributeList",
+              updated_at: DateTime.parse("2000-01-01 22:22:22")
             }
           ]
         end
@@ -269,6 +407,10 @@ module Embulk
             {name: "id", type: "long"},
             {name: "email", type: "string"},
             {name: "FieldName", type: "timestamp"},
+            {name: "FieldInt", type: "long"},
+            {name: "FieldBoolean", type: "boolean"},
+            {name: "FieldFloat", type: "double"},
+            {name: "FieldString", type: "string"},
           ]
         end
       end
