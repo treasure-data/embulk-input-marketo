@@ -55,7 +55,7 @@ module Embulk
               columns << Column.new(nil, name, type, column["format"])
             end
 
-            resume(task, columns, timeslice.size, &control)
+            resume(task, columns, ranges.size, &control)
           end
 
           def timeslice(from, to, count)
