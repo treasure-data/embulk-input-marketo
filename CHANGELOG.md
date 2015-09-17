@@ -1,6 +1,6 @@
 ## 0.2.4 - 2015-09-17
 
-* [enhancement] Retry to call API until 5 times when Timeout [#36](https://github.com/treasure-data/embulk-input-marketo/pull/36)
+* [enhancement] Retry to call API until 5 times when Timeout [#36](https://github.com/treasure-data/embulk-input-marketo/pull/36) [[Reported by @muga](https://github.com/treasure-data/embulk-input-marketo/issues/34). Thanks!]
 
 ## 0.2.3 - 2015-09-14
 
