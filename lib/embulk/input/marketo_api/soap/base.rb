@@ -7,6 +7,8 @@ module Embulk
         class Base
           attr_reader :endpoint, :wsdl, :user_id, :encryption_key
 
+          RETRY_TIMEOUT_COUNT = 5
+
           def initialize(endpoint, wsdl, user_id, encryption_key)
             @endpoint = endpoint
             @wsdl = wsdl
@@ -40,7 +42,9 @@ module Embulk
 
           def savon_call(operation, locals={})
             catch_unretryable_error do
-              savon.call(operation, locals.merge(advanced_typecasting: false))
+              with_retry do
+                savon.call(operation, locals.merge(advanced_typecasting: false))
+              end
             end
           end
 
@@ -53,6 +57,18 @@ module Embulk
               'requestTimestamp' => timestamp,
               'requestSignature' => hashed_signature.to_s
             }
+          end
+
+          def with_retry(&block)
+            count = 0
+            begin
+              yield
+            rescue ::Timeout::Error => e
+              count += 1
+              raise e if count > RETRY_TIMEOUT_COUNT
+              Embulk.logger.warn "TimeoutError [#{count}/#{RETRY_TIMEOUT_COUNT}]. Retrying..."
+              retry
+            end
           end
 
           def catch_unretryable_error(&block)
