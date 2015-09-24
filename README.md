@@ -34,7 +34,7 @@ $ embulk gem install embulk-input-marketo
 
 Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 
-### market/lead
+### marketo/lead
 
 **NOTE: If you use feature of scheduled execution (resume) with marketo/lead, you should not specify `to_datetime` because this plugin can't place next to_datetime (can't know the date to run with new config).**
 
@@ -45,7 +45,7 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 - **from_datetime** Fetch leads since this time (string, required)
 - **to_datetime** Fetch leads until this time (string, default: Time.now)
 
-### market/activity_log
+### marketo/activity_log
 
 - **endpoint** SOAP endpoint URL for your account (string, required)
 - **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
