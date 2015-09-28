@@ -107,6 +107,8 @@ module Embulk
           def resume(task, columns, count, &control)
             commit_reports = yield(task, columns, count)
 
+            # When no task ran, commit_reports is empty
+            return {} if commit_reports.empty?
             # all task returns same report as {from_datetime: to_datetime}
             return commit_reports.first
           end
