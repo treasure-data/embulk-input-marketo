@@ -93,6 +93,25 @@ module Embulk
           end
         end
 
+        def test_same_datetimes_given
+          control = proc { [] } # dummy (#resume method returns [])
+
+          settings = {
+            endpoint: "https://marketo.example.com",
+            wsdl: "https://marketo.example.com/?wsdl",
+            user_id: "user_id",
+            encryption_key: "TOPSECRET",
+            from_datetime: Time.now.to_s,
+            to_datetime: Time.now.to_s,
+            columns: [
+              {"name" => "Name", "type" => "string"},
+            ]
+          }
+          config = DataSource[settings.to_a]
+
+          assert_equal({}, Lead.transaction(config, &control))
+        end
+
         class RunTest < self
           def setup
             setup_soap
