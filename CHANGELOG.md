@@ -1,3 +1,7 @@
+## 0.2.5 - 2015-09-28
+
+* [fixed] lead: Fix the bug when `from_datetime` and `to_datetime` are same [#37](https://github.com/treasure-data/embulk-input-marketo/pull/37)
+
 ## 0.2.4 - 2015-09-17
 
 * [enhancement] Retry to call API until 5 times when Timeout [#36](https://github.com/treasure-data/embulk-input-marketo/pull/36) [[Reported by @muga](https://github.com/treasure-data/embulk-input-marketo/issues/34). Thanks!]
