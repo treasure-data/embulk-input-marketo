@@ -95,14 +95,15 @@ module Embulk
 
         def test_same_datetimes_given
           control = proc { [] } # dummy (#resume method returns [])
+          datetime = Time.now.to_s
 
           settings = {
             endpoint: "https://marketo.example.com",
             wsdl: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            from_datetime: Time.now.to_s,
-            to_datetime: Time.now.to_s,
+            from_datetime: datetime,
+            to_datetime: datetime,
             columns: [
               {"name" => "Name", "type" => "string"},
             ]
