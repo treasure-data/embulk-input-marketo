@@ -1,4 +1,5 @@
 require "savon"
+require "httpclient" # net/http can't verify cert correctly
 
 module Embulk
   module Input
