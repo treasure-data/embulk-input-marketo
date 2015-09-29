@@ -8,6 +8,64 @@ module Embulk
       class ActivityLogTest < Test::Unit::TestCase
         include ActivityLogFixtures
 
+        class TransactionTest < self
+          def test_generate_task
+            control = proc {} # dummy
+            columns = task[:columns].map do |col|
+              Column.new(nil, col["name"], col["type"].to_sym, col["format"])
+            end
+
+            mock(ActivityLog).resume(task, columns, 1, &control)
+            ActivityLog.transaction(config, &control)
+          end
+
+          private
+
+          def settings
+            {
+              endpoint: "https://marketo.example.com",
+              wsdl: "https://marketo.example.com/?wsdl",
+              user_id: "user_id",
+              encryption_key: "TOPSECRET",
+              from_datetime: from_datetime,
+              to_datetime: to_datetime,
+              columns: [
+                {"name" => :id, "type" => :long},
+                {"name" => :activity_date_time, "type" => :timestamp, "format" => "%Y-%m-%dT%H:%M:%S%z"},
+                {"name" => :activity_type, "type" => :string},
+                {"name" => :mktg_asset_name, "type" => :string},
+                {"name" => :mkt_person_id, "type" => :long},
+                {"name" => "Attribute Name", "type" => :string},
+                {"name" => "Old Value", "type" => :string},
+              ]
+            }
+          end
+
+          def config
+            DataSource[settings.to_a]
+          end
+
+          def task
+            {
+              endpoint_url: "https://marketo.example.com",
+              wsdl_url: "https://marketo.example.com/?wsdl",
+              user_id: "user_id",
+              encryption_key: "TOPSECRET",
+              from_datetime: from_datetime,
+              to_datetime: to_datetime,
+              columns: [
+                {"name" => :id, "type" => :long},
+                {"name" => :activity_date_time, "type" => :timestamp, "format" => "%Y-%m-%dT%H:%M:%S%z"},
+                {"name" => :activity_type, "type" => :string},
+                {"name" => :mktg_asset_name, "type" => :string},
+                {"name" => :mkt_person_id, "type" => :long},
+                {"name" => "Attribute Name", "type" => :string},
+                {"name" => "Old Value", "type" => :string},
+              ]
+            }
+          end
+        end
+
         def test_target
           assert_equal(:activity_log, ActivityLog.target)
         end
@@ -22,7 +80,7 @@ module Embulk
           end
 
           def test_include_metadata
-            stub(@soap).metadata(last_updated_at, batch_size: ActivityLog::PREVIEW_COUNT) { Guess::SchemaGuess.from_hash_records(records) }
+            stub(@soap).metadata(from_datetime, batch_size: ActivityLog::PREVIEW_COUNT) { Guess::SchemaGuess.from_hash_records(records) }
 
             assert_equal(
               {"columns" => expected_guessed_columns},
@@ -166,7 +224,8 @@ module Embulk
           def request
             {
               start_position: {
-                oldest_created_at: Time.parse(last_updated_at).iso8601,
+                oldest_created_at: Time.parse(from_datetime).iso8601,
+                latest_created_at: Time.parse(to_datetime).iso8601,
               },
               batch_size: 100
             }
@@ -175,6 +234,8 @@ module Embulk
           def offset_request
             {
               start_position: {
+                oldest_created_at: Time.parse(from_datetime).iso8601,
+                latest_created_at: Time.parse(to_datetime).iso8601,
                 offset: "offset"
               },
               batch_size: 100
@@ -185,7 +246,7 @@ module Embulk
           def preview_request
             {
               start_position: {
-                oldest_created_at: Time.parse(last_updated_at).iso8601,
+                oldest_created_at: Time.parse(from_datetime).iso8601,
               },
               batch_size: ActivityLog::PREVIEW_COUNT
             }
@@ -199,7 +260,8 @@ module Embulk
             wsdl: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            last_updated_at: last_updated_at,
+            from_datetime: from_datetime,
+            to_datetime: to_datetime,
           }
         end
 
@@ -213,7 +275,8 @@ module Embulk
             wsdl_url: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            last_updated_at: last_updated_at,
+            from_datetime: from_datetime,
+            to_datetime: to_datetime,
             columns: [
               {"name" => :id, "type" => :long},
               {"name" => :activity_date_time, "type" => :timestamp, "format" => "%Y-%m-%dT%H:%M:%S%z"},
@@ -226,8 +289,12 @@ module Embulk
           }
         end
 
-        def last_updated_at
+        def from_datetime
           "2015-07-01 00:00:00+00:00"
+        end
+
+        def to_datetime
+          "2015-11-01 00:00:00+00:00"
         end
       end
     end
