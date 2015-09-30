@@ -57,7 +57,7 @@ module Embulk
           self.class.target
         end
 
-        def self.format_from_and_to(config)
+        def self.format_range(config)
           if config.param(:last_updated_at, :string, default: nil)
             Embulk.logger.warn "config: last_updated_at is deprecated. Use from_datetime/to_datetime"
           end

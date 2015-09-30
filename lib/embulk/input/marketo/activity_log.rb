@@ -13,7 +13,7 @@ module Embulk
         def self.transaction(config, &control)
           endpoint_url = config.param(:endpoint, :string)
 
-          range = format_from_and_to(config)
+          range = format_range(config)
 
           task = {
             endpoint_url: endpoint_url,
@@ -39,9 +39,9 @@ module Embulk
 
         def self.guess(config)
           client = soap_client(config)
-          from_datetime = config.param(:from_datetime, :string)
+          range = format_range(config)
 
-          schema = client.metadata(from_datetime, batch_size: PREVIEW_COUNT)
+          schema = client.metadata(range[:from], batch_size: PREVIEW_COUNT)
           columns = schema.map do |c|
             column = {name: c.name, type: c.type}
             column[:format] = c.format if c.format
