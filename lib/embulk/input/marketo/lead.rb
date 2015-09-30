@@ -97,9 +97,6 @@ module Embulk
         end
 
         def run
-          from_datetime = task[:from_datetime]
-          to_datetime = task[:to_datetime] || Time.now
-
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
 
@@ -118,7 +115,7 @@ module Embulk
           page_builder.finish
 
           commit_report = {
-            from_datetime: to_datetime
+            from_datetime: task[:to_datetime] || Time.now
           }
           return commit_report
         end

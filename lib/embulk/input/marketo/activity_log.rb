@@ -4,6 +4,8 @@ module Embulk
   module Input
     module Marketo
       class ActivityLog < Base
+        BATCH_SIZE_DEFAULT = 100
+
         Plugin.register_input("marketo/activity_log", self)
 
         def self.target
@@ -67,9 +69,9 @@ module Embulk
 
         def run
           options = {
-            to: task[:to_datetime]
+            to: task[:to_datetime],
+            batch_size: (preview? ? PREVIEW_COUNT : BATCH_SIZE_DEFAULT),
           }
-          options[:batch_size] = preview? ? PREVIEW_COUNT : 100
 
           latest_updated_at = @soap.each(task[:from_datetime], options) do |activity_log|
             values = @columns.map do |column|
