@@ -10,11 +10,38 @@ module Embulk
           :activity_log
         end
 
+        def self.transaction(config, &control)
+          endpoint_url = config.param(:endpoint, :string)
+
+          range = format_range(config)
+
+          task = {
+            endpoint_url: endpoint_url,
+            wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
+            user_id: config.param(:user_id, :string),
+            encryption_key: config.param(:encryption_key, :string),
+            from_datetime: range[:from],
+            to_datetime: range[:to],
+            columns: config.param(:columns, :array)
+          }
+
+          columns = []
+
+          task[:columns].each do |column|
+            name = column["name"]
+            type = column["type"].to_sym
+
+            columns << Column.new(nil, name, type, column["format"])
+          end
+
+          resume(task, columns, 1, &control)
+        end
+
         def self.guess(config)
           client = soap_client(config)
-          last_updated_at = config.param(:last_updated_at, :string)
+          range = format_range(config)
 
-          schema = client.metadata(last_updated_at, batch_size: PREVIEW_COUNT)
+          schema = client.metadata(range[:from], batch_size: PREVIEW_COUNT)
           columns = schema.map do |c|
             column = {name: c.name, type: c.type}
             column[:format] = c.format if c.format
@@ -33,7 +60,7 @@ module Embulk
 
           count = 0
 
-          last_updated_at = @soap.each(@last_updated_at, batch_size: batch_size) do |activity_log|
+          last_updated_at = @soap.each(task[:from_datetime], batch_size: batch_size, to: task[:to_datetime]) do |activity_log|
             values = @columns.map do |column|
               name = column["name"].to_s
               value = activity_log[name]
@@ -60,7 +87,7 @@ module Embulk
 
           commit_report = {}
           if !preview? && last_updated_at
-            commit_report = {last_updated_at: last_updated_at}
+            commit_report = {from_datetime: last_updated_at}
           end
 
           return commit_report

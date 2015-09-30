@@ -18,8 +18,7 @@ module Embulk
           def each(last_updated_at, options={}, &block)
             response = fetch_by_last_updated_at(last_updated_at, options, &block)
             while response[:remaining_count] > 0 do
-              offset = response[:offset]
-              response = fetch_by_offset(offset, options, &block)
+              response = fetch_by_last_updated_at(last_updated_at, options.merge(offset: response[:offset]), &block)
             end
 
             response[:last_updated_at]
@@ -31,28 +30,26 @@ module Embulk
             last_updated_at = last_updated_at.to_s
             last_updated_at = Time.parse(last_updated_at).iso8601
 
+            to =
+              if options[:to]
+                Time.parse(options[:to]).iso8601
+              else
+                Time.now.iso8601
+              end
+
             request = {
               start_position: {
                 oldest_created_at: last_updated_at,
+                latest_created_at: to,
               },
+              batch_size: options[:batch_size] || 100
             }
-
-            fetch(request, options, &block)
-          end
-
-          def fetch_by_offset(offset, options={}, &block)
-            request = {
-              start_position: {
-                offset: offset,
-              },
-            }
+            request[:start_position][:offset] = options[:offset] if options[:offset]
 
             fetch(request, options, &block)
           end
 
           def fetch(request, options={}, &block)
-            request[:batch_size] = options[:batch_size] || 100
-
             response = savon_call(:get_lead_changes, message: request)
             remaining = response.body[:success_get_lead_changes][:result][:remaining_count].to_i
             Embulk.logger.info "Remaining records: #{remaining}"

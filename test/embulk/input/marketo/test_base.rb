@@ -11,16 +11,6 @@ module Embulk
           end
         end
 
-        def test_transaction
-          control = proc {} # dummy
-          columns = task[:columns].map do |col|
-            Column.new(nil, col["name"], col["type"].to_sym)
-          end
-
-          mock(Base).resume(task, columns, 1, &control)
-          Base.transaction(config, &control)
-        end
-
         def test_resume
           next_config_diff = {last_updated_at: last_updated_at}
           control = proc { [next_config_diff] } # In actual, embulk prepares control block returning Array.
