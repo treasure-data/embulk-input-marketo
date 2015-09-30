@@ -91,9 +91,6 @@ module Embulk
           options = {}
           options[:batch_size] = PREVIEW_COUNT if preview?
 
-          # NOTE: set this before API request for avoid lacking data between now and next
-          next_from_datetime = task[:to_datetime] || Time.now
-
           counter = 0
           @ranges.each do |range|
             soap.each(range, options) do |lead|
@@ -111,7 +108,7 @@ module Embulk
           page_builder.finish
 
           commit_report = {
-            from_datetime: next_from_datetime
+            from_datetime: task[:to_datetime]
           }
           return commit_report
         end
