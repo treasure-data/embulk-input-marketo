@@ -5,30 +5,29 @@ module Embulk
     module MarketoApi
       module Soap
         class ActivityLog < Base
-          def metadata(last_updated_at, options={})
+          def metadata(from_datetime, options={})
             activity_logs = []
 
-            fetch_by_last_updated_at(last_updated_at, options) do |record|
+            fetch_by_from_datetime(from_datetime, options) do |record|
               activity_logs << record
             end
 
             Guess::SchemaGuess.from_hash_records(activity_logs)
           end
 
-          def each(last_updated_at, options={}, &block)
-            response = fetch_by_last_updated_at(last_updated_at, options, &block)
+          def each(from_datetime, options={}, &block)
+            response = fetch_by_from_datetime(from_datetime, options, &block)
             while response[:remaining_count] > 0 do
-              response = fetch_by_last_updated_at(last_updated_at, options.merge(offset: response[:offset]), &block)
+              response = fetch_by_from_datetime(from_datetime, options.merge(offset: response[:offset]), &block)
             end
 
-            response[:last_updated_at]
+            response[:from_datetime]
           end
 
           private
 
-          def fetch_by_last_updated_at(last_updated_at, options={}, &block)
-            last_updated_at = last_updated_at.to_s
-            last_updated_at = Time.parse(last_updated_at).iso8601
+          def fetch_by_from_datetime(from_datetime, options={}, &block)
+            from = Time.parse(from_datetime.to_s).iso8601
 
             to =
               if options[:to]
@@ -39,7 +38,7 @@ module Embulk
 
             request = {
               start_position: {
-                oldest_created_at: last_updated_at,
+                oldest_created_at: from,
                 latest_created_at: to,
               },
               batch_size: options[:batch_size] || 100
@@ -58,7 +57,7 @@ module Embulk
 
             if activities_list.nil?
               Embulk.logger.info "No record is fetched."
-              return {remaining_count: 0, offset: nil, last_updated_at: nil}
+              return {remaining_count: 0, offset: nil, from_datetime: nil}
             end
 
             activities = activities_list[:lead_change_record].sort_by { |activity| Time.parse(activity[:activity_date_time]) }
@@ -85,7 +84,7 @@ module Embulk
             {
               remaining_count: remaining,
               offset: response.body[:success_get_lead_changes][:result][:new_start_position][:offset],
-              last_updated_at: activities.last[:activity_date_time]
+              from_datetime: activities.last[:activity_date_time]
             }
           end
         end

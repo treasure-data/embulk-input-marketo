@@ -46,14 +46,14 @@ module Embulk
             wsdl: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            last_updated_at: last_updated_at,
+            from_datetime: from_datetime,
             columns: [
               {"name" => "Name", "type" => "string"},
             ]
           }
         end
 
-        def last_updated_at
+        def from_datetime
           "2015-07-01 00:00:00+00:00"
         end
 
@@ -63,7 +63,7 @@ module Embulk
             wsdl_url: "https://marketo.example.com/?wsdl",
             user_id: "user_id",
             encryption_key: "TOPSECRET",
-            last_updated_at: last_updated_at,
+            from_datetime: from_datetime,
             columns: [
               {"name" => "Name", "type" => "string"},
             ]

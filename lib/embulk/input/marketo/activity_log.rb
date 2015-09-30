@@ -61,7 +61,6 @@ module Embulk
         end
 
         def init
-          @last_updated_at = task[:last_updated_at]
           @columns = task[:columns]
           @soap = MarketoApi.soap_client(task, target)
         end
@@ -75,7 +74,7 @@ module Embulk
 
           count = 0
 
-          last_updated_at = @soap.each(task[:from_datetime], batch_size: batch_size, to: task[:to_datetime]) do |activity_log|
+          latest_updated_at = @soap.each(task[:from_datetime], batch_size: batch_size, to: task[:to_datetime]) do |activity_log|
             values = @columns.map do |column|
               name = column["name"].to_s
               value = activity_log[name]
@@ -101,8 +100,8 @@ module Embulk
           page_builder.finish
 
           commit_report = {}
-          if !preview? && last_updated_at
-            commit_report = {from_datetime: last_updated_at}
+          if !preview? && latest_updated_at
+            commit_report = {from_datetime: latest_updated_at}
           end
 
           return commit_report
