@@ -13,15 +13,6 @@ module Embulk
           raise NotImplementedError
         end
 
-        def self.resume(task, columns, count, &control)
-          commit_reports = yield(task, columns, count)
-
-          # NOTE: If this plugin supports to run by multi threads, this
-          # implementation is terrible.
-          next_config_diff = commit_reports.first
-          return next_config_diff
-        end
-
         def self.soap_client(config)
           @soap ||=
             begin
@@ -35,12 +26,6 @@ module Embulk
 
               MarketoApi.soap_client(soap_config, target)
             end
-        end
-
-        def init
-          @last_updated_at = task[:last_updated_at]
-          @columns = task[:columns]
-          @soap = MarketoApi.soap_client(task, target)
         end
 
         private

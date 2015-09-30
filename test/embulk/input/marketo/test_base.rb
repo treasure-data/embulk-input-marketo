@@ -11,17 +11,6 @@ module Embulk
           end
         end
 
-        def test_resume
-          next_config_diff = {last_updated_at: last_updated_at}
-          control = proc { [next_config_diff] } # In actual, embulk prepares control block returning Array.
-          columns = task[:columns].map do |col|
-            Column.new(nil, col["name"], col["type"].to_sym)
-          end
-
-          actual = Base.resume(task, columns, 1, &control)
-          assert_equal(next_config_diff, actual)
-        end
-
         class SoapClientTest < self
           def setup
             stub(Base).target { :lead }

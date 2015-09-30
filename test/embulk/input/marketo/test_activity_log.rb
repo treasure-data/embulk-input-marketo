@@ -19,6 +19,17 @@ module Embulk
             ActivityLog.transaction(config, &control)
           end
 
+          def test_resume
+            next_config_diff = {from_datetime: from_datetime}
+            control = proc { [next_config_diff] } # In actual, embulk prepares control block returning Array.
+            columns = task[:columns].map do |col|
+              Column.new(nil, col["name"], col["type"].to_sym)
+            end
+
+            actual = ActivityLog.resume(task, columns, 1, &control)
+            assert_equal(next_config_diff, actual)
+          end
+
           private
 
           def settings

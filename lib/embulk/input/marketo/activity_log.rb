@@ -10,6 +10,15 @@ module Embulk
           :activity_log
         end
 
+        def self.resume(task, columns, count, &control)
+          commit_reports = yield(task, columns, count)
+
+          # NOTE: If this plugin supports to run by multi threads, this
+          # implementation is terrible.
+          next_config_diff = commit_reports.first
+          return next_config_diff
+        end
+
         def self.transaction(config, &control)
           endpoint_url = config.param(:endpoint, :string)
 
@@ -49,6 +58,12 @@ module Embulk
           end
 
           return {"columns" => columns}
+        end
+
+        def init
+          @last_updated_at = task[:last_updated_at]
+          @columns = task[:columns]
+          @soap = MarketoApi.soap_client(task, target)
         end
 
         def run
