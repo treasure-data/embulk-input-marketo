@@ -36,16 +36,7 @@ module Embulk
             columns: config.param(:columns, :array)
           }
 
-          columns = []
-
-          task[:columns].each do |column|
-            name = column["name"]
-            type = column["type"].to_sym
-
-            columns << Column.new(nil, name, type, column["format"])
-          end
-
-          resume(task, columns, 1, &control)
+          resume(task, embulk_columns(config), 1, &control)
         end
 
         def self.guess(config)

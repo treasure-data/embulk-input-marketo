@@ -27,6 +27,15 @@ module Embulk
             end
         end
 
+        def self.embulk_columns(config)
+          config.param(:columns, :array).map do |column|
+            name = column["name"]
+            type = column["type"].to_sym
+
+            Column.new(nil, name, type, column["format"])
+          end
+        end
+
         def self.format_range(config)
           if config.param(:last_updated_at, :string, default: nil)
             Embulk.logger.warn "config: last_updated_at is deprecated. Use from_datetime/to_datetime"

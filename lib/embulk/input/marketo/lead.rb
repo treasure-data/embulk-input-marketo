@@ -49,16 +49,7 @@ module Embulk
             columns: config.param(:columns, :array)
           }
 
-          columns = []
-
-          task[:columns].each do |column|
-            name = column["name"]
-            type = column["type"].to_sym
-
-            columns << Column.new(nil, name, type, column["format"])
-          end
-
-          resume(task, columns, ranges.size, &control)
+          resume(task, embulk_columns(config), ranges.size, &control)
         end
 
         def self.generate_columns(metadata)
