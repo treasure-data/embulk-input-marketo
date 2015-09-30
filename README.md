@@ -1,8 +1,7 @@
 [![Build Status](https://travis-ci.org/treasure-data/embulk-input-marketo.svg?branch=master)](https://travis-ci.org/treasure-data/embulk-input-marketo)
-
 [![Code Climate](https://codeclimate.com/github/treasure-data/embulk-input-marketo/badges/gpa.svg)](https://codeclimate.com/github/treasure-data/embulk-input-marketo)
-
 [![Test Coverage](https://codeclimate.com/github/treasure-data/embulk-input-marketo/badges/coverage.svg)](https://codeclimate.com/github/treasure-data/embulk-input-marketo/coverage)
+[![Gem Version](https://badge.fury.io/rb/embulk-input-marketo.svg)](http://badge.fury.io/rb/embulk-input-marketo)
 
 # Marketo input plugin for Embulk
 
