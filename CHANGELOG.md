@@ -2,7 +2,7 @@
 
 This version breaks backword compatibility of marketo/activity_log. Please check README.md to modify your config.
 
-* [enhancement] From to filter for activity log [#39](https://github.com/treasure-data/embulk-input-marketo/pull/39)
+* [enhancement] Also activity_log uses from_datetime/to_datetime same as lead [#39](https://github.com/treasure-data/embulk-input-marketo/pull/39)
 
 ## 0.2.5 - 2015-09-28
 
