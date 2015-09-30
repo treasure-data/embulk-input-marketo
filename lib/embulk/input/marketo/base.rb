@@ -1,4 +1,3 @@
-require "embulk/input/marketo/timeslice"
 require "embulk/input/marketo_api"
 
 module Embulk
@@ -11,15 +10,6 @@ module Embulk
 
         def self.target
           raise NotImplementedError
-        end
-
-        def self.resume(task, columns, count, &control)
-          commit_reports = yield(task, columns, count)
-
-          # NOTE: If this plugin supports to run by multi threads, this
-          # implementation is terrible.
-          next_config_diff = commit_reports.first
-          return next_config_diff
         end
 
         def self.soap_client(config)
@@ -37,24 +27,13 @@ module Embulk
             end
         end
 
-        def init
-          @last_updated_at = task[:last_updated_at]
-          @columns = task[:columns]
-          @soap = MarketoApi.soap_client(task, target)
-        end
+        def self.embulk_columns(config)
+          config.param(:columns, :array).map do |column|
+            name = column["name"]
+            type = column["type"].to_sym
 
-        private
-
-        def preview?
-          begin
-            org.embulk.spi.Exec.isPreview()
-          rescue java.lang.NullPointerException => e
-            false
+            Column.new(nil, name, type, column["format"])
           end
-        end
-
-        def target
-          self.class.target
         end
 
         def self.format_range(config)
@@ -82,6 +61,72 @@ module Embulk
             from: from_datetime,
             to: to_datetime,
           }
+        end
+
+        def self.timeslice(from, to, count)
+          generate_time_range(from, to).each_slice(count).to_a
+        end
+
+        def self.generate_time_range(from, to)
+          # e.g. from = 2010-01-01 15:00, to = 2010-01-03 09:30
+          # convert to such array:
+          # [
+          #   {from: 2010-01-01 15:00, to: 2010-01-01 16:00},
+          #   {from: 2010-01-01 16:00, to: 2010-01-01 17:00},
+          #   ...
+          #   {from: 2010-01-03 08:00, to: 2010-01-03 09:00},
+          #   {from: 2010-01-03 09:00, to: 2010-01-03 09:30},
+          # ]
+          # to fetch data from Marketo API with each day as
+          # desribed on official blog:
+          # http://developers.marketo.com/blog/performance-tuning-api-requests/
+          to ||= Time.now
+          from = Time.parse(from) unless from.is_a?(Time)
+          to = Time.parse(to) unless to.is_a?(Time)
+
+          result = []
+          since = from
+          while since < to
+            next_since = since + 3600
+            if to < next_since
+              next_since = to
+            end
+            result << {
+              "from" => since,
+              "to" => next_since
+            }
+            since = next_since
+          end
+          result
+        end
+
+        private
+
+        def preview?
+          begin
+            org.embulk.spi.Exec.isPreview()
+          rescue java.lang.NullPointerException => e
+            false
+          end
+        end
+
+        def cast_value(column, value)
+          return unless value
+
+          case column["type"].to_s
+          when "timestamp"
+            begin
+              Time.parse(value)
+            rescue => e
+              raise ConfigError, "Can't parse as Time '#{value}' (column is #{column["name"]})"
+            end
+          else
+            value
+          end
+        end
+
+        def target
+          self.class.target
         end
       end
     end

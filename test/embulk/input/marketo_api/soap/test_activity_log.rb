@@ -15,7 +15,7 @@ module Embulk
           def test_each
             request = {
               start_position: {
-                oldest_created_at: Time.parse(last_updated_at).iso8601,
+                oldest_created_at: Time.parse(from_datetime).iso8601,
               },
               batch_size: 100
             }
@@ -31,13 +31,13 @@ module Embulk
             last_activity_log = activity_logs.last
 
             mock(proc).call(anything).times(activity_logs.size)
-            assert_equal(last_activity_log[:activity_date_time], soap.each(last_updated_at, &proc))
+            assert_equal(last_activity_log[:activity_date_time], soap.each(from_datetime, &proc))
           end
 
           def test_each_with_no_response
             request = {
               start_position: {
-                oldest_created_at: Time.parse(last_updated_at).iso8601,
+                oldest_created_at: Time.parse(from_datetime).iso8601,
               },
               batch_size: 100
             }
@@ -50,7 +50,7 @@ module Embulk
 
             proc = proc{ "" }
 
-            assert_nil(soap.each(last_updated_at, &proc))
+            assert_nil(soap.each(from_datetime, &proc))
           end
 
           class TestMetadata < self
@@ -65,14 +65,14 @@ module Embulk
               mock(@savon).call(:get_lead_changes, message: request) {
                 next_stream_activity_logs_response
               }
-              soap.metadata(last_updated_at)
+              soap.metadata(from_datetime)
             end
 
             def test_return_schema
               stub(@savon).call(:get_lead_changes, message: request) {
                 next_stream_activity_logs_response
               }
-              assert_equal(schema, soap.metadata(last_updated_at))
+              assert_equal(schema, soap.metadata(from_datetime))
             end
 
             private
@@ -80,7 +80,7 @@ module Embulk
             def request
               {
                 start_position: {
-                  oldest_created_at: Time.parse(last_updated_at).iso8601,
+                  oldest_created_at: Time.parse(from_datetime).iso8601,
                 },
                 batch_size: 100
               }
@@ -105,7 +105,7 @@ module Embulk
 
           private
 
-          def last_updated_at
+          def from_datetime
             "2015-07-06"
           end
 
