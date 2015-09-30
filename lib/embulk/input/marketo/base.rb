@@ -38,6 +38,21 @@ module Embulk
           end
         end
 
+        def cast_value(column, value)
+          return unless value
+
+          case column["type"].to_s
+          when "timestamp"
+            begin
+              Time.parse(value)
+            rescue => e
+              raise ConfigError, "Can't parse as Time '#{value}' (column is #{column["name"]})"
+            end
+          else
+            value
+          end
+        end
+
         def target
           self.class.target
         end

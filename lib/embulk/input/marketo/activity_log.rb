@@ -66,35 +66,19 @@ module Embulk
         end
 
         def run
-          if preview?
-            batch_size = PREVIEW_COUNT
-          else
-            batch_size = 100
-          end
+          options = {
+            to: task[:to_datetime]
+          }
+          options[:batch_size] = preview? ? PREVIEW_COUNT : 100
 
-          count = 0
-
-          latest_updated_at = @soap.each(task[:from_datetime], batch_size: batch_size, to: task[:to_datetime]) do |activity_log|
+          latest_updated_at = @soap.each(task[:from_datetime], options) do |activity_log|
             values = @columns.map do |column|
               name = column["name"].to_s
               value = activity_log[name]
-              next unless value
-
-              case column["type"].to_s
-              when "timestamp"
-                begin
-                  Time.parse(value)
-                rescue => e
-                  raise ConfigError, "Can't parse as Time '#{value}' (column is #{column["name"]})"
-                end
-              else
-                value
-              end
+              cast_value(column, value)
             end
 
             page_builder.add(values)
-            count += 1
-            break if preview? && count >= PREVIEW_COUNT
           end
 
           page_builder.finish

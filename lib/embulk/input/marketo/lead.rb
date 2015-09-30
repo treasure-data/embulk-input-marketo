@@ -59,18 +59,7 @@ module Embulk
               values = @columns.map do |column|
                 name = column["name"].to_s
                 value = (lead[name] || {})[:value]
-                next unless value
-
-                case column["type"]
-                when "timestamp"
-                  begin
-                    Time.parse(value)
-                  rescue => e
-                    raise ConfigError, "Can't parse as Time '#{value}' (column is #{column["name"]})"
-                  end
-                else
-                  value
-                end
+                cast_value(column, value)
               end
 
               page_builder.add(values)
