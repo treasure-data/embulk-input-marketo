@@ -94,6 +94,7 @@ module Embulk
           # NOTE: set this before API request for avoid lacking data between now and next
           next_from_datetime = task[:to_datetime] || Time.now
 
+          counter = 0
           @ranges.each do |range|
             soap.each(range, options) do |lead|
               values = @columns.map do |column|
@@ -103,6 +104,7 @@ module Embulk
               end
 
               page_builder.add(values)
+              break if preview? && (counter += 1) >= PREVIEW_COUNT
             end
           end
 

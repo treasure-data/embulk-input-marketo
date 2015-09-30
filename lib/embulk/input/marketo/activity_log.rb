@@ -64,6 +64,7 @@ module Embulk
             batch_size: (preview? ? PREVIEW_COUNT : BATCH_SIZE_DEFAULT),
           }
 
+          counter = 0
           latest_updated_at = @soap.each(task[:from_datetime], options) do |activity_log|
             values = @columns.map do |column|
               name = column["name"].to_s
@@ -72,6 +73,7 @@ module Embulk
             end
 
             page_builder.add(values)
+            break if preview? && (counter += 1) >= PREVIEW_COUNT
           end
 
           page_builder.finish
