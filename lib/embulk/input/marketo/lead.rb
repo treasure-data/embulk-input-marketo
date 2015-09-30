@@ -4,12 +4,79 @@ module Embulk
   module Input
     module Marketo
       class Lead < Base
-        include Timeslice
+        TIMESLICE_COUNT_PER_TASK = 24
 
         Plugin.register_input("marketo/lead", self)
 
         def self.target
           :lead
+        end
+
+        def self.guess(config)
+          if config.param(:last_updated_at, :string, default: nil)
+            Embulk.logger.warn "config: last_updated_at is deprecated. Use from_datetime/to_datetime"
+          end
+
+          client = soap_client(config)
+          metadata = client.metadata
+
+          return {"columns" => generate_columns(metadata)}
+        end
+
+        def self.resume(task, columns, count, &control)
+          commit_reports = yield(task, columns, count)
+
+          # When no task ran, commit_reports is empty
+          return {} if commit_reports.empty?
+          # all task returns same report as {from_datetime: to_datetime}
+          return commit_reports.first
+        end
+
+        def self.transaction(config, &control)
+          endpoint_url = config.param(:endpoint, :string)
+
+          if config.param(:last_updated_at, :string, default: nil)
+            Embulk.logger.warn "config: last_updated_at is deprecated. Use from_datetime/to_datetime"
+          end
+
+          from_datetime = config.param(:from_datetime, :string)
+          to_datetime = config.param(:to_datetime, :string, default: Time.now.to_s)
+
+          # check from/to format to parse
+          begin
+            Time.parse(from_datetime)
+            Time.parse(to_datetime)
+          rescue => e
+            # possibly Time.parse fail
+            raise ConfigError, e.message
+          end
+
+          if Time.parse(from_datetime) > Time.parse(to_datetime)
+            raise ConfigError, "config: from_datetime '#{from_datetime}' is later than '#{to_datetime}'."
+          end
+
+          ranges = timeslice(from_datetime, to_datetime, TIMESLICE_COUNT_PER_TASK)
+          task = {
+            endpoint_url: endpoint_url,
+            wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
+            user_id: config.param(:user_id, :string),
+            encryption_key: config.param(:encryption_key, :string),
+            from_datetime: from_datetime,
+            to_datetime: to_datetime,
+            ranges: ranges,
+            columns: config.param(:columns, :array)
+          }
+
+          columns = []
+
+          task[:columns].each do |column|
+            name = column["name"]
+            type = column["type"].to_sym
+
+            columns << Column.new(nil, name, type, column["format"])
+          end
+
+          resume(task, columns, ranges.size, &control)
         end
 
         def self.generate_columns(metadata)
