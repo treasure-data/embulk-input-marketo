@@ -35,34 +35,16 @@ module Embulk
         def self.transaction(config, &control)
           endpoint_url = config.param(:endpoint, :string)
 
-          if config.param(:last_updated_at, :string, default: nil)
-            Embulk.logger.warn "config: last_updated_at is deprecated. Use from_datetime/to_datetime"
-          end
+          range = format_range(config)
 
-          from_datetime = config.param(:from_datetime, :string)
-          to_datetime = config.param(:to_datetime, :string, default: Time.now.to_s)
-
-          # check from/to format to parse
-          begin
-            Time.parse(from_datetime)
-            Time.parse(to_datetime)
-          rescue => e
-            # possibly Time.parse fail
-            raise ConfigError, e.message
-          end
-
-          if Time.parse(from_datetime) > Time.parse(to_datetime)
-            raise ConfigError, "config: from_datetime '#{from_datetime}' is later than '#{to_datetime}'."
-          end
-
-          ranges = timeslice(from_datetime, to_datetime, TIMESLICE_COUNT_PER_TASK)
+          ranges = timeslice(range[:from], range[:to], TIMESLICE_COUNT_PER_TASK)
           task = {
             endpoint_url: endpoint_url,
             wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
             user_id: config.param(:user_id, :string),
             encryption_key: config.param(:encryption_key, :string),
-            from_datetime: from_datetime,
-            to_datetime: to_datetime,
+            from_datetime: range[:from],
+            to_datetime: range[:to],
             ranges: ranges,
             columns: config.param(:columns, :array)
           }
