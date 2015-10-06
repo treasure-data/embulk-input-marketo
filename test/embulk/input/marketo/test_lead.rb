@@ -1,6 +1,7 @@
 require "prepare_embulk"
 require "lead_fixtures"
 require "mute_logger"
+require "override_assert_raise"
 require "embulk/input/marketo/lead"
 
 module Embulk
@@ -9,6 +10,7 @@ module Embulk
       class LeadTest < Test::Unit::TestCase
         include LeadFixtures
         include MuteLogger
+        include OverrideAssertRaise
 
         def test_target
           assert_equal(:lead, Lead.target)

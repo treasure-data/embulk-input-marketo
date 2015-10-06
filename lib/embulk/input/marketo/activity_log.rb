@@ -13,11 +13,11 @@ module Embulk
         end
 
         def self.resume(task, columns, count, &control)
-          commit_reports = yield(task, columns, count)
+          task_reports = yield(task, columns, count)
 
           # NOTE: If this plugin supports to run by multi threads, this
           # implementation is terrible.
-          next_config_diff = commit_reports.first
+          next_config_diff = task_reports.first
           return next_config_diff
         end
 
@@ -78,12 +78,12 @@ module Embulk
 
           page_builder.finish
 
-          commit_report = {}
+          task_report = {}
           if !preview? && latest_updated_at
-            commit_report = {from_datetime: latest_updated_at}
+            task_report = {from_datetime: latest_updated_at}
           end
 
-          return commit_report
+          return task_report
         end
       end
     end

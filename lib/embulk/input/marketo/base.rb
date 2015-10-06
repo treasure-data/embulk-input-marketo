@@ -50,11 +50,11 @@ module Embulk
             Time.parse(to_datetime)
           rescue => e
             # possibly Time.parse fail
-            raise ConfigError, e.message
+            raise ConfigError.new e.message
           end
 
           if Time.parse(from_datetime) > Time.parse(to_datetime)
-            raise ConfigError, "config: from_datetime '#{from_datetime}' is later than '#{to_datetime}'."
+            raise ConfigError.new "config: from_datetime '#{from_datetime}' is later than '#{to_datetime}'."
           end
 
           {
@@ -118,7 +118,7 @@ module Embulk
             begin
               Time.parse(value)
             rescue => e
-              raise ConfigError, "Can't parse as Time '#{value}' (column is #{column["name"]})"
+              raise ConfigError.new "Can't parse as Time '#{value}' (column is #{column["name"]})"
             end
           else
             value
