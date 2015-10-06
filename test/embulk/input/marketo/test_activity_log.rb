@@ -1,4 +1,5 @@
 require "prepare_embulk"
+require "override_assert_raise"
 require "embulk/input/marketo/activity_log"
 require "activity_log_fixtures"
 
@@ -7,6 +8,7 @@ module Embulk
     module Marketo
       class ActivityLogTest < Test::Unit::TestCase
         include ActivityLogFixtures
+        include OverrideAssertRaise
 
         class TransactionTest < self
           def test_generate_task

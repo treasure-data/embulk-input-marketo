@@ -77,7 +77,7 @@ module Embulk
           rescue Savon::SOAPFault => e
             Embulk.logger.debug "#{e.class}: #{e.to_hash}"
             if e.to_hash[:fault][:faultcode].to_str == "SOAP-ENV:Client"
-              raise ConfigError, e.message
+              raise ConfigError.new e.message
             end
           rescue Savon::HTTPError => e
             # NOTE: Marketo API always return error as HTTP 500
@@ -94,12 +94,12 @@ module Embulk
               raise e
             else
               # unretryable error such as Authentication Failed, Invalid Request, etc.
-              raise ConfigError, soap_message
+              raise ConfigError.new soap_message
             end
           rescue SocketError, Errno::ECONNREFUSED => e
             # maybe endpoint/wsdl domain was wrong
             Embulk.logger.debug "Connection error: endpoint=#{endpoint} wsdl=#{wsdl}"
-            raise ConfigError, "Connection error: #{e.message} (endpoint is '#{endpoint}')"
+            raise ConfigError.new "Connection error: #{e.message} (endpoint is '#{endpoint}')"
           end
         end
       end
