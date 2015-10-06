@@ -1,3 +1,8 @@
+## 0.3.1 - 2015-10-06
+
+* [enhancement] Supports embulk.0.7 [#43](https://github.com/treasure-data/embulk-input-marketo/pull/43)
+* [maintenance] Refactor [#40](https://github.com/treasure-data/embulk-input-marketo/pull/40)
+
 ## 0.3.0 - 2015-09-30
 
 This version breaks backword compatibility of marketo/activity_log. Please check README.md to modify your config.
