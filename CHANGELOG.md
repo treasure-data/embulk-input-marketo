@@ -1,3 +1,7 @@
+## 0.3.2 - 2015-10-13
+
+* [fixed] Prevent memoize in class [#44](https://github.com/treasure-data/embulk-input-marketo/pull/44)
+
 ## 0.3.1 - 2015-10-06
 
 * [enhancement] Supports embulk.0.7 [#43](https://github.com/treasure-data/embulk-input-marketo/pull/43)

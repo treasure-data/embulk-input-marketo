@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = "embulk-input-marketo"
-  spec.version       = "0.3.1"
+  spec.version       = "0.3.2"
   spec.authors       = ["uu59", "yoshihara"]
   spec.summary       = "Marketo input plugin for Embulk"
   spec.description   = "Loads records from Marketo."
