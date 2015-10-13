@@ -13,18 +13,15 @@ module Embulk
         end
 
         def self.soap_client(config)
-          @soap ||=
-            begin
-              endpoint_url = config.param(:endpoint, :string)
-              soap_config = {
-                endpoint_url: endpoint_url,
-                wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
-                user_id: config.param(:user_id, :string),
-                encryption_key: config.param(:encryption_key, :string),
-              }
+          endpoint_url = config.param(:endpoint, :string)
+          soap_config = {
+            endpoint_url: endpoint_url,
+            wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
+            user_id: config.param(:user_id, :string),
+            encryption_key: config.param(:encryption_key, :string),
+          }
 
-              MarketoApi.soap_client(soap_config, target)
-            end
+          MarketoApi.soap_client(soap_config, target)
         end
 
         def self.embulk_columns(config)
