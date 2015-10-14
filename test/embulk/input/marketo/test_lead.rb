@@ -168,6 +168,22 @@ module Embulk
             @plugin.run
           end
 
+          def test_preview_will_stop_fetching_when_defined_times_added
+            stub(@plugin).preview? { true }
+            @plugin.instance_variable_set(:@ranges, @plugin.task[:ranges].first * 3) # multiple ranges
+
+            any_instance_of(Savon::Client) do |klass|
+              mock(klass).call(:get_multiple_leads, anything) do
+                preview_leads_response
+              end
+            end
+
+            mock(@page_builder).add(anything).times(Lead::PREVIEW_COUNT)
+            mock(@page_builder).finish
+
+            @plugin.run
+          end
+
           class SavonCallTest < self
             def test_soap_error
               assert_raise(Embulk::ConfigError) do

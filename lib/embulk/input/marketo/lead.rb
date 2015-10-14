@@ -92,16 +92,18 @@ module Embulk
           options[:batch_size] = PREVIEW_COUNT if preview?
 
           counter = 0
-          @ranges.each do |range|
-            soap.each(range, options) do |lead|
-              values = @columns.map do |column|
-                name = column["name"].to_s
-                value = (lead[name] || {})[:value]
-                cast_value(column, value)
-              end
+          catch(:finish) do
+            @ranges.each do |range|
+              soap.each(range, options) do |lead|
+                values = @columns.map do |column|
+                  name = column["name"].to_s
+                  value = (lead[name] || {})[:value]
+                  cast_value(column, value)
+                end
 
-              page_builder.add(values)
-              break if preview? && (counter += 1) >= PREVIEW_COUNT
+                page_builder.add(values)
+                throw(:finish) if preview? && (counter += 1) >= PREVIEW_COUNT
+              end
             end
           end
 
