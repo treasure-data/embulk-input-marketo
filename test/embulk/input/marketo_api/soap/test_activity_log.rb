@@ -81,6 +81,7 @@ module Embulk
               {
                 start_position: {
                   oldest_created_at: Time.parse(from_datetime).iso8601,
+                  latest_created_at: (Time.parse(from_datetime) + ActivityLog::GUESS_DURATION).iso8601
                 },
                 batch_size: 100
               }

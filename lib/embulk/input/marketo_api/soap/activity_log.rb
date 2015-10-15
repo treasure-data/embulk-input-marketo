@@ -5,8 +5,14 @@ module Embulk
     module MarketoApi
       module Soap
         class ActivityLog < Base
+          GUESS_DURATION = 60 * 30 # 30m
+
           def metadata(from_datetime, options={})
             activity_logs = []
+
+            from = Time.parse(from_datetime.to_s)
+            to = from + GUESS_DURATION
+            options[:to] = to.to_s
 
             fetch_by_from_datetime(from_datetime, options) do |record|
               activity_logs << record
@@ -45,6 +51,7 @@ module Embulk
             }
             request[:start_position][:offset] = options[:offset] if options[:offset]
 
+            Embulk.logger.info "Fetching from '#{from}' to '#{to}'..."
             fetch(request, options, &block)
           end
 
