@@ -142,13 +142,13 @@ module Embulk
             @plugin.run
           end
 
-          def test_run_commit_report
+          def test_run_task_report
             # do not requests
             stub(@page_builder).finish
             stub(@plugin.soap).each { }
 
-            commit_report = @plugin.run
-            assert_equal({}, commit_report)
+            task_report = @plugin.run
+            assert_equal({}, task_report)
           end
 
           def test_preview_through
