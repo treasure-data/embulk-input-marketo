@@ -148,7 +148,7 @@ module Embulk
             stub(@plugin.soap).each { }
 
             commit_report = @plugin.run
-            assert_equal to_datetime, commit_report[:from_datetime]
+            assert_equal({}, commit_report)
           end
 
           def test_preview_through

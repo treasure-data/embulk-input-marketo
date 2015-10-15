@@ -26,10 +26,7 @@ module Embulk
         def self.resume(task, columns, count, &control)
           task_reports = yield(task, columns, count)
 
-          # When no task ran, task_reports is empty
-          return {} if task_reports.empty?
-          # all task returns same report as {from_datetime: to_datetime}
-          return task_reports.first
+          return {}
         end
 
         def self.transaction(config, &control)
@@ -107,9 +104,7 @@ module Embulk
 
           page_builder.finish
 
-          task_report = {
-            from_datetime: task[:to_datetime]
-          }
+          task_report = {}
           return task_report
         end
       end
