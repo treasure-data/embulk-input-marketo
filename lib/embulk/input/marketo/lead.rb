@@ -43,7 +43,9 @@ module Embulk
             from_datetime: range[:from],
             to_datetime: range[:to],
             ranges: ranges,
-            columns: config.param(:columns, :array)
+            retry_initial_wait_sec: config.param(:retry_initial_wait_sec, :integer, default: 1),
+            retry_limit: config.param(:retry_limit, :integer, default: 5),
+            columns: config.param(:columns, :array),
           }
 
           resume(task, embulk_columns(config), ranges.size, &control)
@@ -85,7 +87,10 @@ module Embulk
         end
 
         def run
-          options = {}
+          options = {
+            retry_initial_wait_sec: task[:retry_initial_wait_sec],
+            retry_limit: task[:retry_limit],
+          }
           options[:batch_size] = PREVIEW_COUNT if preview?
 
           counter = 0
