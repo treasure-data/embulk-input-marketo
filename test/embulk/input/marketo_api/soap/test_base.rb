@@ -1,5 +1,6 @@
 require "embulk/input/marketo_api/soap/base"
 require "lead_fixtures"
+require "override_assert_raise"
 
 module Embulk
   module Input
@@ -7,16 +8,43 @@ module Embulk
       module Soap
         class BaseTest < Test::Unit::TestCase
           include LeadFixtures
+          include OverrideAssertRaise
 
-          def test_with_retry
-            any_instance_of(Savon::Client) do |klass|
-              stub(klass).call(:timeout_test, advanced_typecasting: false) { raise ::Timeout::Error }
+          class TestRetry < self
+            def test_retry_timeout
+              any_instance_of(Savon::Client) do |klass|
+                stub(klass).call(:timeout_test, advanced_typecasting: false) { raise ::Timeout::Error }
+              end
+
+              mock(Embulk.logger).warn(/Retrying/).times(Base::RETRY_TIMEOUT_COUNT)
+
+              assert_raise(::Timeout::Error) do
+                soap.send(:savon_call, :timeout_test)
+              end
             end
 
-            mock(Embulk.logger).warn(/TimeoutError/).times(Base::RETRY_TIMEOUT_COUNT)
+            def test_retry_common_error
+              any_instance_of(Savon::Client) do |klass|
+                stub(klass).call(:timeout_test, advanced_typecasting: false) { raise "something error" }
+              end
 
-            assert_raise(::Timeout::Error) do
-              soap.send(:savon_call, :timeout_test)
+              mock(Embulk.logger).warn(/Retrying/).times(Base::RETRY_TIMEOUT_COUNT)
+
+              assert_raise do
+                soap.send(:savon_call, :timeout_test)
+              end
+            end
+
+            def test_not_retry_config_error
+              any_instance_of(Savon::Client) do |klass|
+                stub(klass).call(:timeout_test, advanced_typecasting: false) { raise Embulk::ConfigError.new("config error") }
+              end
+
+              mock(Embulk.logger).warn(/Retrying/).never
+
+              assert_raise(Embulk::ConfigError) do
+                soap.send(:savon_call, :timeout_test)
+              end
             end
           end
 

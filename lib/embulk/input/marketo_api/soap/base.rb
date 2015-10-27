@@ -64,10 +64,12 @@ module Embulk
             count = 0
             begin
               yield
-            rescue ::Timeout::Error => e
+            rescue Embulk::ConfigError => e # TODO: Add Embulk::DataError for Embulk 0.7+
+              raise e
+            rescue ::Timeout::Error, StandardError=> e
               count += 1
               raise e if count > RETRY_TIMEOUT_COUNT
-              Embulk.logger.warn "TimeoutError [#{count}/#{RETRY_TIMEOUT_COUNT}]. Retrying..."
+              Embulk.logger.warn "Error: #{e} [#{count}/#{RETRY_TIMEOUT_COUNT}]. Retrying..."
               retry
             end
           end
