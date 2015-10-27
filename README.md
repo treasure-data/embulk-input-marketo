@@ -43,6 +43,8 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 - **encryption_key** Your encryption key (string, reqiured)
 - **from_datetime** Fetch leads since this time (string, required)
 - **to_datetime** Fetch leads until this time (string, default: Time.now)
+- **retry_initial_wait_sec** Wait seconds for exponential backoff initial value (integer, default: 1)
+- **retry_limit**: Try to retry this times (integer, default: 5)
 
 ### marketo/activity_log
 
@@ -52,6 +54,8 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 - **encryption_key** Your encryption key (string, reqiured)
 - **from_datetime** Fetch activity_logs since this time (string, required)
 - **to_datetime** Fetch activity_logs until this time (string, default: Time.now)
+- **retry_initial_wait_sec** Wait seconds for exponential backoff initial value (integer, default: 1)
+- **retry_limit**: Try to retry this times (integer, default: 5)
 
 ### Selecting plugin type
 
