@@ -196,6 +196,12 @@ module Embulk
               end
             end
 
+            any_instance_of(::Embulk::Input::MarketoApi::Soap::Base) do |klass|
+              task[:retry_limit].times do |n|
+                mock(klass).sleep(task[:retry_initial_wait_sec] * (2**n))
+              end
+            end
+
             mock(Embulk.logger).warn(/Retrying/).times(task[:retry_limit])
             stub(Embulk.logger).info {}
 
@@ -232,7 +238,7 @@ module Embulk
 
             def test_socket_error
               mute_logger
-              stub(@soap).endpoint { "http://192.0.2.0/" }
+              stub(@soap).endpoint { "http://foo.test/" }
 
               assert_raise(Embulk::ConfigError) do
                 @plugin.run

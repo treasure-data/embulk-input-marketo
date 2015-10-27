@@ -20,6 +20,12 @@ module Embulk
                 stub(klass).call(:timeout_test, advanced_typecasting: false) { raise ::Timeout::Error }
               end
 
+              any_instance_of(MarketoApi::Soap::Base) do |klass|
+                retry_options[:retry_limit].times do |n|
+                  mock(klass).sleep(retry_options[:retry_initial_wait_sec] * (2**n))
+                end
+              end
+
               mock(Embulk.logger).warn(/Retrying/).times(retry_options[:retry_limit])
 
               assert_raise(::Timeout::Error) do
@@ -30,6 +36,12 @@ module Embulk
             def test_retry_common_error
               any_instance_of(Savon::Client) do |klass|
                 stub(klass).call(:timeout_test, advanced_typecasting: false) { raise "something error" }
+              end
+
+              any_instance_of(MarketoApi::Soap::Base) do |klass|
+                retry_options[:retry_limit].times do |n|
+                  mock(klass).sleep(retry_options[:retry_initial_wait_sec] * (2**n))
+                end
               end
 
               mock(Embulk.logger).warn(/Retrying/).times(retry_options[:retry_limit])

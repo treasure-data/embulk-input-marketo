@@ -42,8 +42,8 @@ module Embulk
           end
 
           def savon_call(operation, locals={}, retry_options={})
-            catch_unretryable_error do
-              with_retry(retry_options) do
+            with_retry(retry_options) do
+              catch_unretryable_error do
                 savon.call(operation, locals.merge(advanced_typecasting: false))
               end
             end
@@ -61,6 +61,7 @@ module Embulk
           end
 
           def with_retry(options, &block)
+            wait_sec = options[:retry_initial_wait_sec]
             count = 0
             begin
               yield
@@ -69,7 +70,9 @@ module Embulk
             rescue ::Timeout::Error, StandardError => e
               count += 1
               raise e if count > options[:retry_limit]
-              Embulk.logger.warn "Retrying [#{count}/#{RETRY_TIMEOUT_COUNT}] Error: #{e}"
+              Embulk.logger.warn "Retrying after #{wait_sec} seconds [#{count}/#{RETRY_TIMEOUT_COUNT}] Error: #{e}"
+              sleep wait_sec
+              wait_sec *= 2
               retry
             end
           end
