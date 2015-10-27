@@ -33,6 +33,8 @@ module Embulk
             encryption_key: config.param(:encryption_key, :string),
             from_datetime: range[:from],
             to_datetime: range[:to],
+            retry_initial_wait_sec: config.param(:retry_initial_wait_sec, :integer, default: 1),
+            retry_limit: config.param(:retry_limit, :integer, default: 5),
             columns: config.param(:columns, :array)
           }
 
@@ -60,6 +62,8 @@ module Embulk
 
         def run
           options = {
+            retry_initial_wait_sec: task[:retry_initial_wait_sec],
+            retry_limit: task[:retry_limit],
             to: task[:to_datetime],
             batch_size: (preview? ? PREVIEW_COUNT : BATCH_SIZE_DEFAULT),
           }
