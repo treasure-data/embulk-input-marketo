@@ -56,7 +56,7 @@ module Embulk
           end
 
           def fetch(request, options={}, &block)
-            response = savon_call(:get_lead_changes, message: request)
+            response = savon_call(:get_lead_changes, {message: request}, options)
             remaining = response.body[:success_get_lead_changes][:result][:remaining_count].to_i
             Embulk.logger.info "Remaining records: #{remaining}"
 

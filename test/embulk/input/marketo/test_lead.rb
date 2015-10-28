@@ -28,7 +28,6 @@ module Embulk
             stub(klass).index { 0 }
           end
           @plugin = Lead.new(task, nil, nil, @page_builder)
-          mute_logger
         end
 
         def test_invalid_from_datetime_to_datetime
@@ -122,6 +121,7 @@ module Embulk
           end
 
           def test_run_through
+            mute_logger
             stub(@plugin).preview? { false }
 
             any_instance_of(Savon::Client) do |klass|
@@ -143,6 +143,7 @@ module Embulk
           end
 
           def test_run_task_report
+            mute_logger
             # do not requests
             stub(@page_builder).finish
             stub(@plugin.soap).each { }
@@ -152,6 +153,7 @@ module Embulk
           end
 
           def test_preview_through
+            mute_logger
             stub(@plugin).preview? { true }
 
             any_instance_of(Savon::Client) do |klass|
@@ -169,6 +171,7 @@ module Embulk
           end
 
           def test_preview_will_stop_fetching_when_defined_times_added
+            mute_logger
             stub(@plugin).preview? { true }
             @plugin.instance_variable_set(:@ranges, @plugin.task[:ranges].first * 3) # multiple ranges
 
@@ -182,6 +185,29 @@ module Embulk
             mock(@page_builder).finish
 
             @plugin.run
+          end
+
+          def test_retry
+            setup_plugin
+
+            any_instance_of(Savon::Client) do |klass|
+              stub(klass).call(:get_multiple_leads, anything) do
+                raise "foo"
+              end
+            end
+
+            any_instance_of(::Embulk::Input::MarketoApi::Soap::Base) do |klass|
+              task[:retry_limit].times do |n|
+                mock(klass).sleep(task[:retry_initial_wait_sec] * (2**n))
+              end
+            end
+
+            mock(Embulk.logger).warn(/Retrying/).times(task[:retry_limit])
+            stub(Embulk.logger).info {}
+
+            assert_raise do
+              @plugin.run
+            end
           end
 
           class SavonCallTest < self
@@ -211,7 +237,8 @@ module Embulk
             end
 
             def test_socket_error
-              stub(@soap).endpoint { "http://192.0.2.0/" }
+              mute_logger
+              stub(@soap).endpoint { "http://foo.test/" }
 
               assert_raise(Embulk::ConfigError) do
                 @plugin.run
@@ -391,6 +418,8 @@ module Embulk
             encryption_key: "TOPSECRET",
             from_datetime: from_datetime,
             to_datetime: to_datetime,
+            retry_initial_wait_sec: 2,
+            retry_limit: 3,
             ranges: Lead.timeslice(from_datetime, to_datetime, Lead::TIMESLICE_COUNT_PER_TASK),
             columns: [
               {"name" => "Name", "type" => "string"},

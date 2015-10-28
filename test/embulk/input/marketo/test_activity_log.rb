@@ -42,6 +42,8 @@ module Embulk
               encryption_key: "TOPSECRET",
               from_datetime: from_datetime,
               to_datetime: to_datetime,
+              retry_initial_wait_sec: 3,
+              retry_limit: 2,
               columns: [
                 {"name" => :id, "type" => :long},
                 {"name" => :activity_date_time, "type" => :timestamp, "format" => "%Y-%m-%dT%H:%M:%S%z"},
@@ -66,6 +68,8 @@ module Embulk
               encryption_key: "TOPSECRET",
               from_datetime: from_datetime,
               to_datetime: to_datetime,
+              retry_initial_wait_sec: 3,
+              retry_limit: 2,
               columns: [
                 {"name" => :id, "type" => :long},
                 {"name" => :activity_date_time, "type" => :timestamp, "format" => "%Y-%m-%dT%H:%M:%S%z"},
@@ -139,6 +143,37 @@ module Embulk
               {name: "Created At", type: :timestamp, format: "%Y-%m-%d %H:%M:%S"},
               {name: "Lead ID", type: :long}
             ]
+          end
+        end
+
+        class TestRetry < self
+          def setup
+            @soap = MarketoApi::Soap::ActivityLog.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])
+            stub(ActivityLog).soap_client(task) { @soap }
+
+            @page_builder = Object.new
+            @plugin = ActivityLog.new(task, nil, nil, @page_builder)
+          end
+
+          def test_retry
+            any_instance_of(Savon::Client) do |klass|
+              stub(klass).call(:get_multiple_leads, anything) do
+                raise "foo"
+              end
+            end
+
+            any_instance_of(::Embulk::Input::MarketoApi::Soap::Base) do |klass|
+              task[:retry_limit].times do |n|
+                mock(klass).sleep(task[:retry_initial_wait_sec] * (2**n))
+              end
+            end
+
+            mock(Embulk.logger).warn(/Retrying/).times(task[:retry_limit])
+            stub(Embulk.logger).info {}
+
+            assert_raise do
+              @plugin.run
+            end
           end
         end
 
@@ -290,6 +325,8 @@ module Embulk
             encryption_key: "TOPSECRET",
             from_datetime: from_datetime,
             to_datetime: to_datetime,
+            retry_initial_wait_sec: 3,
+            retry_limit: 2,
             columns: [
               {"name" => :id, "type" => :long},
               {"name" => :activity_date_time, "type" => :timestamp, "format" => "%Y-%m-%dT%H:%M:%S%z"},

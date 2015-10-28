@@ -34,7 +34,7 @@ module Embulk
                 batch_size: Lead::BATCH_SIZE_DEFAULT,
               }
 
-              mock(soap).fetch(request)
+              mock(soap).fetch(request, {})
 
               soap.each(timerange) { }
             end

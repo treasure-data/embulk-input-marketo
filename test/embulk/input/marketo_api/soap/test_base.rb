@@ -1,5 +1,6 @@
 require "embulk/input/marketo_api/soap/base"
 require "lead_fixtures"
+require "override_assert_raise"
 
 module Embulk
   module Input
@@ -7,16 +8,68 @@ module Embulk
       module Soap
         class BaseTest < Test::Unit::TestCase
           include LeadFixtures
+          include OverrideAssertRaise
 
-          def test_with_retry
-            any_instance_of(Savon::Client) do |klass|
-              stub(klass).call(:timeout_test, advanced_typecasting: false) { raise ::Timeout::Error }
+          class TestRetry < self
+            def setup
+              stub(Embulk.logger).warn {}
             end
 
-            mock(Embulk.logger).warn(/TimeoutError/).times(Base::RETRY_TIMEOUT_COUNT)
+            def test_retry_timeout
+              any_instance_of(Savon::Client) do |klass|
+                stub(klass).call(:timeout_test, advanced_typecasting: false) { raise ::Timeout::Error }
+              end
 
-            assert_raise(::Timeout::Error) do
-              soap.send(:savon_call, :timeout_test)
+              any_instance_of(MarketoApi::Soap::Base) do |klass|
+                retry_options[:retry_limit].times do |n|
+                  mock(klass).sleep(retry_options[:retry_initial_wait_sec] * (2**n))
+                end
+              end
+
+              mock(Embulk.logger).warn(/Retrying/).times(retry_options[:retry_limit])
+
+              assert_raise(::Timeout::Error) do
+                soap.send(:savon_call, :timeout_test, {}, retry_options)
+              end
+            end
+
+            def test_retry_common_error
+              any_instance_of(Savon::Client) do |klass|
+                stub(klass).call(:timeout_test, advanced_typecasting: false) { raise "something error" }
+              end
+
+              any_instance_of(MarketoApi::Soap::Base) do |klass|
+                retry_options[:retry_limit].times do |n|
+                  mock(klass).sleep(retry_options[:retry_initial_wait_sec] * (2**n))
+                end
+              end
+
+              mock(Embulk.logger).warn(/Retrying/).times(retry_options[:retry_limit])
+
+              assert_raise do
+                soap.send(:savon_call, :timeout_test, {}, retry_options)
+              end
+            end
+
+            def test_not_retry_config_error
+              any_instance_of(Savon::Client) do |klass|
+                stub(klass).call(:timeout_test, advanced_typecasting: false) { raise Embulk::ConfigError.new("config error") }
+              end
+
+              mock(Embulk.logger).warn(/Retrying/).never
+
+              assert_raise(Embulk::ConfigError) do
+                soap.send(:savon_call, :timeout_test, {}, retry_options)
+              end
+            end
+
+            private
+
+            def retry_options
+              {
+                retry_limit: 4,
+                retry_initial_wait_sec: 3,
+              }
             end
           end
 

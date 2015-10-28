@@ -35,18 +35,18 @@ module Embulk
             }
             Embulk.logger.info "Fetching from '#{from}' to '#{to}'..."
 
-            stream_position = fetch(request, &block)
+            stream_position = fetch(request, options, &block)
 
             while stream_position
-              stream_position = fetch(request.merge(stream_position: stream_position), &block)
+              stream_position = fetch(request.merge(stream_position: stream_position), options, &block)
             end
           end
 
           private
 
-          def fetch(request = {}, &block)
+          def fetch(request = {}, retry_options, &block)
             start = Time.now
-            response = savon_call(:get_multiple_leads, message: request)
+            response = savon_call(:get_multiple_leads, {message: request}, retry_options)
             Embulk.logger.info "Fetched in #{Time.now - start} seconds"
 
             records = response.xpath('//leadRecordList/leadRecord')
