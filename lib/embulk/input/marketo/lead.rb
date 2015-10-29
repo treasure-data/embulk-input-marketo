@@ -53,8 +53,8 @@ module Embulk
 
           columns = embulk_columns(config)
           if append_processed_time_column
-            processed_time_columns = Column.new(nil, :processed_time, :timestamp, "%Y-%m-%dT%H:%M:%S%z")
-            columns << processed_time_columns
+            processed_time_column = Column.new(nil, :processed_time, :timestamp, "%Y-%m-%dT%H:%M:%S%z")
+            columns << processed_time_column
           end
 
           resume(task, columns, ranges.size, &control)
