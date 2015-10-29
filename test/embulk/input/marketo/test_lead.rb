@@ -145,6 +145,31 @@ module Embulk
             @plugin.run
           end
 
+          def test_run_no_processed_time_columns
+            mute_logger
+
+            no_processed__task = task.merge(append_processed_time_column: false)
+            @plugin = Lead.new(no_processed__task, nil, nil, @page_builder)
+            stub(@plugin).preview? { false }
+
+            any_instance_of(Savon::Client) do |klass|
+              mock(klass).call(:get_multiple_leads, message: request) do
+                leads_response
+              end
+
+              mock(klass).call(:get_multiple_leads, message: request.merge(stream_position: stream_position)) do
+                next_stream_leads_response
+              end
+            end
+
+            mock(@page_builder).add(["manyo", nil])
+            mock(@page_builder).add(["everyleaf", nil])
+            mock(@page_builder).add(["ten-thousand-leaf", nil])
+            mock(@page_builder).finish
+
+            @plugin.run
+          end
+
           def test_run_task_report
             mute_logger
             # do not requests
