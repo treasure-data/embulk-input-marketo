@@ -107,7 +107,7 @@ module Embulk
                   cast_value(column, value)
                 end
 
-                if @append_processed_time_column # for processed_time_column
+                if @append_processed_time_column
                   values << Time.now
                 else
                   values << nil
