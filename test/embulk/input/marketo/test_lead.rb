@@ -124,6 +124,9 @@ module Embulk
             mute_logger
             stub(@plugin).preview? { false }
 
+            now = Time.now
+            stub(Time).now { now }
+
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, message: request) do
                 leads_response
@@ -134,9 +137,9 @@ module Embulk
               end
             end
 
-            mock(@page_builder).add(["manyo"])
-            mock(@page_builder).add(["everyleaf"])
-            mock(@page_builder).add(["ten-thousand-leaf"])
+            mock(@page_builder).add(["manyo", now])
+            mock(@page_builder).add(["everyleaf", now])
+            mock(@page_builder).add(["ten-thousand-leaf", now])
             mock(@page_builder).finish
 
             @plugin.run
@@ -156,6 +159,9 @@ module Embulk
             mute_logger
             stub(@plugin).preview? { true }
 
+            now = Time.now
+            stub(Time).now { now }
+
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, message: request.merge(batch_size: Lead::PREVIEW_COUNT)) do
                 preview_leads_response
@@ -163,7 +169,7 @@ module Embulk
             end
 
             Lead::PREVIEW_COUNT.times do |count|
-              mock(@page_builder).add(["manyo#{count}"])
+              mock(@page_builder).add(["manyo#{count}", now])
             end
             mock(@page_builder).finish
 
@@ -420,6 +426,7 @@ module Embulk
             to_datetime: to_datetime,
             retry_initial_wait_sec: 2,
             retry_limit: 3,
+            append_processed_time_column: true,
             ranges: Lead.timeslice(from_datetime, to_datetime, Lead::TIMESLICE_COUNT_PER_TASK),
             columns: [
               {"name" => "Name", "type" => "string"},
