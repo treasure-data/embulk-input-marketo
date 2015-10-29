@@ -33,8 +33,10 @@ module Embulk
           endpoint_url = config.param(:endpoint, :string)
 
           range = format_range(config)
-
           ranges = timeslice(range[:from], range[:to], TIMESLICE_COUNT_PER_TASK)
+
+          append_processed_time_column = config.param(:append_processed_time_column, :bool, default: true)
+
           task = {
             endpoint_url: endpoint_url,
             wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
@@ -45,12 +47,16 @@ module Embulk
             ranges: ranges,
             retry_initial_wait_sec: config.param(:retry_initial_wait_sec, :integer, default: 1),
             retry_limit: config.param(:retry_limit, :integer, default: 5),
-            append_processed_time_column: config.param(:append_processed_time_column, :bool, default: true),
+            append_processed_time_column: append_processed_time_column,
             columns: config.param(:columns, :array),
           }
 
-          processed_time_columns = Column.new(nil, :processed_time, :timestamp, "%Y-%m-%dT%H:%M:%S%z")
-          columns = embulk_columns(config) << processed_time_columns
+          columns = embulk_columns(config)
+          if append_processed_time_column
+            processed_time_columns = Column.new(nil, :processed_time, :timestamp, "%Y-%m-%dT%H:%M:%S%z")
+            columns << processed_time_columns
+          end
+
           resume(task, columns, ranges.size, &control)
         end
 
@@ -109,8 +115,6 @@ module Embulk
 
                 if @append_processed_time_column
                   values << Time.now
-                else
-                  values << nil
                 end
 
                 page_builder.add(values)

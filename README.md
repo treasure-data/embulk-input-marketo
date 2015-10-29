@@ -45,6 +45,7 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 - **to_datetime** Fetch leads until this time (string, default: Time.now)
 - **retry_initial_wait_sec** Wait seconds for exponential backoff initial value (integer, default: 1)
 - **retry_limit**: Try to retry this times (integer, default: 5)
+- **append_processed_time_column**: If you want the column for processed time (boolean, default: true)
 
 ### marketo/activity_log
 
