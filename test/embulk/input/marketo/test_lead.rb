@@ -162,9 +162,9 @@ module Embulk
               end
             end
 
-            mock(@page_builder).add(["manyo", nil])
-            mock(@page_builder).add(["everyleaf", nil])
-            mock(@page_builder).add(["ten-thousand-leaf", nil])
+            mock(@page_builder).add(["manyo"])
+            mock(@page_builder).add(["everyleaf"])
+            mock(@page_builder).add(["ten-thousand-leaf"])
             mock(@page_builder).finish
 
             @plugin.run
