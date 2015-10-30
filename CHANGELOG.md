@@ -6,7 +6,7 @@ This version drops scheduled execution with marketo/lead.
 * [enhancement] Exponential backoff retry [#48](https://github.com/treasure-data/embulk-input-marketo/pull/48)
 * [fixed] Fix preview didn't stop after fetched if multiple ranges have [#45](https://github.com/treasure-data/embulk-input-marketo/pull/45)
 * [enhancement] activity_log: Use from..from+30m range for guess [#47](https://github.com/treasure-data/embulk-input-marketo/pull/47)
-* [enhancement] Unsupport scheduled execution for lead [#46](https://github.com/treasure-data/embulk-input-marketo/pull/46)
+* [enhancement] Unsupport scheduled execution for lead [#46](https://github.com/treasure-data/embulk-input-marketo/pull/46) [#41](https://github.com/treasure-data/embulk-input-marketo/pull/41) [Reported by @muga. Thanks!]
 
 ## 0.3.2 - 2015-10-13
 
