@@ -33,8 +33,10 @@ module Embulk
           endpoint_url = config.param(:endpoint, :string)
 
           range = format_range(config)
-
           ranges = timeslice(range[:from], range[:to], TIMESLICE_COUNT_PER_TASK)
+
+          append_processed_time_column = config.param(:append_processed_time_column, :bool, default: true)
+
           task = {
             endpoint_url: endpoint_url,
             wsdl_url: config.param(:wsdl, :string, default: "#{endpoint_url}?WSDL"),
@@ -45,10 +47,17 @@ module Embulk
             ranges: ranges,
             retry_initial_wait_sec: config.param(:retry_initial_wait_sec, :integer, default: 1),
             retry_limit: config.param(:retry_limit, :integer, default: 5),
+            append_processed_time_column: append_processed_time_column,
             columns: config.param(:columns, :array),
           }
 
-          resume(task, embulk_columns(config), ranges.size, &control)
+          columns = embulk_columns(config)
+          if append_processed_time_column
+            processed_time_column = Column.new(nil, :processed_time, :timestamp, "%Y-%m-%dT%H:%M:%S%z")
+            columns << processed_time_column
+          end
+
+          resume(task, columns, ranges.size, &control)
         end
 
         def self.generate_columns(metadata)
@@ -84,6 +93,7 @@ module Embulk
           @columns = task[:columns]
           @ranges = task[:ranges][index]
           @soap = MarketoApi.soap_client(task, target)
+          @append_processed_time_column = task[:append_processed_time_column]
         end
 
         def run
@@ -101,6 +111,10 @@ module Embulk
                   name = column["name"].to_s
                   value = (lead[name] || {})[:value]
                   cast_value(column, value)
+                end
+
+                if @append_processed_time_column
+                  values << Time.parse(range["from"])
                 end
 
                 page_builder.add(values)
