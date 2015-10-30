@@ -114,7 +114,7 @@ module Embulk
                 end
 
                 if @append_processed_time_column
-                  values << Time.now
+                  values << Time.parse(range["from"])
                 end
 
                 page_builder.add(values)

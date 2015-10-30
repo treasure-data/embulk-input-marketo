@@ -124,9 +124,6 @@ module Embulk
             mute_logger
             stub(@plugin).preview? { false }
 
-            now = Time.now
-            stub(Time).now { now }
-
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, message: request) do
                 leads_response
@@ -137,9 +134,10 @@ module Embulk
               end
             end
 
-            mock(@page_builder).add(["manyo", now])
-            mock(@page_builder).add(["everyleaf", now])
-            mock(@page_builder).add(["ten-thousand-leaf", now])
+            from = Time.parse(from_datetime)
+            mock(@page_builder).add(["manyo", from])
+            mock(@page_builder).add(["everyleaf", from])
+            mock(@page_builder).add(["ten-thousand-leaf", from])
             mock(@page_builder).finish
 
             @plugin.run
@@ -184,17 +182,15 @@ module Embulk
             mute_logger
             stub(@plugin).preview? { true }
 
-            now = Time.now
-            stub(Time).now { now }
-
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, message: request.merge(batch_size: Lead::PREVIEW_COUNT)) do
                 preview_leads_response
               end
             end
 
+            from = Time.parse(from_datetime)
             Lead::PREVIEW_COUNT.times do |count|
-              mock(@page_builder).add(["manyo#{count}", now])
+              mock(@page_builder).add(["manyo#{count}", from])
             end
             mock(@page_builder).finish
 
@@ -442,6 +438,16 @@ module Embulk
         end
 
         def task
+          # Values in Lead#timeslice are converted String from Time in
+          # Embulk (.transaction -> #init),
+          # but below values are passed to #init directly, so convert them.
+          raw_timeslice = Lead.timeslice(from_datetime, to_datetime, Lead::TIMESLICE_COUNT_PER_TASK)
+          timeslice = raw_timeslice.map do |ranges|
+            ranges.map do |range|
+              {"from" => range["from"].to_s, "to" => range["to"].to_s}
+            end
+          end
+
           {
             endpoint_url: "https://marketo.example.com",
             wsdl_url: "https://marketo.example.com/?wsdl",
@@ -452,7 +458,7 @@ module Embulk
             retry_initial_wait_sec: 2,
             retry_limit: 3,
             append_processed_time_column: true,
-            ranges: Lead.timeslice(from_datetime, to_datetime, Lead::TIMESLICE_COUNT_PER_TASK),
+            ranges: timeslice,
             columns: [
               {"name" => "Name", "type" => "string"},
             ]
