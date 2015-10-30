@@ -1,5 +1,7 @@
 ## 0.4.0 - 2015-10-30
 
+This version drops scheduled execution with marketo/lead.
+
 * [enhancement] Append processed time column [#49](https://github.com/treasure-data/embulk-input-marketo/pull/49)
 * [enhancement] Exponential backoff retry [#48](https://github.com/treasure-data/embulk-input-marketo/pull/48)
 * [fixed] Fix preview didn't stop after fetched if multiple ranges have [#45](https://github.com/treasure-data/embulk-input-marketo/pull/45)
