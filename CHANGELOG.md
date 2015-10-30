@@ -1,3 +1,11 @@
+## 0.4.0 - 2015-10-30
+
+* [enhancement] Append processed time column [#49](https://github.com/treasure-data/embulk-input-marketo/pull/49)
+* [enhancement] Exponential backoff retry [#48](https://github.com/treasure-data/embulk-input-marketo/pull/48)
+* [fixed] Fix preview didn't stop after fetched if multiple ranges have [#45](https://github.com/treasure-data/embulk-input-marketo/pull/45)
+* [enhancement] activity_log: Use from..from+30m range for guess [#47](https://github.com/treasure-data/embulk-input-marketo/pull/47)
+* [enhancement] Unsupport scheduled execution for lead [#46](https://github.com/treasure-data/embulk-input-marketo/pull/46)
+
 ## 0.3.2 - 2015-10-13
 
 * [fixed] Prevent memoize in class [#44](https://github.com/treasure-data/embulk-input-marketo/pull/44)
