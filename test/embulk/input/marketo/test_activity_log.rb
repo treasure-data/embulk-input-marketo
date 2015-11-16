@@ -194,11 +194,11 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_lead_changes, message: request) do
-                activity_logs_response
+                savon_response(xml_ac_response)
               end
 
               mock(klass).call(:get_lead_changes, message: offset_request) do
-                next_stream_activity_logs_response
+                savon_response(xml_ac_next_response)
               end
             end
 
@@ -215,7 +215,7 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_lead_changes, message: request) do
-                none_activity_log_response
+                savon_response xml_ac_none_response
               end
             end
 
@@ -229,12 +229,12 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_lead_changes, message: preview_request) do
-                preview_activity_logs_response
+                savon_response xml_ac_preview_response
               end
             end
 
             1.upto(ActivityLog::PREVIEW_COUNT) do |count|
-              mock(@page_builder).add([count, Time.parse("2015-07-14T00:00:11+0000"), "at#{count}", "score#{count}", "100", "Attribute#{count}", "404"])
+              mock(@page_builder).add([count.to_s, Time.parse("2015-07-14T00:00:11+0000"), "at#{count}", "score#{count}", "100", "Attribute#{count}", "404"])
             end
             mock(@page_builder).finish
 
@@ -244,7 +244,7 @@ module Embulk
           def test_wrong_type
             any_instance_of(Savon::Client) do |klass|
               stub(klass).call(:get_lead_changes, message: request) do
-                next_stream_activity_logs_response
+                savon_response xml_ac_next_response
               end
             end
             stub(@page_builder).add {}

@@ -5,171 +5,156 @@ module ActivityLogFixtures
 
   private
 
-  def activity_logs_response
-    activity_logs(response)
+  def activity_log_xml(body)
+    <<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns1="http://www.marketo.com/mktows/">
+  <SOAP-ENV:Body>
+    <ns1:successGetLeadChanges>
+      <result>
+        #{body}
+      </result>
+    </ns1:successGetLeadChanges>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+XML
   end
 
-  def next_stream_activity_logs_response
-    activity_logs(next_stream_response)
+  def xml_ac_response
+    activity_log_xml <<XML
+<returnCount>2</returnCount>
+<remainingCount>1</remainingCount>
+<newStartPosition>
+  <latestCreatedAt>2015-07-14T09:13:10+09:00</latestCreatedAt>
+  <oldestCreatedAt>2015-07-14T09:13:13+09:00</oldestCreatedAt>
+  <activityCreatedAt xsi:nil="true"/>
+  <offset>offset</offset>
+</newStartPosition>
+<leadChangeRecordList>
+  <leadChangeRecord>
+    <id>1</id>
+    <activityDateTime>2015-07-14T09:00:09+09:00</activityDateTime>
+    <activityType>at1</activityType>
+    <mktgAssetName>score1</mktgAssetName>
+    <activityAttributes>
+      <attribute>
+        <attrName>Attribute Name</attrName>
+        <attrType xsi:nil="true"/>
+        <attrValue>Attribute1</attrValue>
+      </attribute>
+      <attribute>
+        <attrName>Old Value</attrName>
+        <attrType xsi:nil="true"/>
+        <attrValue>402</attrValue>
+      </attribute>
+    </activityAttributes>
+    <mktPersonId>100</mktPersonId>
+  </leadChangeRecord>
+  <leadChangeRecord>
+    <id>2</id>
+    <activityDateTime>2015-07-14T09:00:10+09:00</activityDateTime>
+    <activityType>at2</activityType>
+    <mktgAssetName>score2</mktgAssetName>
+    <activityAttributes>
+      <attribute>
+        <attrName>Attribute Name</attrName>
+        <attrType xsi:nil="true"/>
+        <attrValue>Attribute2</attrValue>
+      </attribute>
+      <attribute>
+        <attrName>Old Value</attrName>
+        <attrType xsi:nil="true"/>
+        <attrValue>403</attrValue>
+      </attribute>
+    </activityAttributes>
+    <mktPersonId>90</mktPersonId>
+  </leadChangeRecord>
+</leadChangeRecordList>
+XML
   end
 
-  def preview_activity_logs_response
-    activity_logs(preview_response)
+  def xml_ac_next_response
+    activity_log_xml <<XML
+<returnCount>1</returnCount>
+<remainingCount>0</remainingCount>
+<newStartPosition>
+</newStartPosition>
+<leadChangeRecordList>
+  <leadChangeRecord>
+    <id>3</id>
+    <activityDateTime>2015-07-14T09:00:11+09:00</activityDateTime>
+    <activityType>at3</activityType>
+    <mktgAssetName>score3</mktgAssetName>
+    <activityAttributes>
+      <attribute>
+        <attrName>Attribute Name</attrName>
+        <attrType xsi:nil="true"/>
+        <attrValue>Attribute3</attrValue>
+      </attribute>
+      <attribute>
+        <attrName>Old Value</attrName>
+        <attrType xsi:nil="true"/>
+        <attrValue>404</attrValue>
+      </attribute>
+    </activityAttributes>
+    <mktPersonId>100</mktPersonId>
+  </leadChangeRecord>
+</leadChangeRecordList>
+XML
   end
 
-  def none_activity_log_response
-    activity_logs(none_response)
+  def xml_ac_none_response
+    activity_log_xml <<XML
+<returnCount>0</returnCount>
+<remainingCount>0</remainingCount>
+<newStartPosition>
+</newStartPosition>
+<leadChangeRecordList>
+</leadChangeRecordList>
+XML
   end
 
-  def activity_logs(body)
-    Struct.new(:body).new({
-      success_get_lead_changes: {
-        result: body
-      }
-    })
+  def xml_ac_preview_response
+    activity_log_xml <<XML
+<returnCount>15</returnCount>
+<remainingCount>0</remainingCount>
+<newStartPosition>
+</newStartPosition>
+<leadChangeRecordList>
+#{xml_ac_attr(15)}
+</leadChangeRecordList>
+XML
   end
 
-  def response
-    {
-      return_count: "2",
-      remaining_count: "1",
-      new_start_position: {
-        latest_created_at: true,
-        oldest_created_at: "2015-07-14T00:13:13+0000",
-        activity_created_at: true,
-        offset: offset,
-      },
-      lead_change_record_list: {
-        lead_change_record: [
-          {
-            id: "1",
-            activity_date_time: "2015-07-14T00:00:09+0000",
-            activity_type: "at1",
-            mktg_asset_name: "score1",
-            activity_attributes: {
-              attribute: [
-                {
-                  attr_name: "Attribute Name",
-                  attr_type: nil,
-                  attr_value: "Attribute1",
-                },
-                {
-                  attr_name: "Old Value",
-                  attr_type: nil,
-                  attr_value: "402",
-                },
-              ],
-            },
-            mkt_person_id: "100",
-          },
-          {
-            id: "2",
-            activity_date_time: "2015-07-14T00:00:10+0000",
-            activity_type: "at2",
-            mktg_asset_name: "score2",
-            activity_attributes: {
-              attribute: [
-                {
-                  attr_name: "Attribute Name",
-                  attr_type: nil,
-                  attr_value: "Attribute2",
-                },
-                {
-                  attr_name: "Old Value",
-                  attr_type: nil,
-                  attr_value: "403",
-                },
-              ],
-            },
-            mkt_person_id: "90",
-          },
-        ]
-      }
-    }
+  def xml_ac_attr(times = 15)
+    response = ""
+    (1..times).each do |n|
+    response << <<-XML
+  <leadChangeRecord>
+    <id>#{n}</id>
+    <activityDateTime>2015-07-14T00:00:11+00:00</activityDateTime>
+    <activityType>at#{n}</activityType>
+    <mktgAssetName>score#{n}</mktgAssetName>
+    <activityAttributes>
+      <attribute>
+        <attrName>Attribute Name</attrName>
+        <attrType xsi:nil="true"/>
+        <attrValue>Attribute#{n}</attrValue>
+      </attribute>
+      <attribute>
+        <attrName>Old Value</attrName>
+        <attrType xsi:nil="true"/>
+        <attrValue>404</attrValue>
+      </attribute>
+    </activityAttributes>
+    <mktPersonId>100</mktPersonId>
+  </leadChangeRecord>
+    XML
+    end
+    response
   end
 
   def offset
     "offset"
-  end
-
-  def next_stream_response
-    {
-      return_count: 1,
-      remaining_count: 0,
-      new_start_position: {
-      },
-      lead_change_record_list: {
-        lead_change_record: [
-          {
-            id: "3",
-            activity_date_time: "2015-07-14T00:00:11+0000",
-            activity_type: "at3",
-            mktg_asset_name: "score3",
-            activity_attributes: {
-              attribute: [
-                {
-                  attr_name: "Attribute Name",
-                  attr_type: nil,
-                  attr_value: "Attribute3",
-                },
-                {
-                  attr_name: "Old Value",
-                  attr_type: nil,
-                  attr_value: "404",
-                },
-              ],
-            },
-            mkt_person_id: "100",
-          },
-        ]
-      }
-    }
-  end
-
-  def preview_response
-    records = (1..15).map do |i|
-      {
-        id: i,
-        activity_date_time: "2015-07-14T00:00:11+0000",
-        activity_type: "at#{i}",
-        mktg_asset_name: "score#{i}",
-        activity_attributes: {
-          attribute: [
-            {
-              attr_name: "Attribute Name",
-              attr_type: nil,
-              attr_value: "Attribute#{i}",
-            },
-            {
-              attr_name: "Old Value",
-              attr_type: nil,
-              attr_value: "404",
-            },
-          ],
-        },
-        mkt_person_id: "100",
-      }
-    end
-
-    {
-      return_count: 15,
-      remaining_count: 0,
-      new_start_position: {},
-      lead_change_record_list: {
-        lead_change_record: records
-      }
-    }
-  end
-
-  def none_response
-    {
-      result: {
-        return_count: 0,
-        remaining_count: 0,
-        new_start_position: {
-        },
-        lead_change_record_list: nil
-      }
-    }
   end
 end

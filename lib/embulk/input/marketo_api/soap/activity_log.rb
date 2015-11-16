@@ -57,30 +57,28 @@ module Embulk
 
           def fetch(request, options={}, &block)
             response = savon_call(:get_lead_changes, {message: request}, options)
-            remaining = response.body[:success_get_lead_changes][:result][:remaining_count].to_i
+            remaining = response.xpath('//remainingCount').text.to_i
             Embulk.logger.info "Remaining records: #{remaining}"
 
-            activities_list = response.body[:success_get_lead_changes][:result][:lead_change_record_list]
+            activities = response.xpath('//leadChangeRecord')
 
-            if activities_list.nil?
+            if activities.empty?
               Embulk.logger.info "No record is fetched."
               return {remaining_count: 0, offset: nil, from_datetime: nil}
             end
 
-            activities = activities_list[:lead_change_record].sort_by { |activity| Time.parse(activity[:activity_date_time]) }
-
             activities.each do |activity|
               record = {
-                "id" => activity[:id],
-                "activity_date_time" => activity[:activity_date_time],
-                "activity_type" => activity[:activity_type],
-                "mktg_asset_name" => activity[:mktg_asset_name],
-                "mkt_person_id" => activity[:mkt_person_id],
+                "id" => activity.at("./id").text,
+                "activity_date_time" => activity.at('./activityDateTime').text,
+                "activity_type" => activity.at('./activityType').text,
+                "mktg_asset_name" => activity.at('./mktgAssetName').text,
+                "mkt_person_id" => activity.at('./mktPersonId').text,
               }
 
-              activity[:activity_attributes][:attribute].each do |attributes|
-                name = attributes[:attr_name]
-                value = attributes[:attr_value]
+              activity.xpath('./activityAttributes/attribute').each do |attr|
+                name = attr.xpath('attrName').text
+                value = attr.xpath('attrValue').text
 
                 record[name] = value
               end
@@ -90,8 +88,8 @@ module Embulk
 
             {
               remaining_count: remaining,
-              offset: response.body[:success_get_lead_changes][:result][:new_start_position][:offset],
-              from_datetime: activities.last[:activity_date_time]
+              offset: response.xpath('//newStartPosition/offset').text,
+              from_datetime: activities.map{|a| Time.parse(a.at('./activityDateTime').text) }.max,
             }
           end
         end
