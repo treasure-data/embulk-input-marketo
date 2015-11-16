@@ -1,5 +1,6 @@
 require "savon"
 require "httpclient" # net/http can't verify cert correctly
+require "perfect_retry"
 
 module Embulk
   module Input
@@ -41,8 +42,19 @@ module Embulk
             )
           end
 
+          def retryer(retry_options)
+            PerfectRetry.new do |config|
+              config.sleep = proc{|n| retry_options[:retry_initial_wait_sec] * (2 ** (n - 1))}
+              config.limit = retry_options[:retry_limit]
+              config.dont_rescues = [Embulk::ConfigError]
+              config.rescues = [StandardError, Timeout::Error]
+              config.logger = Embulk.logger
+              config.log_level = nil
+            end
+          end
+
           def savon_call(operation, locals={}, retry_options={})
-            with_retry(retry_options) do
+            retryer(retry_options).with_retry do
               catch_unretryable_error do
                 savon.call(operation, locals.merge(advanced_typecasting: false))
               end
@@ -58,23 +70,6 @@ module Embulk
               'requestTimestamp' => timestamp,
               'requestSignature' => hashed_signature.to_s
             }
-          end
-
-          def with_retry(options, &block)
-            wait_sec = options[:retry_initial_wait_sec]
-            count = 0
-            begin
-              yield
-            rescue Embulk::ConfigError => e # TODO: Add Embulk::DataError for Embulk 0.7+
-              raise e
-            rescue ::Timeout::Error, StandardError => e
-              count += 1
-              raise e if count > options[:retry_limit]
-              Embulk.logger.warn "Retrying after #{wait_sec} seconds [#{count}/#{RETRY_TIMEOUT_COUNT}] Error: #{e}"
-              sleep wait_sec
-              wait_sec *= 2
-              retry
-            end
           end
 
           def catch_unretryable_error(&block)
