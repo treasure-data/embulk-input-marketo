@@ -47,12 +47,12 @@ module Embulk
 
               any_instance_of(Savon::Client) do |klass|
                 mock(klass).call(:get_multiple_leads, anything) do
-                  next_stream_leads_response
+                  savon_response(raw_next_stream_response)
                 end
               end
 
               proc = proc{ "" }
-              leads_count = next_stream_leads_response.xpath('//leadRecord').length
+              leads_count = savon_response(raw_next_stream_response).xpath('//leadRecord').length
               mock(proc).call(anything).times(leads_count)
 
               soap.each(timerange, {}, &proc)

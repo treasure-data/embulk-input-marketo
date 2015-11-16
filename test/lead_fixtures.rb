@@ -5,18 +5,6 @@ module LeadFixtures
 
   private
 
-  def leads_response
-    Nokogiri::XML(raw_response)
-  end
-
-  def next_stream_leads_response
-    Nokogiri::XML(raw_next_stream_response)
-  end
-
-  def preview_leads_response
-    Nokogiri::XML(raw_preview_response)
-  end
-
   def leads(body)
     <<XML
 <?xml version="1.0" encoding="UTF-8"?>
