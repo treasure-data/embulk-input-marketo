@@ -1,4 +1,8 @@
+require "savon_helper"
+
 module LeadFixtures
+  include SavonHelper
+
   private
 
   def leads_response

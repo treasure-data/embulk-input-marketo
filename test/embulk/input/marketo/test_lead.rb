@@ -126,11 +126,11 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, message: request) do
-                leads_response
+                savon_response(raw_response)
               end
 
               mock(klass).call(:get_multiple_leads, message: request.merge(stream_position: stream_position)) do
-                next_stream_leads_response
+                savon_response(raw_next_stream_response)
               end
             end
 
@@ -152,11 +152,11 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, message: request) do
-                leads_response
+                savon_response(raw_response)
               end
 
               mock(klass).call(:get_multiple_leads, message: request.merge(stream_position: stream_position)) do
-                next_stream_leads_response
+                savon_response(raw_next_stream_response)
               end
             end
 
@@ -184,7 +184,7 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, message: request.merge(batch_size: Lead::PREVIEW_COUNT)) do
-                preview_leads_response
+                savon_response(raw_preview_response)
               end
             end
 
@@ -204,7 +204,7 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, anything) do
-                preview_leads_response
+                savon_response(raw_preview_response)
               end
             end
 
@@ -233,9 +233,14 @@ module Embulk
 
           class SavonCallTest < self
             def test_soap_error
+              nori_options = {
+                :strip_namespaces          => true,
+                :convert_tags_to  => lambda { |tag| tag.snakecase.to_sym},
+                :convert_attributes_to     => lambda { |k,v| [k,v] },
+              }
               assert_raise(Embulk::ConfigError) do
                 @soap.send(:catch_unretryable_error) do
-                  raise Savon::SOAPFault.new(nil, Nori.new(default_nori_options), xml)
+                  raise Savon::SOAPFault.new(nil, Nori.new(nori_options), xml)
                 end
               end
             end
@@ -281,14 +286,6 @@ module Embulk
               XML
             end
 
-            def default_nori_options
-              # https://github.com/savonrb/savon/blob/v2.11.1/lib/savon/options.rb#L75-L94
-              {
-                :strip_namespaces          => true,
-                :convert_tags_to  => lambda { |tag| tag.snakecase.to_sym},
-                :convert_attributes_to     => lambda { |k,v| [k,v] },
-              }
-            end
           end
 
           class TestTimeslice < self

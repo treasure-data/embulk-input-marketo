@@ -1,4 +1,8 @@
+require "savon_helper"
+
 module ActivityLogFixtures
+  include SavonHelper
+
   private
 
   def activity_logs_response
