@@ -157,14 +157,8 @@ module Embulk
 
           def test_retry
             any_instance_of(Savon::Client) do |klass|
-              stub(klass).call(:get_multiple_leads, anything) do
+              stub(klass).call(:get_lead_changes, anything) do
                 raise "foo"
-              end
-            end
-
-            any_instance_of(::Embulk::Input::MarketoApi::Soap::Base) do |klass|
-              task[:retry_limit].times do |n|
-                mock(klass).sleep(task[:retry_initial_wait_sec] * (2**n))
               end
             end
 
@@ -325,7 +319,7 @@ module Embulk
             encryption_key: "TOPSECRET",
             from_datetime: from_datetime,
             to_datetime: to_datetime,
-            retry_initial_wait_sec: 3,
+            retry_initial_wait_sec: 0,
             retry_limit: 2,
             columns: [
               {"name" => :id, "type" => :long},

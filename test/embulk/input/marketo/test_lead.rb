@@ -223,12 +223,6 @@ module Embulk
               end
             end
 
-            any_instance_of(::Embulk::Input::MarketoApi::Soap::Base) do |klass|
-              task[:retry_limit].times do |n|
-                mock(klass).sleep(task[:retry_initial_wait_sec] * (2**n))
-              end
-            end
-
             mock(Embulk.logger).warn(/Retrying/).times(task[:retry_limit])
             stub(Embulk.logger).info {}
 
@@ -455,7 +449,7 @@ module Embulk
             encryption_key: "TOPSECRET",
             from_datetime: from_datetime,
             to_datetime: to_datetime,
-            retry_initial_wait_sec: 2,
+            retry_initial_wait_sec: 0,
             retry_limit: 3,
             append_processed_time_column: true,
             ranges: timeslice,
