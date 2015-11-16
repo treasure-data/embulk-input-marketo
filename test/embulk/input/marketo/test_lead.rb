@@ -126,11 +126,11 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, message: request) do
-                savon_response(raw_response)
+                savon_response(xml_lead_response)
               end
 
               mock(klass).call(:get_multiple_leads, message: request.merge(stream_position: stream_position)) do
-                savon_response(raw_next_stream_response)
+                savon_response(xml_lead_next)
               end
             end
 
@@ -152,11 +152,11 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, message: request) do
-                savon_response(raw_response)
+                savon_response(xml_lead_response)
               end
 
               mock(klass).call(:get_multiple_leads, message: request.merge(stream_position: stream_position)) do
-                savon_response(raw_next_stream_response)
+                savon_response(xml_lead_next)
               end
             end
 
@@ -184,7 +184,7 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, message: request.merge(batch_size: Lead::PREVIEW_COUNT)) do
-                savon_response(raw_preview_response)
+                savon_response(xml_lead_preview)
               end
             end
 
@@ -204,7 +204,7 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_multiple_leads, anything) do
-                savon_response(raw_preview_response)
+                savon_response(xml_lead_preview)
               end
             end
 

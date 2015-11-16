@@ -5,7 +5,7 @@ module LeadFixtures
 
   private
 
-  def leads(body)
+  def leads_xml(body)
     <<XML
 <?xml version="1.0" encoding="UTF-8"?>
 <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns1="http://www.marketo.com/mktows/">
@@ -20,8 +20,8 @@ module LeadFixtures
 XML
   end
 
-  def raw_response
-    leads(<<XML)
+  def xml_lead_response
+    leads_xml(<<XML)
 <remainingCount>1</remainingCount>
 <newStreamPosition>#{stream_position}</newStreamPosition>
 <leadRecordList>
@@ -59,8 +59,8 @@ XML
     "next_steam_position"
   end
 
-  def raw_next_stream_response
-    leads(<<XML)
+  def xml_lead_next
+    leads_xml(<<XML)
 <returnCount>2</returnCount>
 <remainingCount>0</remainingCount>
 <newStreamPosition />
@@ -82,7 +82,7 @@ XML
 XML
   end
 
-  def raw_preview_response
+  def xml_lead_preview
     body = ""
     15.times do |i|
       body << <<XML
@@ -106,6 +106,6 @@ XML
 </leadRecordList>
 XML
     end
-    leads(body)
+    leads_xml(body)
   end
 end
