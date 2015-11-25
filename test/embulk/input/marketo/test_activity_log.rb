@@ -207,6 +207,7 @@ module Embulk
             mock(@page_builder).add(["3", Time.parse("2015-07-14T00:00:11+0000"), "at3", "score3", "100", "Attribute3", "404"])
             mock(@page_builder).finish
 
+            @plugin.init
             @plugin.run
           end
 
@@ -221,6 +222,7 @@ module Embulk
 
             mock(@page_builder).finish
 
+            @plugin.init
             @plugin.run
           end
 
@@ -238,6 +240,7 @@ module Embulk
             end
             mock(@page_builder).finish
 
+            @plugin.init
             @plugin.run
           end
 
@@ -257,6 +260,7 @@ module Embulk
             @plugin = ActivityLog.new(task, nil, nil, @page_builder)
 
             assert_raise(Embulk::ConfigError) do
+              @plugin.init
               @plugin.run
             end
           end

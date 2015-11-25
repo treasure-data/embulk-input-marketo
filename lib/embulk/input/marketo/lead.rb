@@ -94,19 +94,18 @@ module Embulk
           @ranges = task[:ranges][index]
           @soap = MarketoApi.soap_client(task, target)
           @append_processed_time_column = task[:append_processed_time_column]
-        end
-
-        def run
-          options = {
+          @options = {
             retry_initial_wait_sec: task[:retry_initial_wait_sec],
             retry_limit: task[:retry_limit],
           }
-          options[:batch_size] = PREVIEW_COUNT if preview?
+          @options[:batch_size] = PREVIEW_COUNT if preview?
+        end
 
+        def run
           counter = 0
           catch(:finish) do
             @ranges.each do |range|
-              soap.each(range, options) do |lead|
+              soap.each(range, @options) do |lead|
                 values = @columns.map do |column|
                   name = column["name"].to_s
                   value = (lead[name] || {})[:value]

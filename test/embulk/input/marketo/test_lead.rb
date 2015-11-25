@@ -140,6 +140,7 @@ module Embulk
             mock(@page_builder).add(["ten-thousand-leaf", from])
             mock(@page_builder).finish
 
+            @plugin.init
             @plugin.run
           end
 
@@ -165,6 +166,7 @@ module Embulk
             mock(@page_builder).add(["ten-thousand-leaf"])
             mock(@page_builder).finish
 
+            @plugin.init
             @plugin.run
           end
 
@@ -194,6 +196,7 @@ module Embulk
             end
             mock(@page_builder).finish
 
+            @plugin.init
             @plugin.run
           end
 
@@ -211,6 +214,7 @@ module Embulk
             mock(@page_builder).add(anything).times(Lead::PREVIEW_COUNT)
             mock(@page_builder).finish
 
+            @plugin.init
             @plugin.run
           end
 
@@ -227,6 +231,7 @@ module Embulk
             stub(Embulk.logger).info {}
 
             assert_raise do
+              @plugin.init
               @plugin.run
             end
           end
@@ -267,6 +272,7 @@ module Embulk
               stub(@soap).endpoint { "http://foo.test/" }
 
               assert_raise(Embulk::ConfigError) do
+                @plugin.init
                 @plugin.run
               end
             end
