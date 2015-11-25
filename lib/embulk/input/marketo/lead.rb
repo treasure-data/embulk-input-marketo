@@ -106,17 +106,7 @@ module Embulk
           catch(:finish) do
             @ranges.each do |range|
               soap.each(range, @options) do |lead|
-                values = @columns.map do |column|
-                  name = column["name"].to_s
-                  value = (lead[name] || {})[:value]
-                  cast_value(column, value)
-                end
-
-                if @append_processed_time_column
-                  values << Time.parse(range["from"])
-                end
-
-                page_builder.add(values)
+                page_builder.add(format_record(lead, range))
                 throw(:finish) if preview? && (counter += 1) >= PREVIEW_COUNT
               end
             end
@@ -126,6 +116,19 @@ module Embulk
 
           task_report = {}
           return task_report
+        end
+
+        def format_record(lead, range)
+          values = @columns.map do |column|
+            name = column["name"].to_s
+            value = (lead[name] || {})[:value]
+            cast_value(column, value)
+          end
+
+          if @append_processed_time_column
+            values << Time.parse(range["from"])
+          end
+          values
         end
       end
     end

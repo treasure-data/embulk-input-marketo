@@ -69,13 +69,7 @@ module Embulk
         def run
           counter = 0
           latest_updated_at = @soap.each(task[:from_datetime], @options) do |activity_log|
-            values = @columns.map do |column|
-              name = column["name"].to_s
-              value = activity_log[name]
-              cast_value(column, value)
-            end
-
-            page_builder.add(values)
+            page_builder.add(format_record(activity_log))
             break if preview? && (counter += 1) >= PREVIEW_COUNT
           end
 
@@ -87,6 +81,14 @@ module Embulk
           end
 
           return task_report
+        end
+
+        def format_record(activity_log)
+          @columns.map do |column|
+            name = column["name"].to_s
+            value = activity_log[name]
+            cast_value(column, value)
+          end
         end
       end
     end
