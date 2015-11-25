@@ -68,22 +68,7 @@ module Embulk
             end
 
             activities.each do |activity|
-              record = {
-                "id" => activity.at("./id").text,
-                "activity_date_time" => activity.at('./activityDateTime').text,
-                "activity_type" => activity.at('./activityType').text,
-                "mktg_asset_name" => activity.at('./mktgAssetName').text,
-                "mkt_person_id" => activity.at('./mktPersonId').text,
-              }
-
-              activity.xpath('./activityAttributes/attribute').each do |attr|
-                name = attr.xpath('attrName').text
-                value = attr.xpath('attrValue').text
-
-                record[name] = value
-              end
-
-              block.call(record)
+              process_record(activity, &block)
             end
 
             {
@@ -91,6 +76,25 @@ module Embulk
               offset: response.xpath('//newStartPosition/offset').text,
               from_datetime: activities.map{|a| Time.parse(a.at('./activityDateTime').text) }.max,
             }
+          end
+
+          def process_record(activity, &block)
+            record = {
+              "id" => activity.at("./id").text,
+              "activity_date_time" => activity.at('./activityDateTime').text,
+              "activity_type" => activity.at('./activityType').text,
+              "mktg_asset_name" => activity.at('./mktgAssetName').text,
+              "mkt_person_id" => activity.at('./mktPersonId').text,
+            }
+
+            activity.xpath('./activityAttributes/attribute').each do |attr|
+              name = attr.xpath('attrName').text
+              value = attr.xpath('attrValue').text
+
+              record[name] = value
+            end
+
+            block.call(record)
           end
         end
       end
