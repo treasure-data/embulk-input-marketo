@@ -22,16 +22,16 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_lead_changes, message: request) do
-                next_stream_activity_logs_response
+                savon_response xml_ac_next_response
               end
             end
 
             proc = proc{ "" }
-            activity_logs = next_stream_activity_logs_response[:body][:success_get_lead_changes][:result][:lead_change_record_list][:lead_change_record]
-            last_activity_log = activity_logs.last
+            activity_logs = savon_response(xml_ac_next_response).xpath('//leadChangeRecord')
+            latest = Time.parse(activity_logs.last.at('./activityDateTime').text)
 
             mock(proc).call(anything).times(activity_logs.size)
-            assert_equal(last_activity_log[:activity_date_time], soap.each(from_datetime, &proc))
+            assert_equal(latest, soap.each(from_datetime, &proc))
           end
 
           def test_each_with_no_response
@@ -44,7 +44,7 @@ module Embulk
 
             any_instance_of(Savon::Client) do |klass|
               mock(klass).call(:get_lead_changes, message: request) do
-                none_activity_log_response
+                savon_response xml_ac_none_response
               end
             end
 
@@ -63,14 +63,14 @@ module Embulk
 
             def test_savon_call
               mock(@savon).call(:get_lead_changes, message: request) {
-                next_stream_activity_logs_response
+                savon_response xml_ac_next_response
               }
               soap.metadata(from_datetime)
             end
 
             def test_return_schema
               stub(@savon).call(:get_lead_changes, message: request) {
-                next_stream_activity_logs_response
+                savon_response xml_ac_next_response
               }
               assert_equal(schema, soap.metadata(from_datetime))
             end

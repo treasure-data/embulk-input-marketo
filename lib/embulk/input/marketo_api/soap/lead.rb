@@ -53,24 +53,9 @@ module Embulk
             remaining = response.xpath('//remainingCount').text.to_i
             Embulk.logger.info "Fetched records in the range: #{records.size}"
             Embulk.logger.info "Remaining records in the range: #{remaining}"
-            records.each do |lead|
-              record = {
-                "id" => {type: :integer, value: lead.xpath('Id').text.to_i},
-                "email" => {type: :string, value: lead.xpath('Email').text}
-              }
-              lead.xpath('leadAttributeList/attribute').each do |attr|
-                name = attr.xpath('attrName').text
-                type = attr.xpath('attrType').text
-                value = attr.xpath('attrValue').text
-                record = record.merge(
-                  name => {
-                    type: type,
-                    value: value
-                  }
-                )
-              end
 
-              block.call(record)
+            records.each do |lead|
+              process_record(lead, &block)
             end
 
             if remaining > 0
@@ -78,6 +63,26 @@ module Embulk
             else
               nil
             end
+          end
+
+          def process_record(lead, &block)
+            record = {
+              "id" => {type: :integer, value: lead.xpath('Id').text.to_i},
+              "email" => {type: :string, value: lead.xpath('Email').text}
+            }
+            lead.xpath('leadAttributeList/attribute').each do |attr|
+              name = attr.xpath('attrName').text
+              type = attr.xpath('attrType').text
+              value = attr.xpath('attrValue').text
+              record = record.merge(
+                name => {
+                  type: type,
+                  value: value
+                }
+              )
+            end
+
+            block.call(record)
           end
         end
       end

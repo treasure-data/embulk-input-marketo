@@ -58,25 +58,18 @@ module Embulk
         def init
           @columns = task[:columns]
           @soap = MarketoApi.soap_client(task, target)
-        end
-
-        def run
-          options = {
+          @options = {
             retry_initial_wait_sec: task[:retry_initial_wait_sec],
             retry_limit: task[:retry_limit],
             to: task[:to_datetime],
             batch_size: (preview? ? PREVIEW_COUNT : BATCH_SIZE_DEFAULT),
           }
+        end
 
+        def run
           counter = 0
-          latest_updated_at = @soap.each(task[:from_datetime], options) do |activity_log|
-            values = @columns.map do |column|
-              name = column["name"].to_s
-              value = activity_log[name]
-              cast_value(column, value)
-            end
-
-            page_builder.add(values)
+          latest_updated_at = @soap.each(task[:from_datetime], @options) do |activity_log|
+            page_builder.add(format_record(activity_log))
             break if preview? && (counter += 1) >= PREVIEW_COUNT
           end
 
@@ -88,6 +81,14 @@ module Embulk
           end
 
           return task_report
+        end
+
+        def format_record(activity_log)
+          @columns.map do |column|
+            name = column["name"].to_s
+            value = activity_log[name]
+            cast_value(column, value)
+          end
         end
       end
     end
