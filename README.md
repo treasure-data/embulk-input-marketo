@@ -17,7 +17,7 @@ This plugin uses Marketo SOAP API.
 Required Embulk version >= 0.6.13.
 
 * **Plugin type**: input
-* **Resume supported**: yes for `marketo/lead`, no for `marketo/activity_log`
+* **Resume supported**: no for `marketo/lead`, yes for `marketo/activity_log`
 * **Cleanup supported**: no
 * **Guess supported**: yes
 
