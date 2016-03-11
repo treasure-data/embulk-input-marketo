@@ -35,8 +35,6 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 
 ### marketo/lead
 
-**NOTE: If you use feature of scheduled execution (resume) with marketo/lead, you should not specify `to_datetime` because this plugin can't place next to_datetime (can't know the date to run with new config).**
-
 - **endpoint** SOAP endpoint URL for your account (string, required)
 - **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
 - **user_id** Your user id (string, reqiured)
