@@ -130,7 +130,7 @@ module Embulk
           def expected_guessed_columns
             [
               {name: :id, type: :long},
-              {name: :activity_date_time, type: :timestamp, format: "%Y-%m-%dT%H:%M:%S%z"},
+              {name: :activity_date_time, type: :timestamp, format: "%Y-%m-%dT%H:%M:%S%:z"},
               {name: :activity_type, type: :string},
               {name: :mktg_asset_name, type: :string},
               {name: :mkt_person_id, type: :long},

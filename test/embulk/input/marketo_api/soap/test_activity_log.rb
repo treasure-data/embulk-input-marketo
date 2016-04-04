@@ -90,7 +90,7 @@ module Embulk
             def schema
               metadata = [
                 {index: 0, name: "id", type: :long},
-                {index: 1, name: "activity_date_time", type: :timestamp, format: "%Y-%m-%dT%H:%M:%S%z"}, # NOTE: `format` is the same as-is response (e.g. "2015-07-14T00:00:11+0000" to "%Y-%m-%dT%H:%M:%S%z")
+                {index: 1, name: "activity_date_time", type: :timestamp, format: "%Y-%m-%dT%H:%M:%S%:z"}, # NOTE: `format` is the same as-is response (e.g. "2015-07-14T00:00:11+0000" to "%Y-%m-%dT%H:%M:%S%:z")
                 {index: 2, name: "activity_type", type: :string},
                 {index: 3, name: "mktg_asset_name", type: :string},
                 {index: 4, name: "mkt_person_id", type: :long},
