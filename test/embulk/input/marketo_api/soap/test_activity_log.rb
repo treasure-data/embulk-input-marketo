@@ -34,6 +34,31 @@ module Embulk
             assert_equal(latest, soap.each(from_datetime, &proc))
           end
 
+          def test_no_attributes
+            request = {
+              start_position: {
+                oldest_created_at: Time.parse(from_datetime).iso8601,
+              },
+              batch_size: 100
+            }
+
+            any_instance_of(Savon::Client) do |klass|
+              mock(klass).call(:get_lead_changes, message: request) do
+                savon_response xml_ac_response_no_attributes
+              end
+            end
+
+            proc = proc{ "" }
+            activity_logs = savon_response(xml_ac_response_no_attributes).xpath('//leadChangeRecord')
+            latest = Time.parse(activity_logs.last.at('./activityDateTime').text)
+
+            mock(proc).call(anything).times(activity_logs.size)
+            assert_nothing_raised do
+              assert_equal(latest, soap.each(from_datetime, &proc))
+            end
+          end
+
+
           def test_each_with_no_response
             request = {
               start_position: {
@@ -90,7 +115,7 @@ module Embulk
             def schema
               metadata = [
                 {index: 0, name: "id", type: :long},
-                {index: 1, name: "activity_date_time", type: :timestamp, format: "%Y-%m-%dT%H:%M:%S%z"}, # NOTE: `format` is the same as-is response (e.g. "2015-07-14T00:00:11+0000" to "%Y-%m-%dT%H:%M:%S%z")
+                {index: 1, name: "activity_date_time", type: :timestamp, format: "%Y-%m-%dT%H:%M:%S%:z"}, # NOTE: `format` is the same as-is response (e.g. "2015-07-14T00:00:11+0000" to "%Y-%m-%dT%H:%M:%S%:z")
                 {index: 2, name: "activity_type", type: :string},
                 {index: 3, name: "mktg_asset_name", type: :string},
                 {index: 4, name: "mkt_person_id", type: :long},

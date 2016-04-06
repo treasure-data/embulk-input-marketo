@@ -20,6 +20,48 @@ module ActivityLogFixtures
 XML
   end
 
+  def xml_ac_response_no_attributes
+    activity_log_xml <<XML
+<returnCount>2</returnCount>
+<remainingCount>0</remainingCount>
+<newStartPosition>
+  <latestCreatedAt>2015-07-14T09:13:10+09:00</latestCreatedAt>
+  <oldestCreatedAt>2015-07-14T09:13:13+09:00</oldestCreatedAt>
+  <activityCreatedAt xsi:nil="true"/>
+  <offset>offset</offset>
+</newStartPosition>
+<leadChangeRecordList>
+  <leadChangeRecord>
+    <id>1</id>
+    <activityDateTime>2015-07-14T09:00:09+09:00</activityDateTime>
+    <activityType>at1</activityType>
+    <mktgAssetName>score1</mktgAssetName>
+    <activityAttributes>
+      <attribute>
+        <attrName>Attribute Name</attrName>
+        <attrType xsi:nil="true"/>
+        <attrValue>Attribute1</attrValue>
+      </attribute>
+      <attribute>
+        <attrName>Old Value</attrName>
+        <attrType xsi:nil="true"/>
+        <attrValue>402</attrValue>
+      </attribute>
+    </activityAttributes>
+    <mktPersonId>100</mktPersonId>
+  </leadChangeRecord>
+  <leadChangeRecord>
+    <id>2</id>
+    <activityDateTime>2015-07-14T09:00:10+09:00</activityDateTime>
+    <activityType>at2</activityType>
+    <mktgAssetName>score2</mktgAssetName>
+    <mktPersonId>90</mktPersonId>
+  </leadChangeRecord>
+</leadChangeRecordList>
+XML
+  end
+
+
   def xml_ac_response
     activity_log_xml <<XML
 <returnCount>2</returnCount>
