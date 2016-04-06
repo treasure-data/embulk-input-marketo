@@ -1,3 +1,11 @@
+## 0.5.0 - 2016-04-06
+
+This version drops old Embulk supports. Embulk 0.8 or later is required since this version.
+
+* [enhancement] Add tests for Embulk 0.8 and drop support old Embulk [#52](https://github.com/treasure-data/embulk-input-marketo/pull/52)
+* [maintenance] Refactor lead and activity [#51](https://github.com/treasure-data/embulk-input-marketo/pull/51)
+* [maintenance] Refactor retry [#50](https://github.com/treasure-data/embulk-input-marketo/pull/50)
+
 ## 0.4.0 - 2015-10-30
 
 This version drops scheduled execution with marketo/lead.
