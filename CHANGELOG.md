@@ -1,3 +1,7 @@
+## 0.5.1 - 2016-04-06
+
+* [maintenance] Relax dependency version
+
 ## 0.5.0 - 2016-04-06
 
 This version drops old Embulk supports. Embulk 0.8 or later is required since this version.
