@@ -50,6 +50,7 @@ module Embulk
               config.rescues = [StandardError, Timeout::Error]
               config.logger = Embulk.logger
               config.log_level = nil
+              config.raise_original_error = true
             end
           end
 

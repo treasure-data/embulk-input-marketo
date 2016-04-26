@@ -22,7 +22,7 @@ module Embulk
 
               mock(Embulk.logger).warn(/Retrying/).times(retry_options[:retry_limit])
 
-              assert_raise(PerfectRetry::TooManyRetry) do
+              assert_raise(::Timeout::Error) do
                 soap.send(:savon_call, :timeout_test, {}, retry_options)
               end
             end
