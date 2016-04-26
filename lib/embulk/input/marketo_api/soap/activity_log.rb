@@ -51,14 +51,13 @@ module Embulk
             }
             request[:start_position][:offset] = options[:offset] if options[:offset]
 
-            Embulk.logger.info "Fetching from '#{from}' to '#{to}'..."
             fetch(request, options, &block)
           end
 
           def fetch(request, options={}, &block)
             response = savon_call(:get_lead_changes, {message: request}, options)
             remaining = response.xpath('//remainingCount').text.to_i
-            Embulk.logger.info "Remaining records: #{remaining}"
+            Embulk.logger.info "Remaining #{remaining} records for this range: from '#{request[:start_position][:oldest_created_at]}' to '#{request[:start_position][:latest_created_at]}'."
 
             activities = response.xpath('//leadChangeRecord')
 

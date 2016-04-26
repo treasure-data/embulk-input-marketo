@@ -47,11 +47,11 @@ module Embulk
           def fetch(request = {}, retry_options, &block)
             start = Time.now
             response = savon_call(:get_multiple_leads, {message: request}, retry_options)
-            Embulk.logger.info "Fetched in #{Time.now - start} seconds"
+            Embulk.logger.debug "Fetched in #{Time.now - start} seconds"
 
             records = response.xpath('//leadRecordList/leadRecord')
             remaining = response.xpath('//remainingCount').text.to_i
-            Embulk.logger.info "Fetched records in the range: #{records.size}"
+            Embulk.logger.debug "Fetched records in the range: #{records.size}"
             Embulk.logger.info "Remaining records in the range: #{remaining}"
 
             records.each do |lead|
