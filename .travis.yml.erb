@@ -20,7 +20,7 @@ jdk: oraclejdk8
 rvm:
   - jruby-9.0.5.0
 
-script: bundle exec rake test
+script: bundle exec rake cov
 
 gemfile:
 <% versions.each do |file| -%>
