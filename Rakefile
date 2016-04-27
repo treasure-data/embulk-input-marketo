@@ -8,6 +8,12 @@ task :test do
   ruby("test/run-test.rb", "--use-color=yes", "--collector=dir")
 end
 
+desc "Run tests with coverage"
+task :cov do
+  ENV["COVERAGE"] = "1"
+  ruby("--debug", "test/run-test.rb", "--use-color=yes", "--collector=dir")
+end
+
 Everyleaf::EmbulkHelper::Tasks.install(
   gemspec: "./embulk-input-marketo.gemspec",
   github_name: "treasure-data/embulk-input-marketo",
