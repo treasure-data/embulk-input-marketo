@@ -171,6 +171,37 @@ module Embulk
           end
         end
 
+        class FormatRecordTest < self
+          def setup
+            @page_builder = Object.new
+            plugin_task = task.dup
+            plugin_task[:columns] = [
+              {"name" => "time", "type" => :timestamp, "format" => "%Y-%m-%d %H:%M:%S"}
+            ]
+            @plugin = ActivityLog.new(plugin_task, nil, nil, @page_builder)
+          end
+
+          data do
+            [
+              ["valid timestamp", [Time.parse("2000-01-01 00:00:00"), "2000-01-01 00:00:00"]],
+              ["nil", [nil, nil]],
+              ["empty", [nil, ""]],
+            ]
+          end
+          def test_valid_timestamp(data)
+            expected, actual = data
+            record = { "time" => actual }
+            assert_equal [expected], @plugin.format_record(record)
+          end
+
+          def test_invalid_timestamp
+            record = { "time" => "123" }
+            assert_raise(Embulk::ConfigError) do
+              @plugin.format_record(record)
+            end
+          end
+        end
+
         class RunTest < self
           def setup_soap
             @soap = MarketoApi::Soap::ActivityLog.new(settings[:endpoint], settings[:wsdl], settings[:user_id], settings[:encryption_key])

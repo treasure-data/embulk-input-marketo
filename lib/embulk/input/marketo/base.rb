@@ -108,7 +108,7 @@ module Embulk
         end
 
         def cast_value(column, value)
-          return unless value
+          return if value.to_s.empty? # nil or empty string
 
           case column["type"].to_s
           when "timestamp"
