@@ -29,7 +29,7 @@ module Embulk
             # NOTE: Do not memoize this to use always fresh signature (avoid 20016 error)
             # ref. https://jira.talendforge.org/secure/attachmentzip/unzip/167201/49761%5B1%5D/Marketo%20Enterprise%20API%202%200.pdf (41 page)
             Savon.client(
-              log: true,
+              log: false,
               logger: Embulk.logger,
               wsdl: wsdl,
               soap_header: headers,
@@ -50,6 +50,7 @@ module Embulk
               config.rescues = [StandardError, Timeout::Error]
               config.logger = Embulk.logger
               config.log_level = nil
+              config.raise_original_error = true
             end
           end
 
