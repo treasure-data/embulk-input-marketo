@@ -1,3 +1,7 @@
+## 0.5.2 - 2016-04-27
+* [enhancement] Make debug easier [#54](https://github.com/treasure-data/embulk-input-marketo/pull/54)
+* [fixed] Recognize empty string as nil value [#53](https://github.com/treasure-data/embulk-input-marketo/pull/53)
+
 ## 0.5.1 - 2016-04-06
 
 * [maintenance] Relax dependency version
