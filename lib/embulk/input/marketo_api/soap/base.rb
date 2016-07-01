@@ -93,6 +93,13 @@ module Embulk
             when "20015"
               # Request Limit Exceeded
               raise e
+            when "20024"
+              # 20024 - Concurrent limit exceeded
+              #
+              # Undocumented in a SOAP document but REST document has it
+              # http://developers.marketo.com/documentation/soap/error-codes/
+              # http://developers.marketo.com/documentation/rest/error-codes/
+              raise e
             else
               # unretryable error such as Authentication Failed, Invalid Request, etc.
               raise ConfigError.new soap_message
