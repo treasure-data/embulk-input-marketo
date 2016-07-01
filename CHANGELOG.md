@@ -1,3 +1,8 @@
+## 0.5.3 - 2016-07-01
+
+* [enhancement] make concurrent limit exceeded error retryable [#56](https://github.com/treasure-data/embulk-input-marketo/pull/56)
+* [maintenance] Gathering test coverage on CI [#55](https://github.com/treasure-data/embulk-input-marketo/pull/55)
+
 ## 0.5.2 - 2016-04-27
 * [enhancement] Make debug easier [#54](https://github.com/treasure-data/embulk-input-marketo/pull/54)
 * [fixed] Recognize empty string as nil value [#53](https://github.com/treasure-data/embulk-input-marketo/pull/53)
