@@ -6,7 +6,8 @@ module Embulk
       class ActivityLog < Base
         BATCH_SIZE_DEFAULT = 100
 
-        Plugin.register_input("marketo/activity_log", self)
+        Plugin.register_input("marketo/activity_log", self) # for compatibility
+        Plugin.register_input("marketo_activity_log", self)
 
         def self.target
           :activity_log

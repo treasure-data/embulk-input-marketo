@@ -17,7 +17,7 @@ This plugin uses Marketo SOAP API.
 Required Embulk version >= 0.8.7 (since 0.5.0).
 
 * **Plugin type**: input
-* **Resume supported**: no for `marketo/lead`, yes for `marketo/activity_log`
+* **Resume supported**: no for `marketo_lead`, yes for `marketo_activity_log`
 * **Cleanup supported**: no
 * **Guess supported**: yes
 
@@ -33,7 +33,7 @@ $ embulk gem install embulk-input-marketo
 
 Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 
-### marketo/lead
+### marketo_lead
 
 - **endpoint** SOAP endpoint URL for your account (string, required)
 - **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
@@ -45,7 +45,7 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 - **retry_limit**: Try to retry this times (integer, default: 5)
 - **append_processed_time_column**: If you want the column for processed time (boolean, default: true)
 
-### marketo/activity_log
+### marketo_activity_log
 
 - **endpoint** SOAP endpoint URL for your account (string, required)
 - **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
@@ -58,7 +58,7 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 
 ### Selecting plugin type
 
-You should specify `type: marketo/lead` or `type: marketo/activity_log` on your demand.
+You should specify `type: marketo_lead` or `type: marketo_activity_log` on your demand.
 
 
 ## Example
@@ -67,7 +67,7 @@ For lead, you have `partial-config.yml` like below:
 
 ```yaml
 in:
-  type: marketo/lead
+  type: marketo_lead
   endpoint: https://soap-end-point.mktoapi.com/
   wsdl: https://wsdl-url.mktoapi.com/?WSDL
   user_id: user_ABC123
