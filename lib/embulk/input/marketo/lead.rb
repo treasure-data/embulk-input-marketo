@@ -91,7 +91,12 @@ module Embulk
 
         def init
           @columns = task[:columns]
-          @ranges = task[:ranges][index]
+          if preview?
+            # Try newer date at first to reduce cache miss hit
+            @ranges = task[:ranges].flatten.sort_by{|range| Time.parse(range["to"])}.reverse
+          else
+            @ranges = task[:ranges][index]
+          end
           @soap = MarketoApi.soap_client(task, target)
           @append_processed_time_column = task[:append_processed_time_column]
           @options = {
