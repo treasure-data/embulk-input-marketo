@@ -43,9 +43,12 @@ module Embulk
           end
 
           def retryer(retry_options)
+            # guess/preview doesn't pass retry_options
+            initial_wait = retry_options[:retry_initial_wait_sec] || 1
+            retry_limit = retry_options[:retry_limit] || 5
             PerfectRetry.new do |config|
-              config.sleep = proc{|n| retry_options[:retry_initial_wait_sec] * (2 ** (n - 1))}
-              config.limit = retry_options[:retry_limit]
+              config.sleep = proc{|n| initial_wait * (2 ** (n - 1))}
+              config.limit = retry_limit
               config.dont_rescues = [Embulk::ConfigError]
               config.rescues = [StandardError, Timeout::Error]
               config.logger = Embulk.logger
