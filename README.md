@@ -48,7 +48,7 @@ Below parameters are shown in "Admin" > "Web Services" page in Marketo.
 ### marketo/activity_log
 
 - **endpoint** SOAP endpoint URL for your account (string, required)
-- **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")
+- **wsdl** SOAP endpoint URL for your account (string, default: endpoint + "?WSDL")(Note "?WSDL" needs to be in all caps)
 - **user_id** Your user id (string, reqiured)
 - **encryption_key** Your encryption key (string, reqiured)
 - **from_datetime** Fetch activity_logs since this time (string, required)
