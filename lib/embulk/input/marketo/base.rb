@@ -20,6 +20,8 @@ module Embulk
             user_id: config.param(:user_id, :string),
             encryption_key: config.param(:encryption_key, :string),
           }
+          validate_url(soap_config[:endpoint_url], "endpoint")
+          validate_url(soap_config[:wsdl_url], "wsdl")
 
           MarketoApi.soap_client(soap_config, target)
         end
@@ -98,6 +100,12 @@ module Embulk
         end
 
         private
+
+        def self.validate_url(url, key)
+          URI.parse(url)
+        rescue URI::InvalidURIError
+          raise ConfigError.new("#{key}: '#{url}' is not a valid URL.")
+        end
 
         def preview?
           begin

@@ -32,6 +32,34 @@ module Embulk
             assert_equal(next_config_diff, actual)
           end
 
+          data do
+            [
+              ["endpoint", "endpoint"],
+              ["wsdl", "wsdl"],
+            ]
+          end
+          def test_invalid_url(key)
+            control = proc {} # dummy
+
+            settings = {
+              endpoint: "https://marketo.example.com",
+              wsdl: "https://marketo.example.com/?wsdl",
+              user_id: "user_id",
+              encryption_key: "TOPSECRET",
+              columns: [
+                {"name" => "Name", "type" => "string"},
+              ],
+              from_datetime: Time.now,
+              to_datetime: Time.now + 3600,
+            }
+            settings[key.to_sym] = " invalid url "
+            config = DataSource[settings.to_a]
+
+            assert_raise(ConfigError) do
+              ActivityLog.transaction(config, &control)
+            end
+          end
+
           private
 
           def settings
@@ -103,6 +131,19 @@ module Embulk
               {"columns" => expected_guessed_columns},
               Marketo::ActivityLog.guess(config)
             )
+          end
+
+          data do
+            [
+              ["endpoint", "endpoint"],
+              ["wsdl", "wsdl"],
+            ]
+          end
+          def test_invalid_url(key)
+            config[key] = " invalid url "
+            assert_raise(ConfigError) do
+              Marketo::ActivityLog.guess(config)
+            end
           end
 
           private
