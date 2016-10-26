@@ -50,6 +50,8 @@ module Embulk
             append_processed_time_column: append_processed_time_column,
             columns: config.param(:columns, :array),
           }
+          validate_url(task[:endpoint_url], "endpoint")
+          validate_url(task[:wsdl_url], "wsdl")
 
           columns = embulk_columns(config)
           if append_processed_time_column

@@ -37,6 +37,8 @@ module Embulk
             retry_limit: config.param(:retry_limit, :integer, default: 5),
             columns: config.param(:columns, :array)
           }
+          validate_url(task[:endpoint_url], "endpoint")
+          validate_url(task[:wsdl_url], "wsdl")
 
           resume(task, embulk_columns(config), 1, &control)
         end
