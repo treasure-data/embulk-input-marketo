@@ -1,3 +1,9 @@
+## 0.5.4 - 2016-10-26
+* [enhancement] Validate wsdl_url and endpoint_url are the valid form [#61](https://github.com/treasure-data/embulk-input-marketo/pull/61)
+* [enhancement] Minor readme change [#58](https://github.com/treasure-data/embulk-input-marketo/pull/58)
+* [fixed] Fix error when retrying on guess/preview [#59](https://github.com/treasure-data/embulk-input-marketo/pull/59)
+* [enhancement] Try newer date at first on preview to avoid miss hit [#60](https://github.com/treasure-data/embulk-input-marketo/pull/60)
+
 ## 0.5.3 - 2016-07-01
 
 * [enhancement] make concurrent limit exceeded error retryable [#56](https://github.com/treasure-data/embulk-input-marketo/pull/56)
