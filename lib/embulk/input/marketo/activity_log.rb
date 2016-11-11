@@ -78,8 +78,13 @@ module Embulk
           page_builder.finish
 
           task_report = {}
-          if !preview? && latest_updated_at
-            task_report = {from_datetime: latest_updated_at}
+          if !preview?
+            from_datetime = latest_updated_at || task[:from_datetime]
+            if from_datetime
+              task_report = {
+                from_datetime: from_datetime
+              }
+            end
           end
 
           return task_report
