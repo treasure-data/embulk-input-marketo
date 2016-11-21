@@ -337,6 +337,28 @@ module Embulk
             end
           end
 
+          def test_task_report
+            stub(@plugin).preview? { false }
+
+            any_instance_of(Savon::Client) do |klass|
+              mock(klass).call(:get_lead_changes, anything) do
+                savon_response(xml_ac_response_no_record)
+              end
+            end
+
+            mock(@page_builder).finish
+
+            from_datetime = "1998-11-11"
+            plugin = ActivityLog.new(task().merge(from_datetime: from_datetime), nil, nil, @page_builder)
+            plugin.init
+            actual = plugin.run
+            expected = {
+              from_datetime: from_datetime
+            }
+
+            assert_equal expected, actual
+          end
+
           private
 
           def request
