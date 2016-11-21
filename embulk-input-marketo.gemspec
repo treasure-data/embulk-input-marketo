@@ -22,6 +22,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'test-unit'
   spec.add_development_dependency 'rr', "1.1.2" # 1.2.0 causes strange error.. https://travis-ci.org/treasure-data/embulk-input-marketo/jobs/141537151
   spec.add_development_dependency 'test-unit-rr'
-  spec.add_development_dependency 'codeclimate-test-reporter'
+  spec.add_development_dependency 'codeclimate-test-reporter', "~> 0.5"
   spec.add_development_dependency 'everyleaf-embulk_helper'
 end
