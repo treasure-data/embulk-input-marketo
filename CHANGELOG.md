@@ -1,3 +1,7 @@
+## 0.5.5 - 2016-11-24
+* [fixed] Generate config_diff even if no records found [#62](https://github.com/treasure-data/embulk-input-marketo/pull/62)
+* [maintenance] Fix to use CodeClimate 0.x [#63](https://github.com/treasure-data/embulk-input-marketo/pull/63)
+
 ## 0.5.4 - 2016-10-26
 * [enhancement] Validate wsdl_url and endpoint_url are the valid form [#61](https://github.com/treasure-data/embulk-input-marketo/pull/61)
 * [enhancement] Minor readme change [#58](https://github.com/treasure-data/embulk-input-marketo/pull/58)
