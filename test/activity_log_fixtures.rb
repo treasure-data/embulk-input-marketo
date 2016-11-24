@@ -61,6 +61,20 @@ XML
 XML
   end
 
+  def xml_ac_response_no_record
+    activity_log_xml <<-XML
+<returnCount>0</returnCount>
+<remainingCount>0</remainingCount>
+<newStartPosition>
+  <latestCreatedAt>2015-07-14T09:13:10+09:00</latestCreatedAt>
+  <oldestCreatedAt>2015-07-14T09:13:13+09:00</oldestCreatedAt>
+  <activityCreatedAt xsi:nil="true"/>
+  <offset>offset</offset>
+</newStartPosition>
+<leadChangeRecordList>
+</leadChangeRecordList>
+    XML
+  end
 
   def xml_ac_response
     activity_log_xml <<XML
