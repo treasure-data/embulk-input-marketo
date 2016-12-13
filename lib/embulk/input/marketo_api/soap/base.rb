@@ -107,7 +107,7 @@ module Embulk
               # unretryable error such as Authentication Failed, Invalid Request, etc.
               raise ConfigError.new soap_message
             end
-          rescue SocketError, ::Java::JavaNet::UnknownHostException, Errno::ECONNREFUSED => e
+          rescue SocketError, ::Java::JavaNet::UnknownHostException, Errno::ECONNREFUSED, HTTPI::SSLError => e
             # maybe endpoint/wsdl domain was wrong
             Embulk.logger.debug "Connection error: endpoint=#{endpoint} wsdl=#{wsdl}"
             raise ConfigError.new "Connection error: #{e.message} (endpoint is '#{endpoint}')"
