@@ -13,7 +13,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency 'savon', ['~> 2.11.1']
-  spec.add_dependency 'httpclient'
+  spec.add_dependency 'httpclient', '>= 2.8.3' # To use tcp_keepalive
+  spec.add_dependency 'httpi', '2.4.2' # To use tcp_keepalive with monky patch (See lib/embulk/input/marketo/base.rb)
   spec.add_dependency 'perfect_retry', ["~> 0.5"]
   spec.add_development_dependency 'embulk', [">= 0.6.13", "< 1.0"]
   spec.add_development_dependency 'bundler', ['~> 1.0']

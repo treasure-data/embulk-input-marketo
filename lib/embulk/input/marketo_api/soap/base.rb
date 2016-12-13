@@ -2,6 +2,21 @@ require "savon"
 require "httpclient" # net/http can't verify cert correctly
 require "perfect_retry"
 
+# https://github.com/savonrb/httpi/blob/v2.4.2/lib/httpi/adapter/httpclient.rb
+require "httpi"
+module HTTPI
+  module Adapter
+    class HTTPClient < Base
+      alias_method :original_basic_setup, :basic_setup
+
+      def basic_setup
+        original_basic_setup
+        @client.tcp_keepalive = true
+      end
+    end
+  end
+end
+
 module Embulk
   module Input
     module MarketoApi
@@ -38,6 +53,7 @@ module Embulk
               read_timeout: 90,
               raise_errors: true,
               namespace_identifier: :ns1,
+              adapter: :httpclient,
               env_namespace: 'SOAP-ENV',
             )
           end
