@@ -1,3 +1,6 @@
+## 0.5.6 - 2016-12-14
+* [maintenance] Enable tcp keepalive [#64](https://github.com/treasure-data/embulk-input-marketo/pull/64)
+
 ## 0.5.5 - 2016-11-24
 * [fixed] Generate config_diff even if no records found [#62](https://github.com/treasure-data/embulk-input-marketo/pull/62)
 * [maintenance] Fix to use CodeClimate 0.x [#63](https://github.com/treasure-data/embulk-input-marketo/pull/63)
