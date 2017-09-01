@@ -6,7 +6,8 @@ module Embulk
       class Lead < Base
         TIMESLICE_COUNT_PER_TASK = 24
 
-        Plugin.register_input("marketo/lead", self)
+        Plugin.register_input("marketo/lead", self) # for compatibility
+        Plugin.register_input("marketo_lead", self)
 
         def self.target
           :lead
