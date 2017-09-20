@@ -1,28 +1,19 @@
+
 Gem::Specification.new do |spec|
   spec.name          = "embulk-input-marketo"
-  spec.version       = "0.5.6"
-  spec.authors       = ["uu59", "yoshihara"]
-  spec.summary       = "Marketo input plugin for Embulk"
-  spec.description   = "Loads records from Marketo."
-  spec.email         = ["k@uu59.org", "h.yoshihara@everyleaf.com"]
-  spec.licenses      = ["Apache2"]
-  spec.homepage      = "https://github.com/treasure-data/embulk-input-marketo"
+  spec.version       = "0.1.0"
+  spec.authors       = ["Tai Khuu"]
+  spec.summary       = %[Marketo input plugin for Embulk]
+  spec.description   = %[Loads records from Marketo.]
+  spec.email         = ["tai@treasuredata.com"]
+  spec.licenses      = ["MIT"]
+  # TODO set this: spec.homepage      = "https://github.com/khuutantai/embulk-input-marketo"
 
   spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
-  spec.test_files    = spec.files.grep(%r{^(test|spec)/})
+  spec.test_files    = spec.files.grep(%r"^(test|spec)/")
   spec.require_paths = ["lib"]
 
-  spec.add_dependency 'savon', ['~> 2.11.1']
-  spec.add_dependency 'httpclient', '>= 2.8.3' # To use tcp_keepalive
-  spec.add_dependency 'httpi', '2.4.2' # To use tcp_keepalive with monky patch (See lib/embulk/input/marketo/base.rb)
-  spec.add_dependency 'perfect_retry', ["~> 0.5"]
-  spec.add_development_dependency 'embulk', [">= 0.6.13", "< 1.0"]
+  #spec.add_dependency 'YOUR_GEM_DEPENDENCY', ['~> YOUR_GEM_DEPENDENCY_VERSION']
   spec.add_development_dependency 'bundler', ['~> 1.0']
   spec.add_development_dependency 'rake', ['>= 10.0']
-  spec.add_development_dependency 'pry'
-  spec.add_development_dependency 'test-unit'
-  spec.add_development_dependency 'rr', "1.1.2" # 1.2.0 causes strange error.. https://travis-ci.org/treasure-data/embulk-input-marketo/jobs/141537151
-  spec.add_development_dependency 'test-unit-rr'
-  spec.add_development_dependency 'codeclimate-test-reporter', "~> 0.5"
-  spec.add_development_dependency 'everyleaf-embulk_helper'
 end
