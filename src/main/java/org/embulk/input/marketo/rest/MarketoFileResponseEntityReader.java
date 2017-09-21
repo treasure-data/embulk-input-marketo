@@ -2,6 +2,7 @@ package org.embulk.input.marketo.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.CharStreams;
 import org.eclipse.jetty.client.api.Response;
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class MarketoFileResponseEntityReader implements Jetty92ResponseReader<InputStream>
 {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectReader OBJECT_READER = new ObjectMapper().readerFor(new TypeReference<MarketoResponse<ObjectNode>>(){ });
 
     private InputStreamResponseListener listener;
 
@@ -49,7 +50,8 @@ public class MarketoFileResponseEntityReader implements Jetty92ResponseReader<In
     {
         if (!getResponse().getHeaders().getField(HttpHeader.CONTENT_TYPE).getValue().equals("text/csv")) {
             String errorString = readResponseContentInString();
-            MarketoResponse<ObjectNode> errorResponse = OBJECT_MAPPER.readValue(errorString, new TypeReference<MarketoResponse<ObjectNode>>(){ });
+
+            MarketoResponse<ObjectNode> errorResponse = OBJECT_READER.readValue(errorString);
             if (!errorResponse.isSuccess()) {
                 throw new MarketoAPIException(errorResponse.getErrors());
             }

@@ -32,7 +32,7 @@ public class LeadWithProgramInputPlugin extends MarketoBaseInputPluginDelegate<L
             List<String> fieldNames = MarketoUtils.getFieldNameFromSchema(pageBuilder.getSchema());
 
             FluentIterable<ServiceRecord> serviceRecords = FluentIterable.from(marketoService.getAllProgramLead(fieldNames)).
-                    transform(MarketoUtils.transformObjectToJackSonServiceRecordFunction());
+                    transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION);
             int imported = 0;
             for (ServiceRecord serviceRecord : serviceRecords) {
                 if (imported >= PREVIEW_RECORD_LIMIT && Exec.isPreview()) {

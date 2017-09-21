@@ -34,7 +34,7 @@ public class LeadWithListInputPlugin extends MarketoBaseInputPluginDelegate<Lead
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
             List<String> fieldNames = MarketoUtils.getFieldNameFromSchema(pageBuilder.getSchema());
-            FluentIterable<ServiceRecord> serviceRecords = FluentIterable.from(marketoService.getAllListLead(fieldNames)).transform(MarketoUtils.transformObjectToJackSonServiceRecordFunction());
+            FluentIterable<ServiceRecord> serviceRecords = FluentIterable.from(marketoService.getAllListLead(fieldNames)).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION);
             int imported = 0;
             for (ServiceRecord serviceRecord : serviceRecords) {
                 if (imported >= PREVIEW_RECORD_LIMIT && Exec.isPreview()) {

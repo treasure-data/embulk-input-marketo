@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.config.Task;
+import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.MarketoBulkExtractRequest;
 import org.embulk.input.marketo.model.MarketoError;
 import org.embulk.input.marketo.model.MarketoResponse;
@@ -83,6 +84,10 @@ public class MarketoRestClient extends MarketoBaseRestClient
         @Config("client_id")
         String getClientId();
 
+        @Config("marketo_limit_interval_milis")
+        @ConfigDefault("20000")
+        Integer getMarketoLimitIntervalMilis();
+
         @Config("batch_size")
         @ConfigDefault("300")
         Integer getBatchSize();
@@ -90,12 +95,12 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public MarketoRestClient(PluginTask task, Jetty92RetryHelper retryHelper)
     {
-        this(task.getEndpoint(), task.getIdentityEndpoint(), task.getClientId(), task.getClientSecret(), task.getBatchSize(), retryHelper);
+        this(task.getEndpoint(), task.getIdentityEndpoint(), task.getClientId(), task.getClientSecret(), task.getBatchSize(), task.getMarketoLimitIntervalMilis(), retryHelper);
     }
 
-    public MarketoRestClient(String endPoint, String identityEndPoint, String clientId, String clientSecret, Integer batchSize, Jetty92RetryHelper retryHelper)
+    public MarketoRestClient(String endPoint, String identityEndPoint, String clientId, String clientSecret, Integer batchSize, int marketoLimitIntervalMilis, Jetty92RetryHelper retryHelper)
     {
-        super(identityEndPoint, clientId, clientSecret, retryHelper);
+        super(identityEndPoint, clientId, clientSecret, marketoLimitIntervalMilis, retryHelper);
         this.endPoint = endPoint;
         this.batchSize = batchSize;
     }
@@ -122,7 +127,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public String createLeadBulkExtract(Date startTime, Date endTime, List<String> extractFields)
     {
-        SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        SimpleDateFormat timeFormat = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
         MarketoBulkExtractRequest marketoBulkExtractRequest = new MarketoBulkExtractRequest();
         marketoBulkExtractRequest.setFields(extractFields);
         marketoBulkExtractRequest.setFormat("CSV");
@@ -137,7 +142,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public String createActitvityExtract(Date startTime, Date endTime, List<String> activityTypes)
     {
-        SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        SimpleDateFormat timeFormat = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
         MarketoBulkExtractRequest marketoBulkExtractRequest = new MarketoBulkExtractRequest();
         marketoBulkExtractRequest.setFormat("CSV");
         Map<String, MarketoFilter> filterMap = new HashMap<>();
@@ -224,6 +229,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
     private void waitExportJobComplete(MarketoRESTEndpoint marketoRESTEndpoint, String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
     {
         long waitTime = 0;
+        long now = System.currentTimeMillis();
         while (true) {
             MarketoResponse<ObjectNode> marketoResponse = doGet(this.endPoint + marketoRESTEndpoint.getEndpoint(
                     new ImmutableMap.Builder<String, String>().put("export_id", exportId).build()), null, null, new MarketoResponseJetty92EntityReader<ObjectNode>(READ_TIMEOUT_MILLIS));
@@ -244,7 +250,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 }
             }
             Thread.sleep(pollingInterval * 1000);
-            waitTime = waitTime + pollingInterval;
+            waitTime = waitTime + (System.currentTimeMillis() - now);
             if (waitTime >= waitTimeout) {
                 throw new DataException("Job timeout exception, exportJob: " + exportId + ", run longer than " + waitTimeout + " seconds");
             }
@@ -304,7 +310,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
             public RecordPagingIterable.MarketoPage<T> getNextPage(RecordPagingIterable.MarketoPage<T> currentPage)
             {
                 final Multimap<String, String> params = ArrayListMultimap.create();
-                params.put(BATCH_SIZE, batchSize + "");
+                params.put(BATCH_SIZE, String.valueOf(batchSize));
                 params.put(NEXT_PAGE_TOKEN, currentPage.getNextPageToken());
                 if (parameters != null) {
                     params.putAll(parameters);
@@ -317,7 +323,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
             public RecordPagingIterable.MarketoPage<T> getFirstPage()
             {
                 final Multimap<String, String> params = ArrayListMultimap.create();
-                params.put(BATCH_SIZE, batchSize + "");
+                params.put(BATCH_SIZE, String.valueOf(batchSize));
                 if (parameters != null) {
                     params.putAll(parameters);
                 }

@@ -37,19 +37,18 @@ public class MarketoUtils
     private static final Logger LOGGER = Exec.getLogger(MarketoUtils.class);
     public static final String ISO_8601_FORMAT = "%Y-%m-%dT%H:%M:%S%z";
 
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    public static Function<ObjectNode, ServiceRecord> transformObjectToJackSonServiceRecordFunction()
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    public static final Function<ObjectNode, ServiceRecord> TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION = new Function<ObjectNode, ServiceRecord>()
     {
-        return new Function<ObjectNode, ServiceRecord>()
+        @Nullable
+        @Override
+        public JacksonServiceRecord apply(@Nullable ObjectNode input)
         {
-            @Nullable
-            @Override
-            public JacksonServiceRecord apply(@Nullable ObjectNode input)
-            {
-                return new JacksonServiceRecord(input);
-            }
-        };
-    }
+            return new JacksonServiceRecord(input);
+        }
+    };
+
+    public static final String MARKETO_DATE_SIMPLE_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
 
     private MarketoUtils()
     {
@@ -84,7 +83,6 @@ public class MarketoUtils
     public static  ObjectNode transformToObjectNode(final Map<String, String> kvMap, Schema schema)
     {
         final ObjectNode objectNode = OBJECT_MAPPER.createObjectNode();
-
         schema.visitColumns(new ColumnVisitor()
         {
             @Override

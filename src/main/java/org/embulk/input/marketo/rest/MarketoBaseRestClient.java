@@ -1,6 +1,7 @@
 package org.embulk.input.marketo.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.eclipse.jetty.client.HttpClient;
@@ -42,8 +43,6 @@ public class MarketoBaseRestClient implements AutoCloseable
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
-    private static final long MARKETO_LIMIT_INTERVAL_MILLIS = 20000L;
-
     protected static final long READ_TIMEOUT_MILLIS = 30000;
 
     private String identityEndPoint;
@@ -54,25 +53,40 @@ public class MarketoBaseRestClient implements AutoCloseable
 
     private String accessToken;
 
+    private int marketoLimitIntervalMilis;
+
     private Jetty92RetryHelper retryHelper;
 
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false).configure(ALLOW_UNQUOTED_CONTROL_CHARS, false);
 
-    MarketoBaseRestClient(String identityEndPoint, String clientId, String clientSecret, Jetty92RetryHelper retryHelper)
+    MarketoBaseRestClient(String identityEndPoint, String clientId, String clientSecret, int marketoLimitIntervalMilis, Jetty92RetryHelper retryHelper)
     {
         this.identityEndPoint = identityEndPoint;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.retryHelper = retryHelper;
-        this.accessToken = getAccessToken();
+        this.marketoLimitIntervalMilis = marketoLimitIntervalMilis;
     }
 
     private void renewAccessToken()
     {
-        accessToken = getAccessToken();
+        accessToken = requestAccessToken();
     }
 
-    private String getAccessToken()
+    @VisibleForTesting
+    public String getAccessToken()
+    {
+        if (accessToken == null) {
+            synchronized (this) {
+                if (accessToken == null) {
+                    accessToken = requestAccessToken();
+                }
+            }
+        }
+        return accessToken;
+    }
+
+    private String requestAccessToken()
     {
         final Multimap<String, String> params = ArrayListMultimap.create();
         params.put("client_id", clientId);
@@ -98,7 +112,9 @@ public class MarketoBaseRestClient implements AutoCloseable
                 return response.getStatus() == 502;
             }
         });
+
         MarketoAccessTokenResponse accessTokenResponse;
+
         try {
             accessTokenResponse = OBJECT_MAPPER.readValue(response, MarketoAccessTokenResponse.class);
         }
@@ -140,7 +156,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                         request.header(key, headers.get(key));
                     }
                 }
-                request.header(AUTHORIZATION_HEADER, "Bearer " + accessToken);
+                request.header(AUTHORIZATION_HEADER, "Bearer " + getAccessToken());
                 if (params != null) {
                     for (String key : params.keySet()) {
                         for (String value : params.get(key)) {
@@ -179,7 +195,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                             return true;
                         case "606":
                             try {
-                                Thread.sleep(MARKETO_LIMIT_INTERVAL_MILLIS);
+                                Thread.sleep(marketoLimitIntervalMilis);
                             }
                             catch (InterruptedException e) {
                                 LOGGER.error("Encounter exception when waiting for interval limit", e);

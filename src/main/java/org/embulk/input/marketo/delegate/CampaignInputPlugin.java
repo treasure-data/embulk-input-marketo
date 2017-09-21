@@ -35,7 +35,7 @@ public class CampaignInputPlugin extends MarketoBaseInputPluginDelegate<Campaign
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
             {
-                FluentIterable<ServiceRecord> serviceRecords = FluentIterable.from(marketoService.getCampaign()).transform(MarketoUtils.transformObjectToJackSonServiceRecordFunction());
+                FluentIterable<ServiceRecord> serviceRecords = FluentIterable.from(marketoService.getCampaign()).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION);
                 int imported = 0;
                 for (ServiceRecord serviceRecord : serviceRecords) {
                     if (imported >= PREVIEW_RECORD_LIMIT && Exec.isPreview()) {

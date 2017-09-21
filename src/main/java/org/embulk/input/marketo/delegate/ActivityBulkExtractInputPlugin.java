@@ -37,16 +37,12 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            {
-                try {
-                    Date fromDate = task.getFromDate().get();
-                    return new FileInputStream(marketoService.extractAllActivity(fromDate, MarketoUtils.addDate(fromDate, task.getFetchDays()), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
-                }
-                catch (FileNotFoundException e) {
-                    LOGGER.error("Exception when trying to extract activity", e);
-                    throw new DataException("Error when trying to extract activity");
-                }
-            }
+            Date fromDate = task.getFromDate().orNull();
+            return new FileInputStream(marketoService.extractAllActivity(fromDate, MarketoUtils.addDate(fromDate, task.getFetchDays()), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
+        }
+        catch (FileNotFoundException e) {
+            LOGGER.error("Exception when trying to extract activity", e);
+            throw new DataException("Error when trying to extract activity");
         }
     }
 
@@ -56,7 +52,7 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
         JacksonServiceResponseMapper.Builder builder = JacksonServiceResponseMapper.builder();
         builder.add("marketoGUID", Types.STRING)
                 .add("leadId", Types.STRING)
-                .add("activityDate", Types.TIMESTAMP, "%Y-%m-%dT%H:%M:%S%z")
+                .add("activityDate", Types.TIMESTAMP, MarketoUtils.ISO_8601_FORMAT)
                 .add("activityTypeId", Types.STRING)
                 .add("campaignId", Types.STRING)
                 .add("primaryAttributeValueId", Types.STRING)

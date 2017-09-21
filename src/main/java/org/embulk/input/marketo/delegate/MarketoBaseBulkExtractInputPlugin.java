@@ -112,7 +112,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         }
         if (!currentLatestFetchTime.equals(0L)) {
             configDiff.set(LATEST_FETCH_TIME, currentLatestFetchTime);
-            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+            DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
             configDiff.set("from_date", df.format(new Date(currentLatestFetchTime)));
             configDiff.set(LATEST_UID_LIST, latestUIds);
         }
@@ -146,13 +146,10 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
             while (csvTokenizer.hasNextColumn()) {
                 headers.add(csvTokenizer.nextColumn());
             }
-            while (csvTokenizer.nextRecord()) {
+            while (csvTokenizer.nextRecord() && (imported < PREVIEW_RECORD_LIMIT || !Exec.isPreview())) {
                 List<String> values = new ArrayList<>();
                 while (csvTokenizer.hasNextColumn()) {
                     values.add(csvTokenizer.nextColumnOrNull());
-                }
-                if (imported >= PREVIEW_RECORD_LIMIT && Exec.isPreview()) {
-                    break;
                 }
                 final Map<String, String> kvMap = MarketoUtils.zip(headers, values);
                 ObjectNode objectNode = MarketoUtils.transformToObjectNode(kvMap, pageBuilder.getSchema());
@@ -183,7 +180,8 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                     else if (compareTo == 0) {
                         //timestamp is equal
                         if (uidColumn != null) {
-                            latestUids.add(uidColumn);
+                            JsonNode uidField = objectNode.get(uidColumn);
+                            latestUids.add(uidField.asText());
                         }
                     }
                 }

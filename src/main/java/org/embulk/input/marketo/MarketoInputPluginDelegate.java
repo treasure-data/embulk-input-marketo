@@ -1,5 +1,7 @@
 package org.embulk.input.marketo;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.embulk.base.restclient.DispatchingRestClientInputPluginDelegate;
 import org.embulk.base.restclient.RestClientInputPluginDelegate;
 import org.embulk.config.Config;
@@ -47,8 +49,11 @@ public class MarketoInputPluginDelegate
 
     public enum Target
     {
-        LEAD(new LeadBulkExtractInputPlugin()), ACTIVITY(new ActivityBulkExtractInputPlugin()), ALL_LEAD_WITH_LIST_ID(new LeadWithListInputPlugin()),
-        ALL_LEAD_WITH_PROGRAM_ID(new LeadWithProgramInputPlugin()), CAMPAIGN(new CampaignInputPlugin());
+        LEAD(new LeadBulkExtractInputPlugin()),
+        ACTIVITY(new ActivityBulkExtractInputPlugin()),
+        CAMPAIGN(new CampaignInputPlugin()),
+        ALL_LEAD_WITH_LIST_ID(new LeadWithListInputPlugin()),
+        ALL_LEAD_WITH_PROGRAM_ID(new LeadWithProgramInputPlugin());
 
         private RestClientInputPluginDelegate restClientInputPluginDelegate;
 
@@ -57,9 +62,16 @@ public class MarketoInputPluginDelegate
             this.restClientInputPluginDelegate = restClientInputPluginDelegate;
         }
 
+        @JsonIgnore
         public RestClientInputPluginDelegate getRestClientInputPluginDelegate()
         {
             return restClientInputPluginDelegate;
+        }
+
+        @JsonCreator
+        public static Target of(String value)
+        {
+            return Target.valueOf(value.toUpperCase());
         }
     }
 }
