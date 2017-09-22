@@ -55,6 +55,9 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
     @VisibleForTesting
     public MarketoRestClient createMarketoRestClient(PluginTask task)
     {
+        if (Exec.isPreview()) {
+            task.setBatchSize(PREVIEW_RECORD_LIMIT);
+        }
         return new MarketoRestClient(task, new Jetty92RetryHelper(task.getMaximumRetries(), task.getInitialRetryIntervalMilis(), task.getMaximumRetriesIntervalMilis(), new DefaultJetty92ClientCreator(CONNECT_TIMEOUT_IN_MILLIS, IDLE_TIMEOUT_IN_MILLIS)));
     }
 

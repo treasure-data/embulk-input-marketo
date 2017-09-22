@@ -10,6 +10,7 @@ import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
+import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
@@ -58,8 +59,8 @@ public class CampaignInputPlugin extends MarketoBaseInputPluginDelegate<Campaign
                 .add("description", Types.STRING)
                 .add("type", Types.STRING)
                 .add("workspaceName", Types.STRING)
-                .add("createdAt", Types.TIMESTAMP, MarketoUtils.ISO_8601_FORMAT)
-                .add("updatedAt", Types.TIMESTAMP, MarketoUtils.ISO_8601_FORMAT)
+                .add("createdAt", Types.TIMESTAMP, MarketoUtils.MARKETO_DATE_TIME_FORMAT)
+                .add("updatedAt", Types.TIMESTAMP, MarketoUtils.MARKETO_DATE_TIME_FORMAT)
                 .add("active", Types.BOOLEAN);
         return builder.build();
     }

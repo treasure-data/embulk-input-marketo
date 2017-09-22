@@ -7,6 +7,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.io.ByteStreams;
+import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.input.marketo.rest.RecordPagingIterable;
 import org.embulk.spi.Column;
@@ -152,24 +153,24 @@ public class MarketoServiceImpl implements MarketoService
     }
 
     @Override
-    public List<Column> describeLead()
+    public List<MarketoField> describeLead()
     {
         return marketoRestClient.describeLead();
     }
 
     @Override
-    public List<Column> describeLeadByProgram()
+    public List<MarketoField> describeLeadByProgram()
     {
-        List<Column> columns = marketoRestClient.describeLead();
-        columns.add(new Column(columns.size(), PROGRAM_ID_COLUMN_NAME, Types.STRING));
+        List<MarketoField> columns = marketoRestClient.describeLead();
+        columns.add(new MarketoField(PROGRAM_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
         return columns;
     }
 
     @Override
-    public List<Column> describeLeadByLists()
+    public List<MarketoField> describeLeadByLists()
     {
-        List<Column> columns = marketoRestClient.describeLead();
-        columns.add(new Column(columns.size(), LIST_ID_COLUMN_NAME, Types.STRING));
+        List<MarketoField> columns = marketoRestClient.describeLead();
+        columns.add(new MarketoField(LIST_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
         return columns;
     }
 }

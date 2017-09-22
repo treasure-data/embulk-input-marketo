@@ -1,7 +1,7 @@
 package org.embulk.input.marketo;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.embulk.spi.Column;
+import org.embulk.input.marketo.model.MarketoField;
 
 import java.io.File;
 import java.util.Date;
@@ -12,11 +12,11 @@ import java.util.List;
  */
 public interface MarketoService
 {
-    List<Column> describeLead();
+    List<MarketoField> describeLead();
 
-    List<Column> describeLeadByProgram();
+    List<MarketoField> describeLeadByProgram();
 
-    List<Column> describeLeadByLists();
+    List<MarketoField> describeLeadByLists();
 
     File extractLead(Date startTime, Date endTime, List<String> extractFields, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond);
 

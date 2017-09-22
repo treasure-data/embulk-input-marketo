@@ -5,19 +5,18 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceRecord;
 import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonTopLevelValueLocator;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
+import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.spi.Column;
 import org.embulk.spi.ColumnVisitor;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.embulk.spi.Schema;
-import org.embulk.spi.type.Types;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -35,8 +34,8 @@ import java.util.Map;
 public class MarketoUtils
 {
     private static final Logger LOGGER = Exec.getLogger(MarketoUtils.class);
-    public static final String ISO_8601_FORMAT = "%Y-%m-%dT%H:%M:%S%z";
-
+    public static final String MARKETO_DATE_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S%z";
+    public static final String MARKETO_DATE_FORMAT = "%Y-%m-%d";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     public static final Function<ObjectNode, ServiceRecord> TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION = new Function<ObjectNode, ServiceRecord>()
     {
@@ -54,15 +53,16 @@ public class MarketoUtils
     {
     }
 
-    public static ServiceResponseMapper<? extends ValueLocator> buildDynamicResponseMapper(List<Column> columns)
+    public static ServiceResponseMapper<? extends ValueLocator> buildDynamicResponseMapper(List<MarketoField> columns)
     {
         JacksonServiceResponseMapper.Builder builder = JacksonServiceResponseMapper.builder();
-        for (Column column : columns) {
-            if (column.getType().equals(Types.TIMESTAMP)) {
-                builder.add(new JacksonTopLevelValueLocator(column.getName()), column.getName(), column.getType(), ISO_8601_FORMAT);
+        for (MarketoField column : columns) {
+            MarketoField.MarketoDataType marketoDataType = column.getMarketoDataType();
+            if (marketoDataType.getFormat().isPresent()) {
+                builder.add(new JacksonTopLevelValueLocator(column.getName()), column.getName(), marketoDataType.getType(), marketoDataType.getFormat().get());
             }
             else {
-                builder.add(new JacksonTopLevelValueLocator(column.getName()), column.getName(), column.getType());
+                builder.add(new JacksonTopLevelValueLocator(column.getName()), column.getName(), marketoDataType.getType());
             }
         }
         return builder.build();
@@ -70,7 +70,7 @@ public class MarketoUtils
 
     public static List<String> getFieldNameFromSchema(Schema schema)
     {
-        ImmutableList<String> fieldNames = FluentIterable.from(schema.getColumns()).transform(new Function<Column, String>()
+        return FluentIterable.from(schema.getColumns()).transform(new Function<Column, String>()
         {
             @Override
             public String apply(Column input)
@@ -78,7 +78,6 @@ public class MarketoUtils
                 return input.getName();
             }
         }).toList();
-        return fieldNames;
     }
     public static  ObjectNode transformToObjectNode(final Map<String, String> kvMap, Schema schema)
     {

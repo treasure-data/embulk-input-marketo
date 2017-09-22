@@ -12,11 +12,11 @@ import org.embulk.config.Task;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.MarketoBulkExtractRequest;
 import org.embulk.input.marketo.model.MarketoError;
+import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.input.marketo.model.filter.DateRangeFilter;
 import org.embulk.input.marketo.model.filter.ListFilter;
 import org.embulk.input.marketo.model.filter.MarketoFilter;
-import org.embulk.spi.Column;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.embulk.spi.type.Type;
@@ -37,10 +37,6 @@ import java.util.Map;
  */
 public class MarketoRestClient extends MarketoBaseRestClient
 {
-    private static final int IDLE_TIMEOUT = 5000;
-
-    private static final int CONNECT_TIMEOUT = 5000;
-
     private static final String BATCH_SIZE = "batchSize";
 
     private static final String NEXT_PAGE_TOKEN = "nextPageToken";
@@ -72,11 +68,9 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public interface PluginTask extends Task
     {
-        @Config("endpoint")
-        String getEndpoint();
 
-        @Config("identity_endpoint")
-        String getIdentityEndpoint();
+        @Config("account_id")
+        String getAccountId();
 
         @Config("client_secret")
         String getClientSecret();
@@ -91,11 +85,13 @@ public class MarketoRestClient extends MarketoBaseRestClient
         @Config("batch_size")
         @ConfigDefault("300")
         Integer getBatchSize();
+
+        void setBatchSize(Integer batchSize);
     }
 
     public MarketoRestClient(PluginTask task, Jetty92RetryHelper retryHelper)
     {
-        this(task.getEndpoint(), task.getIdentityEndpoint(), task.getClientId(), task.getClientSecret(), task.getBatchSize(), task.getMarketoLimitIntervalMilis(), retryHelper);
+        this("https://" + task.getAccountId() + ".mktorest.com", "https://" + task.getAccountId() + ".mktorest.com/identity", task.getClientId(), task.getClientSecret(), task.getBatchSize(), task.getMarketoLimitIntervalMilis(), retryHelper);
     }
 
     public MarketoRestClient(String endPoint, String identityEndPoint, String clientId, String clientSecret, Integer batchSize, int marketoLimitIntervalMilis, Jetty92RetryHelper retryHelper)
@@ -105,19 +101,19 @@ public class MarketoRestClient extends MarketoBaseRestClient
         this.batchSize = batchSize;
     }
 
-    public List<Column> describeLead()
+    public List<MarketoField> describeLead()
     {
         MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_LEAD.getEndpoint(), null, null, new MarketoResponseJetty92EntityReader<ObjectNode>(READ_TIMEOUT_MILLIS));
-        List<Column> columnsList = new ArrayList<>();
+        List<MarketoField> marketoFields = new ArrayList<>();
         List<ObjectNode> fields = jsonResponse.getResult();
         for (int i = 0; i < fields.size(); i++) {
             ObjectNode field = fields.get(i);
             String dataType = field.get("dataType").asText();
             ObjectNode restField = (ObjectNode) field.get("rest");
             String name = restField.get("name").asText();
-            columnsList.add(new Column(i, name, getType(dataType)));
+            marketoFields.add(new MarketoField(name, dataType));
         }
-        return columnsList;
+        return marketoFields;
     }
 
     private Type getType(String dataType)
@@ -251,7 +247,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
             }
             Thread.sleep(pollingInterval * 1000);
             waitTime = waitTime + (System.currentTimeMillis() - now);
-            if (waitTime >= waitTimeout) {
+            if (waitTime >= (waitTimeout * 1000)) {
                 throw new DataException("Job timeout exception, exportJob: " + exportId + ", run longer than " + waitTimeout + " seconds");
             }
         }
@@ -309,20 +305,21 @@ public class MarketoRestClient extends MarketoBaseRestClient
             @Override
             public RecordPagingIterable.MarketoPage<T> getNextPage(RecordPagingIterable.MarketoPage<T> currentPage)
             {
-                final Multimap<String, String> params = ArrayListMultimap.create();
-                params.put(BATCH_SIZE, String.valueOf(batchSize));
+                Multimap<String, String> params = ArrayListMultimap.create();
                 params.put(NEXT_PAGE_TOKEN, currentPage.getNextPageToken());
-                if (parameters != null) {
-                    params.putAll(parameters);
-                }
-                MarketoResponse<T> marketoResponse = doGet(endPoint, null, params, new MarketoResponseJetty92EntityReader<>(READ_TIMEOUT_MILLIS, recordClass));
-                return new RecordPagingIterable.MarketoPage<>(marketoResponse.getResult(), marketoResponse.getNextPageToken(), marketoResponse.isMoreResult());
+                return gettMarketoPage(params);
             }
 
             @Override
             public RecordPagingIterable.MarketoPage<T> getFirstPage()
             {
-                final Multimap<String, String> params = ArrayListMultimap.create();
+                return gettMarketoPage(null);
+            }
+            private RecordPagingIterable.MarketoPage<T> gettMarketoPage(Multimap<String, String> params)
+            {
+                if (params == null) {
+                    params = ArrayListMultimap.create();
+                }
                 params.put(BATCH_SIZE, String.valueOf(batchSize));
                 if (parameters != null) {
                     params.putAll(parameters);

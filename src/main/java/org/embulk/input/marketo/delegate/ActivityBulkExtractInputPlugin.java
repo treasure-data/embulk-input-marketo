@@ -52,7 +52,7 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
         JacksonServiceResponseMapper.Builder builder = JacksonServiceResponseMapper.builder();
         builder.add("marketoGUID", Types.STRING)
                 .add("leadId", Types.STRING)
-                .add("activityDate", Types.TIMESTAMP, MarketoUtils.ISO_8601_FORMAT)
+                .add("activityDate", Types.TIMESTAMP, MarketoUtils.MARKETO_DATE_TIME_FORMAT)
                 .add("activityTypeId", Types.STRING)
                 .add("campaignId", Types.STRING)
                 .add("primaryAttributeValueId", Types.STRING)

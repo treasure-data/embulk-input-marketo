@@ -14,10 +14,13 @@ import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.CsvTokenizer;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.spi.BufferAllocator;
+import org.embulk.spi.Column;
+import org.embulk.spi.ColumnVisitor;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
+import org.embulk.spi.json.JsonParser;
 import org.embulk.spi.time.Timestamp;
 import org.embulk.spi.time.TimestampParser;
 import org.embulk.spi.util.InputStreamFileInput;
@@ -72,7 +75,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
         @Config("latest_uids")
         @ConfigDefault("[]")
-        Set<String> previousUIds();
+        Set<String> getPreviousUids();
     }
 
     private String incrementalColumn;
@@ -90,6 +93,9 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     {
         if (!task.getFromDate().isPresent()) {
             throw new ConfigException("From date is required for Bulk Extract");
+        }
+        if (task.getFetchDays() > 30) {
+            throw new ConfigException("Marketo bulk extract fetch days can't be more than 30");
         }
         super.validateInputTask(task);
     }
@@ -122,20 +128,80 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     @Override
     public TaskReport ingestServiceData(T task, RecordImporter recordImporter, int taskIndex, PageBuilder pageBuilder)
     {
-        InputStream extractedStream = getExtractedStream(task, pageBuilder.getSchema());
-        return importRecordFromFile(task, extractedStream, recordImporter, pageBuilder);
+        InputStream extractedStream;
+        if (Exec.isPreview()) {
+            return importMockPreviewData(pageBuilder);
+        }
+        else {
+            extractedStream = getExtractedStream(task, pageBuilder.getSchema());
+            return importRecordFromFile(task, extractedStream, recordImporter, pageBuilder);
+        }
+    }
+
+    /**
+     * This method should be removed when we allow skip preview phase
+     * @param pageBuilder
+     * @return TaskReport
+     */
+    private TaskReport importMockPreviewData(final PageBuilder pageBuilder)
+    {
+        final JsonParser jsonParser = new JsonParser();
+        Schema schema = pageBuilder.getSchema();
+        ColumnVisitor visitor = new ColumnVisitor()
+        {
+            @Override
+            public void booleanColumn(Column column)
+            {
+                pageBuilder.setBoolean(column, false);
+            }
+
+            @Override
+            public void longColumn(Column column)
+            {
+                pageBuilder.setLong(column, 12345L);
+            }
+
+            @Override
+            public void doubleColumn(Column column)
+            {
+                pageBuilder.setDouble(column, 12345.123);
+            }
+
+            @Override
+            public void stringColumn(Column column)
+            {
+                pageBuilder.setString(column, "Mock Value");
+            }
+
+            @Override
+            public void timestampColumn(Column column)
+            {
+                pageBuilder.setTimestamp(column, Timestamp.ofEpochMilli(System.currentTimeMillis()));
+            }
+
+            @Override
+            public void jsonColumn(Column column)
+            {
+                pageBuilder.setJson(column, jsonParser.parse("{\"mockKey\":\"mockValue\"}"));
+            }
+        };
+        for (int i = 0; i < PREVIEW_RECORD_LIMIT; i++) {
+            schema.visitColumns(visitor);
+            pageBuilder.addRecord();
+        }
+        return Exec.newTaskReport();
     }
 
     protected TaskReport importRecordFromFile(T task, InputStream inputStream, RecordImporter recordImporter, PageBuilder pageBuilder)
     {
-        Set<String> latestUids = task.previousUIds();
+        Set<String> latestUids = task.getPreviousUids();
         TaskReport taskReport = Exec.newTaskReport();
         int imported = 0;
         Timestamp currentTimestamp = null;
         if (task.getLatestFetchTime().isPresent()) {
             currentTimestamp = Timestamp.ofEpochMilli(task.getLatestFetchTime().get());
         }
-        TimestampParser timestampParser = new TimestampParser(MarketoUtils.ISO_8601_FORMAT, DateTimeZone.UTC);
+        TimestampParser timestampParser = new TimestampParser(MarketoUtils.MARKETO_DATE_TIME_FORMAT, DateTimeZone.UTC);
         try (LineDecoder lineDecoder = new LineDecoder(new InputStreamFileInput(task.getBufferAllocator(), inputStream), task)) {
             CsvTokenizer csvTokenizer = new CsvTokenizer(lineDecoder, task);
             if (!csvTokenizer.nextFile()) {

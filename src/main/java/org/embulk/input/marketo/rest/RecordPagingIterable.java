@@ -32,13 +32,15 @@ public class RecordPagingIterable<T> implements Iterable<T>
 
         public RecordIterator()
         {
-            currentPage = pagingFunction.getFirstPage();
-            this.currentIterator = currentPage.getRecords().iterator();
         }
 
         @Override
         public boolean hasNext()
         {
+            if (currentPage == null) {
+                currentPage = pagingFunction.getFirstPage();
+                this.currentIterator = currentPage.getRecords().iterator();
+            }
             return currentIterator.hasNext() || currentPage.hasNext;
         }
 
