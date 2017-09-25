@@ -68,7 +68,6 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public interface PluginTask extends Task
     {
-
         @Config("account_id")
         String getAccountId();
 
@@ -85,7 +84,6 @@ public class MarketoRestClient extends MarketoBaseRestClient
         @Config("batch_size")
         @ConfigDefault("300")
         Integer getBatchSize();
-
         void setBatchSize(Integer batchSize);
     }
 
@@ -225,6 +223,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
     private void waitExportJobComplete(MarketoRESTEndpoint marketoRESTEndpoint, String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
     {
         long waitTime = 0;
+        long waitTimeoutMs = waitTimeout * 1000;
         long now = System.currentTimeMillis();
         while (true) {
             MarketoResponse<ObjectNode> marketoResponse = doGet(this.endPoint + marketoRESTEndpoint.getEndpoint(
@@ -238,6 +237,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 LOGGER.info("Jobs [{}] status is [{}]", exportId, status);
                 switch (status) {
                     case "Completed":
+                        LOGGER.info("Total wait time ms is [{}]", waitTime);
                         return;
                     case "Failed":
                         throw new DataException("Bulk extract job failed exportId: " + exportId + " errorMessage: " + objectNode.get("errorMsg").asText());
@@ -247,7 +247,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
             }
             Thread.sleep(pollingInterval * 1000);
             waitTime = waitTime + (System.currentTimeMillis() - now);
-            if (waitTime >= (waitTimeout * 1000)) {
+            if (waitTime >= waitTimeoutMs) {
                 throw new DataException("Job timeout exception, exportJob: " + exportId + ", run longer than " + waitTimeout + " seconds");
             }
         }

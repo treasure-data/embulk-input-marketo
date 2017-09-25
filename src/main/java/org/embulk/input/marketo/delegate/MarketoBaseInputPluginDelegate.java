@@ -39,6 +39,17 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
         @Config("maximum_retries_interval_milis")
         @ConfigDefault("120000")
         Integer getMaximumRetriesIntervalMilis();
+
+        @Config("schema_column_prefix")
+        @ConfigDefault("\"mk\"")
+        String getSchemaColumnPrefix();
+
+        @Config("extracted_fields")
+        @ConfigDefault("[]")
+        List<String> getExtractedFields();
+
+        void setExtractedFields(List<String> extractedFields);
+
     }
 
     @Override

@@ -1,10 +1,12 @@
 package org.embulk.input.marketo.delegate;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
+import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
@@ -39,10 +41,10 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            List<String> fieldNames = MarketoUtils.getFieldNameFromSchema(schema);
+            List<String> fieldNames = task.getExtractedFields();
             Date fromDate = task.getFromDate().orNull();
             File file = marketoService.extractLead(fromDate, MarketoUtils.addDate(fromDate, task.getFetchDays()), fieldNames, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
-                return new FileInputStream(file);
+            return new FileInputStream(file);
         }
         catch (FileNotFoundException e) {
             LOGGER.error("File not found", e);
@@ -55,7 +57,9 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            return MarketoUtils.buildDynamicResponseMapper(marketoService.describeLead());
+            List<MarketoField> columns = marketoService.describeLead();
+            task.setExtractedFields(MarketoUtils.getFieldNameFromMarketoFields(columns));
+            return MarketoUtils.buildDynamicResponseMapper(task.getSchemaColumnPrefix(), columns);
         }
     }
 }

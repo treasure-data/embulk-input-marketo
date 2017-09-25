@@ -9,6 +9,7 @@ import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
+import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
@@ -33,8 +34,7 @@ public class LeadWithListInputPlugin extends MarketoBaseInputPluginDelegate<Lead
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            List<String> fieldNames = MarketoUtils.getFieldNameFromSchema(pageBuilder.getSchema());
-            FluentIterable<ServiceRecord> serviceRecords = FluentIterable.from(marketoService.getAllListLead(fieldNames)).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION);
+            FluentIterable<ServiceRecord> serviceRecords = FluentIterable.from(marketoService.getAllListLead(task.getExtractedFields())).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION);
             int imported = 0;
             for (ServiceRecord serviceRecord : serviceRecords) {
                 if (imported >= PREVIEW_RECORD_LIMIT && Exec.isPreview()) {
@@ -52,7 +52,9 @@ public class LeadWithListInputPlugin extends MarketoBaseInputPluginDelegate<Lead
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            return MarketoUtils.buildDynamicResponseMapper(marketoService.describeLeadByLists());
+            List<MarketoField> columns = marketoService.describeLeadByLists();
+            task.setExtractedFields(MarketoUtils.getFieldNameFromMarketoFields(columns, MarketoUtils.LIST_ID_COLUMN_NAME));
+            return MarketoUtils.buildDynamicResponseMapper(task.getSchemaColumnPrefix(), columns);
         }
     }
 }

@@ -2,18 +2,13 @@ package org.embulk.input.marketo;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.io.ByteStreams;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.input.marketo.rest.RecordPagingIterable;
-import org.embulk.spi.Column;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
-import org.embulk.spi.type.Types;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -36,10 +31,6 @@ public class MarketoServiceImpl implements MarketoService
 
     private static final String DEFAULT_FILE_FORMAT = "csv";
 
-    private static final String LIST_ID_COLUMN_NAME = "listId";
-
-    private static final String PROGRAM_ID_COLUMN_NAME = "programId";
-
     private MarketoRestClient marketoRestClient;
 
     public MarketoServiceImpl(MarketoRestClient marketoRestClient)
@@ -48,9 +39,9 @@ public class MarketoServiceImpl implements MarketoService
     }
 
     @Override
-    public File extractLead(Date startTime, Date endTime, List<String> extractFields, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond)
+    public File extractLead(Date startTime, Date endTime, List<String> extractedFields, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond)
     {
-        String exportID = marketoRestClient.createLeadBulkExtract(startTime, endTime, extractFields);
+        String exportID = marketoRestClient.createLeadBulkExtract(startTime, endTime, extractedFields);
         marketoRestClient.startLeadBulkExtract(exportID);
         try {
             marketoRestClient.waitLeadExportJobComplete(exportID, pollingTimeIntervalSecond, bulkJobTimeoutSecond);
@@ -66,7 +57,7 @@ public class MarketoServiceImpl implements MarketoService
     private File saveExtractedFile(String exportID, InputStream leadBulkExtractResult)
     {
         File tempFile = Exec.getTempFileSpace().createTempFile(DEFAULT_FILE_FORMAT);
-        try (OutputStream fileOuputStream = new FileOutputStream(tempFile)){
+        try (OutputStream fileOuputStream = new FileOutputStream(tempFile)) {
             ByteStreams.copy(leadBulkExtractResult, fileOuputStream);
         }
         catch (IOException e) {
@@ -99,30 +90,18 @@ public class MarketoServiceImpl implements MarketoService
         List<Iterable<ObjectNode>> iterables = new ArrayList<>();
         for (ObjectNode node : lists) {
             final String id = node.get("id").asText();
-            iterables.add(Iterables.transform(marketoRestClient.getLeadsByList(id, filterFieldName(fieldNames, LIST_ID_COLUMN_NAME)), new Function<ObjectNode, ObjectNode>()
+            iterables.add(Iterables.transform(marketoRestClient.getLeadsByList(id, fieldNames), new Function<ObjectNode, ObjectNode>()
             {
                 @Nullable
                 @Override
                 public ObjectNode apply(@Nullable ObjectNode input)
                 {
-                    input.put(LIST_ID_COLUMN_NAME, id);
+                    input.put(MarketoUtils.LIST_ID_COLUMN_NAME, id);
                     return input;
                 }
             }));
         }
         return Iterables.concat(iterables);
-    }
-
-    public static ImmutableList<String> filterFieldName(List<String> fieldNames, final String columName)
-    {
-        return FluentIterable.from(fieldNames).filter(new Predicate<String>()
-        {
-            @Override
-            public boolean apply(@Nullable String input)
-            {
-                return !columName.equals(input);
-            }
-        }).toList();
     }
 
     @Override
@@ -132,13 +111,13 @@ public class MarketoServiceImpl implements MarketoService
         List<Iterable<ObjectNode>> iterables = new ArrayList<>();
         for (ObjectNode node : lists) {
             final String id = node.get("id").asText();
-            iterables.add(Iterables.transform(marketoRestClient.getLeadsByProgram(id, filterFieldName(fieldNames, PROGRAM_ID_COLUMN_NAME)), new Function<ObjectNode, ObjectNode>()
+            iterables.add(Iterables.transform(marketoRestClient.getLeadsByProgram(id, fieldNames), new Function<ObjectNode, ObjectNode>()
             {
                 @Nullable
                 @Override
                 public ObjectNode apply(@Nullable ObjectNode input)
                 {
-                    input.put(PROGRAM_ID_COLUMN_NAME, id);
+                    input.put(MarketoUtils.PROGRAM_ID_COLUMN_NAME, id);
                     return input;
                 }
             }));
@@ -162,7 +141,7 @@ public class MarketoServiceImpl implements MarketoService
     public List<MarketoField> describeLeadByProgram()
     {
         List<MarketoField> columns = marketoRestClient.describeLead();
-        columns.add(new MarketoField(PROGRAM_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
+        columns.add(new MarketoField(MarketoUtils.PROGRAM_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
         return columns;
     }
 
@@ -170,7 +149,7 @@ public class MarketoServiceImpl implements MarketoService
     public List<MarketoField> describeLeadByLists()
     {
         List<MarketoField> columns = marketoRestClient.describeLead();
-        columns.add(new MarketoField(LIST_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
+        columns.add(new MarketoField(MarketoUtils.LIST_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
         return columns;
     }
 }

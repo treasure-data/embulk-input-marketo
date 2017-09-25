@@ -9,6 +9,7 @@ import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
+import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
@@ -29,8 +30,7 @@ public class LeadWithProgramInputPlugin extends MarketoBaseInputPluginDelegate<L
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            List<String> fieldNames = MarketoUtils.getFieldNameFromSchema(pageBuilder.getSchema());
-
+            List<String> fieldNames = task.getExtractedFields();
             FluentIterable<ServiceRecord> serviceRecords = FluentIterable.from(marketoService.getAllProgramLead(fieldNames)).
                     transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION);
             int imported = 0;
@@ -50,7 +50,9 @@ public class LeadWithProgramInputPlugin extends MarketoBaseInputPluginDelegate<L
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            return MarketoUtils.buildDynamicResponseMapper(marketoService.describeLeadByProgram());
+            List<MarketoField> columns = marketoService.describeLeadByProgram();
+            task.setExtractedFields(MarketoUtils.getFieldNameFromMarketoFields(columns, MarketoUtils.PROGRAM_ID_COLUMN_NAME));
+            return MarketoUtils.buildDynamicResponseMapper(task.getSchemaColumnPrefix(), columns);
         }
     }
 }

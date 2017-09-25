@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
 import org.embulk.base.restclient.jackson.JacksonServiceRecord;
+import org.embulk.base.restclient.jackson.JacksonServiceValue;
 import org.embulk.base.restclient.record.RecordImporter;
+import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigDiff;
@@ -25,8 +27,10 @@ import org.embulk.spi.time.Timestamp;
 import org.embulk.spi.time.TimestampParser;
 import org.embulk.spi.util.InputStreamFileInput;
 import org.embulk.spi.util.LineDecoder;
-import org.joda.time.DateTimeZone;
-import org.slf4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+import org.msgpack.value.Value;
 
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -42,11 +46,11 @@ import java.util.Set;
  */
 public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBulkExtractInputPlugin.PluginTask> extends MarketoBaseInputPluginDelegate<T>
 {
-    private static final Logger LOGGER = Exec.getLogger(MarketoBaseBulkExtractInputPlugin.class);
-
     private static final String LATEST_FETCH_TIME = "latest_fetch_time";
 
     private static final String LATEST_UID_LIST = "latest_uids";
+
+    private static final DateTimeFormatter ISO_DATETIME_FORMAT = ISODateTimeFormat.dateTimeParser();
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, CsvTokenizer.PluginTask
     {
@@ -197,11 +201,10 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         Set<String> latestUids = task.getPreviousUids();
         TaskReport taskReport = Exec.newTaskReport();
         int imported = 0;
-        Timestamp currentTimestamp = null;
+        DateTime currentTimestamp = null;
         if (task.getLatestFetchTime().isPresent()) {
-            currentTimestamp = Timestamp.ofEpochMilli(task.getLatestFetchTime().get());
+            currentTimestamp = new DateTime(task.getLatestFetchTime().get());
         }
-        TimestampParser timestampParser = new TimestampParser(MarketoUtils.MARKETO_DATE_TIME_FORMAT, DateTimeZone.UTC);
         try (LineDecoder lineDecoder = new LineDecoder(new InputStreamFileInput(task.getBufferAllocator(), inputStream), task)) {
             CsvTokenizer csvTokenizer = new CsvTokenizer(lineDecoder, task);
             if (!csvTokenizer.nextFile()) {
@@ -218,21 +221,20 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                     values.add(csvTokenizer.nextColumnOrNull());
                 }
                 final Map<String, String> kvMap = MarketoUtils.zip(headers, values);
-                ObjectNode objectNode = MarketoUtils.transformToObjectNode(kvMap, pageBuilder.getSchema());
-                if (!objectNode.has(incrementalColumn)) {
+                ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(kvMap);
+
+                if (!kvMap.containsKey(incrementalColumn)) {
                     throw new DataException("Extracted record doesn't have incremental column " + incrementalColumn);
                 }
-                JsonNode incrementalJsonNode = objectNode.get(incrementalColumn);
                 if (uidColumn != null) {
-                    JsonNode uidField = objectNode.get(uidColumn);
-                    String uid = uidField.asText();
+                    String uid = kvMap.get(uidColumn);
                     if (latestUids.contains(uid)) {
                         //Duplicate value
                         continue;
                     }
                 }
-                String incrementalTimeStamp = incrementalJsonNode.asText();
-                Timestamp timestamp = timestampParser.parse(incrementalTimeStamp);
+                String incrementalTimeStamp = kvMap.get(incrementalColumn);
+                DateTime timestamp = ISO_DATETIME_FORMAT.parseDateTime(incrementalTimeStamp);
                 if (currentTimestamp == null) {
                     currentTimestamp = timestamp;
                 }
@@ -251,13 +253,83 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                         }
                     }
                 }
-                recordImporter.importRecord(new JacksonServiceRecord(objectNode), pageBuilder);
+                recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
                 imported++;
             }
         }
-        taskReport.set(LATEST_FETCH_TIME, currentTimestamp == null ? null : currentTimestamp.toEpochMilli());
+        taskReport.set(LATEST_FETCH_TIME, currentTimestamp == null ? null : currentTimestamp.getMillis());
         taskReport.set(LATEST_UID_LIST, latestUids);
         return taskReport;
     }
+
     protected abstract InputStream getExtractedStream(T task, Schema schema);
+
+    private static class AllStringJacksonServiceRecord extends JacksonServiceRecord
+    {
+        public AllStringJacksonServiceRecord(ObjectNode record)
+        {
+            super(record);
+        }
+
+        @Override
+        public JacksonServiceValue getValue(ValueLocator locator)
+        {
+            // We know that this thing only contain text.
+            JacksonServiceValue value = super.getValue(locator);
+            return new StringConverterJacksonServiceRecord(value.stringValue());
+        }
+    }
+
+    private static class StringConverterJacksonServiceRecord extends JacksonServiceValue
+    {
+        private String textValue;
+
+        public StringConverterJacksonServiceRecord(String textValue)
+        {
+            super(null);
+            this.textValue = textValue;
+        }
+
+        @Override
+        public boolean isNull()
+        {
+            return textValue == null || textValue.equals("null");
+        }
+
+        @Override
+        public boolean booleanValue()
+        {
+            return Boolean.parseBoolean(textValue);
+        }
+
+        @Override
+        public double doubleValue()
+        {
+            return Double.parseDouble(textValue);
+        }
+
+        @Override
+        public Value jsonValue(JsonParser jsonParser)
+        {
+            return jsonParser.parse(textValue);
+        }
+
+        @Override
+        public long longValue()
+        {
+            return Long.parseLong(textValue);
+        }
+
+        @Override
+        public String stringValue()
+        {
+            return textValue;
+        }
+
+        @Override
+        public Timestamp timestampValue(TimestampParser timestampParser)
+        {
+            return timestampParser.parse(textValue);
+        }
+    }
 }

@@ -16,18 +16,18 @@ repositories {
 configurations {
     provided
 }
-version = "0.5.7.alpha.1"
+version = "0.5.7.alpha.3"
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.8.33"
-    provided "org.embulk:embulk-core:0.8.33"
+    compile  "org.embulk:embulk-core:0.8.+"
+    provided "org.embulk:embulk-core:0.8.+"
     compile  "org.embulk.base.restclient:embulk-base-restclient:0.5.3"
     compile  "org.embulk.base.restclient:embulk-util-retryhelper-jetty92:0.5.3"
     testCompile "junit:junit:4.+"
-    testCompile "org.embulk:embulk-core:0.8.16:tests"
-    testCompile "org.embulk:embulk-test:0.8.16"
+    testCompile "org.embulk:embulk-core:0.8.+:tests"
+    testCompile "org.embulk:embulk-test:0.8.+"
     testCompile "org.mockito:mockito-core:2.+"
 }
 
