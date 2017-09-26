@@ -110,21 +110,23 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
         Long currentLatestFetchTime = 0L;
         Set<String> latestUIds = null;
-        for (TaskReport taskReport : taskReports) {
-            Long latestFetchTime = taskReport.get(Long.class, LATEST_FETCH_TIME);
-            if (latestFetchTime == null) {
-                continue;
+        if (incrementalColumn != null) {
+            for (TaskReport taskReport : taskReports) {
+                Long latestFetchTime = taskReport.get(Long.class, LATEST_FETCH_TIME);
+                if (latestFetchTime == null) {
+                    continue;
+                }
+                if (currentLatestFetchTime < latestFetchTime) {
+                    currentLatestFetchTime = latestFetchTime;
+                    latestUIds = taskReport.get(Set.class, LATEST_UID_LIST);
+                }
             }
-            if (currentLatestFetchTime < latestFetchTime) {
-                currentLatestFetchTime = latestFetchTime;
-                latestUIds = taskReport.get(Set.class, LATEST_UID_LIST);
+            if (!currentLatestFetchTime.equals(0L)) {
+                configDiff.set(LATEST_FETCH_TIME, currentLatestFetchTime);
+                DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
+                configDiff.set("from_date", df.format(new Date(currentLatestFetchTime)));
+                configDiff.set(LATEST_UID_LIST, latestUIds);
             }
-        }
-        if (!currentLatestFetchTime.equals(0L)) {
-            configDiff.set(LATEST_FETCH_TIME, currentLatestFetchTime);
-            DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
-            configDiff.set("from_date", df.format(new Date(currentLatestFetchTime)));
-            configDiff.set(LATEST_UID_LIST, latestUIds);
         }
         return configDiff;
     }
@@ -257,7 +259,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 imported++;
             }
         }
-        taskReport.set(LATEST_FETCH_TIME, currentTimestamp == null ? null : currentTimestamp.getMillis());
+        taskReport.set(LATEST_FETCH_TIME, currentTimestamp == null ? 0L : currentTimestamp.getMillis());
         taskReport.set(LATEST_UID_LIST, latestUids);
         return taskReport;
     }
