@@ -14,6 +14,7 @@ import org.embulk.spi.Exec;
 import org.embulk.spi.Schema;
 import org.embulk.util.retryhelper.jetty92.DefaultJetty92ClientCreator;
 import org.embulk.util.retryhelper.jetty92.Jetty92RetryHelper;
+import org.joda.time.DateTime;
 
 import java.util.List;
 
@@ -50,6 +51,9 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
 
         void setExtractedFields(List<String> extractedFields);
 
+        DateTime getJobStartTime();
+
+        void setJobStartTime(DateTime dateTime);
     }
 
     @Override
@@ -61,6 +65,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
     @Override
     public void validateInputTask(T task)
     {
+        task.setJobStartTime(DateTime.now());
     }
 
     @VisibleForTesting

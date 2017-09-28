@@ -52,11 +52,14 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
     private static final DateTimeFormatter ISO_DATETIME_FORMAT = ISODateTimeFormat.dateTimeParser();
 
+    private static final String IMPORTED_RECORD_COUNT = "imported";
+
+    private static final String FROM_DATE = "from_date";
+
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, CsvTokenizer.PluginTask
     {
         @Config("from_date")
-        @ConfigDefault("null")
-        Optional<Date> getFromDate();
+        Date getFromDate();
 
         @Config("fetch_days")
         @ConfigDefault("1")
@@ -80,6 +83,12 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         @Config("latest_uids")
         @ConfigDefault("[]")
         Set<String> getPreviousUids();
+
+        @Config("to_date")
+        @ConfigDefault("null")
+        Optional<Date> getToDate();
+
+        void setToDate(Date toDate);
     }
 
     private String incrementalColumn;
@@ -95,13 +104,28 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     @Override
     public void validateInputTask(T task)
     {
-        if (!task.getFromDate().isPresent()) {
+        super.validateInputTask(task);
+        if (task.getFromDate() == null) {
             throw new ConfigException("From date is required for Bulk Extract");
         }
         if (task.getFetchDays() > 30) {
             throw new ConfigException("Marketo bulk extract fetch days can't be more than 30");
         }
-        super.validateInputTask(task);
+        //Calculate to date
+        DateTime toDate = getToDate(task);
+        task.setToDate(toDate.toDate());
+    }
+
+    public DateTime getToDate(T task)
+    {
+        Date fromDate = task.getFromDate();
+        DateTime dateTime = new DateTime(fromDate);
+        DateTime toDate = dateTime.plusDays(task.getFetchDays());
+        if (toDate.isAfter(task.getJobStartTime())) {
+            //Minus 1 hour and lock down toDate
+            toDate = task.getJobStartTime().minusHours(1);
+        }
+        return toDate;
     }
 
     @Override
@@ -109,8 +133,10 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     {
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
         Long currentLatestFetchTime = 0L;
-        Set<String> latestUIds = null;
+        Set latestUIds = null;
         if (incrementalColumn != null) {
+            int imported = 0;
+            DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
             for (TaskReport taskReport : taskReports) {
                 Long latestFetchTime = taskReport.get(Long.class, LATEST_FETCH_TIME);
                 if (latestFetchTime == null) {
@@ -120,13 +146,12 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                     currentLatestFetchTime = latestFetchTime;
                     latestUIds = taskReport.get(Set.class, LATEST_UID_LIST);
                 }
+                imported = imported + taskReport.get(Integer.class, IMPORTED_RECORD_COUNT);
             }
-            if (!currentLatestFetchTime.equals(0L)) {
-                configDiff.set(LATEST_FETCH_TIME, currentLatestFetchTime);
-                DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
-                configDiff.set("from_date", df.format(new Date(currentLatestFetchTime)));
-                configDiff.set(LATEST_UID_LIST, latestUIds);
-            }
+            // in case of we didn't import anything but search range is entirely in the past. Then we should move the the range anyway.
+            configDiff.set(FROM_DATE, df.format(task.getToDate().get()));
+            configDiff.set(LATEST_FETCH_TIME, currentLatestFetchTime);
+            configDiff.set(LATEST_UID_LIST, latestUIds);
         }
         return configDiff;
     }
@@ -203,9 +228,9 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         Set<String> latestUids = task.getPreviousUids();
         TaskReport taskReport = Exec.newTaskReport();
         int imported = 0;
-        DateTime currentTimestamp = null;
+        long currentTimestamp = 0L;
         if (task.getLatestFetchTime().isPresent()) {
-            currentTimestamp = new DateTime(task.getLatestFetchTime().get());
+            currentTimestamp = task.getLatestFetchTime().get();
         }
         try (LineDecoder lineDecoder = new LineDecoder(new InputStreamFileInput(task.getBufferAllocator(), inputStream), task)) {
             CsvTokenizer csvTokenizer = new CsvTokenizer(lineDecoder, task);
@@ -219,8 +244,14 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
             }
             while (csvTokenizer.nextRecord() && (imported < PREVIEW_RECORD_LIMIT || !Exec.isPreview())) {
                 List<String> values = new ArrayList<>();
-                while (csvTokenizer.hasNextColumn()) {
-                    values.add(csvTokenizer.nextColumnOrNull());
+                try {
+                    while (csvTokenizer.hasNextColumn()) {
+                        values.add(csvTokenizer.nextColumnOrNull());
+                    }
+                }
+                catch (CsvTokenizer.InvalidValueException ex) {
+                    throw new DataException("Encounter exception when parse csv file. Please check to see if you are using the correct" +
+                            "quote or escape character.", ex);
                 }
                 final Map<String, String> kvMap = MarketoUtils.zip(headers, values);
                 ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(kvMap);
@@ -236,31 +267,26 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                     }
                 }
                 String incrementalTimeStamp = kvMap.get(incrementalColumn);
-                DateTime timestamp = ISO_DATETIME_FORMAT.parseDateTime(incrementalTimeStamp);
-                if (currentTimestamp == null) {
+                long timestamp = ISO_DATETIME_FORMAT.parseDateTime(incrementalTimeStamp).getMillis();
+                if (currentTimestamp < timestamp) {
                     currentTimestamp = timestamp;
+                    //switch timestamp
+                    latestUids.clear();
                 }
-                else {
-                    int compareTo = currentTimestamp.compareTo(timestamp);
-                    if (compareTo < 0) {
-                        currentTimestamp = timestamp;
-                        //switch timestamp
-                        latestUids.clear();
-                    }
-                    else if (compareTo == 0) {
-                        //timestamp is equal
-                        if (uidColumn != null) {
-                            JsonNode uidField = objectNode.get(uidColumn);
-                            latestUids.add(uidField.asText());
-                        }
+                else if (currentTimestamp == timestamp) {
+                    //timestamp is equal
+                    if (uidColumn != null) {
+                        JsonNode uidField = objectNode.get(uidColumn);
+                        latestUids.add(uidField.asText());
                     }
                 }
                 recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
                 imported++;
             }
         }
-        taskReport.set(LATEST_FETCH_TIME, currentTimestamp == null ? 0L : currentTimestamp.getMillis());
+        taskReport.set(LATEST_FETCH_TIME, currentTimestamp);
         taskReport.set(LATEST_UID_LIST, latestUids);
+        taskReport.set(IMPORTED_RECORD_COUNT, imported);
         return taskReport;
     }
 

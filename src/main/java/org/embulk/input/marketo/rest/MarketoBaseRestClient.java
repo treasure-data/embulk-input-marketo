@@ -2,10 +2,7 @@ package org.embulk.input.marketo.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentProvider;
@@ -128,6 +125,7 @@ public class MarketoBaseRestClient implements AutoCloseable
         if (accessTokenResponse.hasError()) {
             throw new DataException(accessTokenResponse.getErrorDescription());
         }
+        LOGGER.info("Acquired new access token");
         return accessTokenResponse.getAccessToken();
     }
 
@@ -194,6 +192,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                     String code = error.getCode();
                     switch (code) {
                         case "602":
+                            LOGGER.info("Access token expired");
                             renewAccessToken();
                             return true;
                         case "606":

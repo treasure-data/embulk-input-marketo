@@ -12,6 +12,7 @@ import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.spi.Exec;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -88,14 +89,6 @@ public class MarketoUtils
             kvMap.put(keys.get(i), values.get(i));
         }
         return kvMap;
-    }
-
-    public static Date addDate(Date fromDate, Integer addDate)
-    {
-        Calendar c = Calendar.getInstance();
-        c.setTime(fromDate);
-        c.add(Calendar.DATE, addDate);
-        return c.getTime();
     }
 
     public static String buildColumnName(String prefix, String columnName)

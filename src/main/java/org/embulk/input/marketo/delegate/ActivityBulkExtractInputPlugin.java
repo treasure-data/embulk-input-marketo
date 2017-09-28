@@ -37,8 +37,8 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            Date fromDate = task.getFromDate().orNull();
-            return new FileInputStream(marketoService.extractAllActivity(fromDate, MarketoUtils.addDate(fromDate, task.getFetchDays()), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
+            Date fromDate = task.getFromDate();
+            return new FileInputStream(marketoService.extractAllActivity(fromDate, task.getToDate().get(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
         }
         catch (FileNotFoundException e) {
             LOGGER.error("Exception when trying to extract activity", e);

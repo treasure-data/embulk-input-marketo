@@ -2,16 +2,20 @@ package org.embulk.input.marketo;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.base.Optional;
 import org.embulk.base.restclient.DispatchingRestClientInputPluginDelegate;
 import org.embulk.base.restclient.RestClientInputPluginDelegate;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
+import org.embulk.config.ConfigException;
 import org.embulk.input.marketo.delegate.ActivityBulkExtractInputPlugin;
 import org.embulk.input.marketo.delegate.CampaignInputPlugin;
 import org.embulk.input.marketo.delegate.LeadBulkExtractInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithListInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithProgramInputPlugin;
 import org.embulk.input.marketo.rest.MarketoRestClient;
+
+import java.util.Date;
 
 public class MarketoInputPluginDelegate
         extends DispatchingRestClientInputPluginDelegate<MarketoInputPluginDelegate.PluginTask>
@@ -37,6 +41,17 @@ public class MarketoInputPluginDelegate
         @Config("maximum_retries_interval_milis")
         @ConfigDefault("120000")
         Integer getMaximumRetriesIntervalMilis();
+
+        @Config("hidden_from_date")
+        @ConfigDefault("\"2017-09-01\"")
+        @Override
+        Date getFromDate();
+
+        void setFromDate(Date fromDate);
+
+        @Config("from_date")
+        @ConfigDefault("null")
+        Optional<Date> getWrappedFromDate();
     }
 
     @SuppressWarnings("unchecked")
@@ -44,6 +59,16 @@ public class MarketoInputPluginDelegate
     protected RestClientInputPluginDelegate dispatchPerTask(PluginTask task)
     {
         Target target = task.getTarget();
+        switch (target) {
+            case LEAD:
+            case ACTIVITY:
+                if (!task.getWrappedFromDate().isPresent()) {
+                    throw new ConfigException("From date is required for target LEAD or ACTIVITY");
+                }
+                Date date = task.getWrappedFromDate().get();
+                task.setFromDate(date);
+                break;
+        }
         return target.getRestClientInputPluginDelegate();
     }
 

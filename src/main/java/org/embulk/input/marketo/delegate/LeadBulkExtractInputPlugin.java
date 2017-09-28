@@ -42,8 +42,8 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
             List<String> fieldNames = task.getExtractedFields();
-            Date fromDate = task.getFromDate().orNull();
-            File file = marketoService.extractLead(fromDate, MarketoUtils.addDate(fromDate, task.getFetchDays()), fieldNames, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
+            Date fromDate = task.getFromDate();
+            File file = marketoService.extractLead(fromDate, task.getToDate().get(), fieldNames, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
             return new FileInputStream(file);
         }
         catch (FileNotFoundException e) {
