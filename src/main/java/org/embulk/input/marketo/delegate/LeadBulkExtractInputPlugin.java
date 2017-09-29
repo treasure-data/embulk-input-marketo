@@ -1,6 +1,5 @@
 package org.embulk.input.marketo.delegate;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.input.marketo.MarketoService;
@@ -43,7 +42,7 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
             List<String> fieldNames = task.getExtractedFields();
             Date fromDate = task.getFromDate();
-            File file = marketoService.extractLead(fromDate, task.getToDate().get(), fieldNames, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
+            File file = marketoService.extractLead(fromDate, task.getToDate().orNull(), fieldNames, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
             return new FileInputStream(file);
         }
         catch (FileNotFoundException e) {

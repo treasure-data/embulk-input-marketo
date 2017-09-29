@@ -42,8 +42,10 @@ public class MarketoInputPluginDelegate
         @ConfigDefault("120000")
         Integer getMaximumRetriesIntervalMilis();
 
+        //We don't need to let the internal plugin know that it being dispatched and force it to set require field optional
+        //We will hide the real from_date, and set it when validating task
         @Config("hidden_from_date")
-        @ConfigDefault("\"2017-09-01\"")
+        @ConfigDefault("\"1970-01-01\"")
         @Override
         Date getFromDate();
 

@@ -80,6 +80,10 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         @ConfigDefault("3600")
         Integer getBulkJobTimeoutSecond();
 
+        @Config("incremental")
+        @ConfigDefault("true")
+        Boolean getIncremental();
+
         @Config("latest_uids")
         @ConfigDefault("[]")
         Set<String> getPreviousUids();
@@ -134,7 +138,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
         Long currentLatestFetchTime = 0L;
         Set latestUIds = null;
-        if (incrementalColumn != null) {
+        if (incrementalColumn != null && task.getIncremental()) {
             int imported = 0;
             DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
             for (TaskReport taskReport : taskReports) {
@@ -149,7 +153,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 imported = imported + taskReport.get(Integer.class, IMPORTED_RECORD_COUNT);
             }
             // in case of we didn't import anything but search range is entirely in the past. Then we should move the the range anyway.
-            configDiff.set(FROM_DATE, df.format(task.getToDate().get()));
+            configDiff.set(FROM_DATE, df.format(task.getToDate().orNull()));
             configDiff.set(LATEST_FETCH_TIME, currentLatestFetchTime);
             configDiff.set(LATEST_UID_LIST, latestUIds);
         }
@@ -178,46 +182,46 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     {
         final JsonParser jsonParser = new JsonParser();
         Schema schema = pageBuilder.getSchema();
-        ColumnVisitor visitor = new ColumnVisitor()
-        {
-            @Override
-            public void booleanColumn(Column column)
+        for (int i = 1; i <= PREVIEW_RECORD_LIMIT; i++) {
+            final int rowNum = i;
+            schema.visitColumns(new ColumnVisitor()
             {
-                pageBuilder.setBoolean(column, false);
-            }
+                @Override
+                public void booleanColumn(Column column)
+                {
+                    pageBuilder.setBoolean(column, false);
+                }
 
-            @Override
-            public void longColumn(Column column)
-            {
-                pageBuilder.setLong(column, 12345L);
-            }
+                @Override
+                public void longColumn(Column column)
+                {
+                    pageBuilder.setLong(column, 12345L);
+                }
 
-            @Override
-            public void doubleColumn(Column column)
-            {
-                pageBuilder.setDouble(column, 12345.123);
-            }
+                @Override
+                public void doubleColumn(Column column)
+                {
+                    pageBuilder.setDouble(column, 12345.123);
+                }
 
-            @Override
-            public void stringColumn(Column column)
-            {
-                pageBuilder.setString(column, "Mock Value");
-            }
+                @Override
+                public void stringColumn(Column column)
+                {
+                    pageBuilder.setString(column, column.getName() + "_" + rowNum);
+                }
 
-            @Override
-            public void timestampColumn(Column column)
-            {
-                pageBuilder.setTimestamp(column, Timestamp.ofEpochMilli(System.currentTimeMillis()));
-            }
+                @Override
+                public void timestampColumn(Column column)
+                {
+                    pageBuilder.setTimestamp(column, Timestamp.ofEpochMilli(System.currentTimeMillis()));
+                }
 
-            @Override
-            public void jsonColumn(Column column)
-            {
-                pageBuilder.setJson(column, jsonParser.parse("{\"mockKey\":\"mockValue\"}"));
-            }
-        };
-        for (int i = 0; i < PREVIEW_RECORD_LIMIT; i++) {
-            schema.visitColumns(visitor);
+                @Override
+                public void jsonColumn(Column column)
+                {
+                    pageBuilder.setJson(column, jsonParser.parse("{\"mockKey\":\"mockValue\"}"));
+                }
+            });
             pageBuilder.addRecord();
         }
         return Exec.newTaskReport();
@@ -256,28 +260,30 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 final Map<String, String> kvMap = MarketoUtils.zip(headers, values);
                 ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(kvMap);
 
-                if (!kvMap.containsKey(incrementalColumn)) {
-                    throw new DataException("Extracted record doesn't have incremental column " + incrementalColumn);
-                }
-                if (uidColumn != null) {
-                    String uid = kvMap.get(uidColumn);
-                    if (latestUids.contains(uid)) {
-                        //Duplicate value
-                        continue;
+                if (task.getIncremental()) {
+                    if (!kvMap.containsKey(incrementalColumn)) {
+                        throw new DataException("Extracted record doesn't have incremental column " + incrementalColumn);
                     }
-                }
-                String incrementalTimeStamp = kvMap.get(incrementalColumn);
-                long timestamp = ISO_DATETIME_FORMAT.parseDateTime(incrementalTimeStamp).getMillis();
-                if (currentTimestamp < timestamp) {
-                    currentTimestamp = timestamp;
-                    //switch timestamp
-                    latestUids.clear();
-                }
-                else if (currentTimestamp == timestamp) {
-                    //timestamp is equal
                     if (uidColumn != null) {
-                        JsonNode uidField = objectNode.get(uidColumn);
-                        latestUids.add(uidField.asText());
+                        String uid = kvMap.get(uidColumn);
+                        if (latestUids.contains(uid)) {
+                            //Duplicate value
+                            continue;
+                        }
+                    }
+                    String incrementalTimeStamp = kvMap.get(incrementalColumn);
+                    long timestamp = ISO_DATETIME_FORMAT.parseDateTime(incrementalTimeStamp).getMillis();
+                    if (currentTimestamp < timestamp) {
+                        currentTimestamp = timestamp;
+                        //switch timestamp
+                        latestUids.clear();
+                    }
+                    else if (currentTimestamp == timestamp) {
+                        //timestamp is equal
+                        if (uidColumn != null) {
+                            JsonNode uidField = objectNode.get(uidColumn);
+                            latestUids.add(uidField.asText());
+                        }
                     }
                 }
                 recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
