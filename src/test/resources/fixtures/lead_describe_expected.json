@@ -1,0 +1,66 @@
+[
+  {
+    "name": "mKtestboolean",
+    "marketoDataType": "BOOLEAN"
+  },
+  {
+    "name": "mKtestcurrency",
+    "marketoDataType": "CURRENCY"
+  },
+  {
+    "name": "mKtestdate",
+    "marketoDataType": "DATE"
+  },
+  {
+    "name": "mKtestDatetime",
+    "marketoDataType": "DATETIME"
+  },
+  {
+    "name": "mKtestemail",
+    "marketoDataType": "EMAIL"
+  },
+  {
+    "name": "mKtestfloat",
+    "marketoDataType": "FLOAT"
+  },
+  {
+    "name": "mKtestinteger",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "mKtestpercent",
+    "marketoDataType": "PERCENT"
+  },
+  {
+    "name": "mKtestphone",
+    "marketoDataType": "PHONE"
+  },
+  {
+    "name": "mKtestscore",
+    "marketoDataType": "SCORE"
+  },
+  {
+    "name": "mKteststring",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "mKtesttextarea",
+    "marketoDataType": "TEXTAREA"
+  },
+  {
+    "name": "mKtesturl",
+    "marketoDataType": "URL"
+  },
+  {
+    "name": "mKTestReference",
+    "marketoDataType": "REFERENCE"
+  },
+  {
+    "name": "mKTestFormula",
+    "marketoDataType": "FORMULA"
+  },
+  {
+    "name": "mKtesttext",
+    "marketoDataType": "TEXT"
+  }
+]

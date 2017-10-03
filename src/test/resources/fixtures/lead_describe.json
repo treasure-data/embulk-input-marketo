@@ -1,0 +1,221 @@
+{
+  "requestId": "121e2#15eebcac5d8",
+  "result": [
+    {
+      "id": 1,
+      "displayName": "Marketo_test_boolean",
+      "dataType": "boolean",
+      "rest": {
+        "name": "mKtestboolean",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtestboolean",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 2,
+      "displayName": "Marketo_test_currency",
+      "dataType": "currency",
+      "length": 255,
+      "rest": {
+        "name": "mKtestcurrency",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtestcurrency",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 3,
+      "displayName": "Marketo_test_date",
+      "dataType": "date",
+      "rest": {
+        "name": "mKtestdate",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtestdate",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 4,
+      "displayName": "Marketo_test_Datetime",
+      "dataType": "datetime",
+      "rest": {
+        "name": "mKtestDatetime",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtestDatetime",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 5,
+      "displayName": "Marketo_test_email",
+      "dataType": "email",
+      "length": 255,
+      "rest": {
+        "name": "mKtestemail",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtestemail",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 6,
+      "displayName": "Marketo_test_float",
+      "dataType": "float",
+      "rest": {
+        "name": "mKtestfloat",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtestfloat",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 7,
+      "displayName": "Marketo_test_integer",
+      "dataType": "integer",
+      "rest": {
+        "name": "mKtestinteger",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtestinteger",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 8,
+      "displayName": "Marketo_test_percent",
+      "dataType": "percent",
+      "rest": {
+        "name": "mKtestpercent",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtestpercent",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 9,
+      "displayName": "Marketo_test_phone",
+      "dataType": "phone",
+      "length": 255,
+      "rest": {
+        "name": "mKtestphone",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtestphone",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 11,
+      "displayName": "Marketo_test_score",
+      "dataType": "score",
+      "rest": {
+        "name": "mKtestscore",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtestscore",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 12,
+      "displayName": "Marketo_test_string",
+      "dataType": "string",
+      "length": 255,
+      "rest": {
+        "name": "mKteststring",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKteststring",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 13,
+      "displayName": "Marketo_test_textarea",
+      "dataType": "textarea",
+      "rest": {
+        "name": "mKtesttextarea",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtesttextarea",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 14,
+      "displayName": "Marketo_test_url",
+      "dataType": "url",
+      "length": 255,
+      "rest": {
+        "name": "mKtesturl",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtesturl",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 15,
+      "displayName": "Marketo_test_reference",
+      "dataType": "reference",
+      "length": 255,
+      "rest": {
+        "name": "mKTestReference",
+        "readOnly": true
+      },
+      "soap": {
+        "name": "mKTestReference",
+        "readOnly": false
+      }
+    },
+    {
+      "id": 16,
+      "displayName": "Marketo_test_formula",
+      "dataType": "formula",
+      "length": 255,
+      "rest": {
+        "name": "mKTestFormula",
+        "readOnly": true
+      },
+      "soap": {
+        "name": "mKTestFormula",
+        "readOnly": false
+      }
+    },{
+      "id": 17,
+      "displayName": "Marketo_test_text",
+      "dataType": "text",
+      "rest": {
+        "name": "mKtesttext",
+        "readOnly": false
+      },
+      "soap": {
+        "name": "mKtesttext",
+        "readOnly": false
+      }
+    }
+
+  ],
+  "success": true
+}

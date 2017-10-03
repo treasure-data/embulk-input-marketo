@@ -1,5 +1,6 @@
 package org.embulk.input.marketo.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.google.common.base.Optional;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.spi.type.Type;
@@ -15,13 +16,15 @@ public class MarketoField
 
     private MarketoDataType marketoDataType;
 
+    public MarketoField(){}
 
     public MarketoField(String name, String dataType)
     {
         this.name = name;
         try {
             marketoDataType = MarketoDataType.valueOf(dataType.toUpperCase());
-        } catch (IllegalArgumentException ex) {
+        }
+        catch (IllegalArgumentException ex) {
             marketoDataType = MarketoDataType.STRING;
         }
     }
@@ -30,7 +33,6 @@ public class MarketoField
     {
         this.name = name;
         this.marketoDataType = marketoDataType;
-
     }
 
     public String getName()
@@ -43,6 +45,31 @@ public class MarketoField
         return marketoDataType;
     }
 
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MarketoField field = (MarketoField) o;
+
+        if (name != null ? !name.equals(field.name) : field.name != null) {
+            return false;
+        }
+        return marketoDataType == field.marketoDataType;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (marketoDataType != null ? marketoDataType.hashCode() : 0);
+        return result;
+    }
 
     public enum MarketoDataType
     {

@@ -4,19 +4,16 @@ import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.input.marketo.MarketoService;
-import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
-import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
-import org.embulk.spi.Schema;
 import org.embulk.spi.type.Types;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.Date;
 
 /**
  * Created by tai.khuu on 9/18/17.
@@ -24,21 +21,24 @@ import java.util.Date;
 public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugin<ActivityBulkExtractInputPlugin.PluginTask>
 {
     private static final Logger LOGGER = Exec.getLogger(ActivityBulkExtractInputPlugin.class);
+    public static final String INCREMENTAL_COLUMN = "activityDate";
+    public static final String UID_COLUMN = "marketoGUID";
 
     public interface PluginTask extends MarketoBaseBulkExtractInputPlugin.PluginTask {}
 
-    public ActivityBulkExtractInputPlugin()
+    @Override
+    public void validateInputTask(PluginTask task)
     {
-        super("activityDate", "marketoGUID");
+        task.setIncrementalColumn(INCREMENTAL_COLUMN);
+        task.setUidColumn(UID_COLUMN);
+        super.validateInputTask(task);
     }
 
     @Override
-    protected InputStream getExtractedStream(PluginTask task, Schema schema)
+    protected InputStream getExtractedStream(MarketoService service, PluginTask task, DateTime fromDate, DateTime toDate)
     {
-        try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
-            MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            Date fromDate = task.getFromDate();
-            return new FileInputStream(marketoService.extractAllActivity(fromDate, task.getToDate().orNull(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
+        try {
+            return new FileInputStream(service.extractAllActivity(fromDate.toDate(), toDate.toDate(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
         }
         catch (FileNotFoundException e) {
             LOGGER.error("Exception when trying to extract activity", e);

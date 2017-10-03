@@ -15,7 +15,6 @@ import org.embulk.input.marketo.model.MarketoError;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.input.marketo.model.filter.DateRangeFilter;
-import org.embulk.input.marketo.model.filter.ListFilter;
 import org.embulk.input.marketo.model.filter.MarketoFilter;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
@@ -89,7 +88,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public MarketoRestClient(PluginTask task, Jetty92RetryHelper retryHelper)
     {
-        this("https://" + task.getAccountId() + ".mktorest.com", "https://" + task.getAccountId() + ".mktorest.com/identity", task.getClientId(), task.getClientSecret(), task.getBatchSize(), task.getMarketoLimitIntervalMilis(), retryHelper);
+        this(MarketoUtils.getEndPoint(task.getAccountId()), MarketoUtils.getIdentityEndPoint(task.getAccountId()), task.getClientId(), task.getClientSecret(), task.getBatchSize(), task.getMarketoLimitIntervalMilis(), retryHelper);
     }
 
     public MarketoRestClient(String endPoint, String identityEndPoint, String clientId, String clientSecret, Integer batchSize, int marketoLimitIntervalMilis, Jetty92RetryHelper retryHelper)
@@ -119,37 +118,32 @@ public class MarketoRestClient extends MarketoBaseRestClient
         return TYPE_MAPPING.containsKey(dataType.toLowerCase()) ? TYPE_MAPPING.get(dataType.toLowerCase()) : Types.STRING;
     }
 
-    public String createLeadBulkExtract(Date startTime, Date endTime, List<String> extractFields)
+    public String createLeadBulkExtract(Date startTime, Date endTime, List<String> extractFields, String fitlerField)
     {
-        SimpleDateFormat timeFormat = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
-        MarketoBulkExtractRequest marketoBulkExtractRequest = new MarketoBulkExtractRequest();
-        marketoBulkExtractRequest.setFields(extractFields);
-        marketoBulkExtractRequest.setFormat("CSV");
-        Map<String, MarketoFilter> filterMap = new HashMap<>();
-        DateRangeFilter dateRangeFilter = new DateRangeFilter();
-        dateRangeFilter.setStartAt(timeFormat.format(startTime));
-        dateRangeFilter.setEndAt(timeFormat.format(endTime));
-        filterMap.put("createdAt", dateRangeFilter);
-        marketoBulkExtractRequest.setFilter(filterMap);
+        MarketoBulkExtractRequest marketoBulkExtractRequest = getMarketoBulkExtractRequest(startTime, endTime, extractFields, fitlerField);
         return sendCreateBulkExtractRequest(marketoBulkExtractRequest, MarketoRESTEndpoint.CREATE_LEAD_EXTRACT);
     }
 
-    public String createActitvityExtract(Date startTime, Date endTime, List<String> activityTypes)
+    private MarketoBulkExtractRequest getMarketoBulkExtractRequest(Date startTime, Date endTime, List<String> extractFields, String rangeFilterName)
     {
         SimpleDateFormat timeFormat = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
         MarketoBulkExtractRequest marketoBulkExtractRequest = new MarketoBulkExtractRequest();
+        if (extractFields != null) {
+            marketoBulkExtractRequest.setFields(extractFields);
+        }
         marketoBulkExtractRequest.setFormat("CSV");
         Map<String, MarketoFilter> filterMap = new HashMap<>();
         DateRangeFilter dateRangeFilter = new DateRangeFilter();
         dateRangeFilter.setStartAt(timeFormat.format(startTime));
         dateRangeFilter.setEndAt(timeFormat.format(endTime));
-        filterMap.put("createdAt", dateRangeFilter);
-        if (activityTypes != null) {
-            ListFilter activitiesTypeFilter = new ListFilter();
-            activitiesTypeFilter.addAll(activityTypes);
-            filterMap.put("activities", activitiesTypeFilter);
-        }
+        filterMap.put(rangeFilterName, dateRangeFilter);
         marketoBulkExtractRequest.setFilter(filterMap);
+        return marketoBulkExtractRequest;
+    }
+
+    public String createActitvityExtract(Date startTime, Date endTime)
+    {
+        MarketoBulkExtractRequest marketoBulkExtractRequest = getMarketoBulkExtractRequest(startTime, endTime, null, "createdAt");
         return sendCreateBulkExtractRequest(marketoBulkExtractRequest, MarketoRESTEndpoint.CREATE_ACTIVITY_EXTRACT);
     }
 
@@ -157,6 +151,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
     {
         MarketoResponse<ObjectNode> marketoResponse = null;
         try {
+            LOGGER.info("Send bulk extract request [{}]", request);
             marketoResponse = doPost(endPoint + endpoint.getEndpoint(), null, null, OBJECT_MAPPER.writeValueAsString(request), new MarketoResponseJetty92EntityReader<ObjectNode>(READ_TIMEOUT_MILLIS));
         }
         catch (JsonProcessingException e) {

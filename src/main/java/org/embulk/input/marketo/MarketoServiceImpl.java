@@ -39,9 +39,9 @@ public class MarketoServiceImpl implements MarketoService
     }
 
     @Override
-    public File extractLead(Date startTime, Date endTime, List<String> extractedFields, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond)
+    public File extractLead(Date startTime, Date endTime, List<String> extractedFields, String filterField, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond)
     {
-        String exportID = marketoRestClient.createLeadBulkExtract(startTime, endTime, extractedFields);
+        String exportID = marketoRestClient.createLeadBulkExtract(startTime, endTime, extractedFields, filterField);
         marketoRestClient.startLeadBulkExtract(exportID);
         try {
             marketoRestClient.waitLeadExportJobComplete(exportID, pollingTimeIntervalSecond, bulkJobTimeoutSecond);
@@ -70,7 +70,7 @@ public class MarketoServiceImpl implements MarketoService
     @Override
     public File extractAllActivity(Date startTime, Date endTime, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond)
     {
-        String exportID = marketoRestClient.createActitvityExtract(startTime, endTime, null);
+        String exportID = marketoRestClient.createActitvityExtract(startTime, endTime);
         marketoRestClient.startActitvityBulkExtract(exportID);
         try {
             marketoRestClient.waitActitvityExportJobComplete(exportID, pollingTimeIntervalSecond, bulkJobTimeoutSecond);

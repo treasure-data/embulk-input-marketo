@@ -28,4 +28,13 @@ public class DateRangeFilter implements MarketoFilter
     {
         this.endAt = endAt;
     }
+
+    @Override
+    public String toString()
+    {
+        return "DateRangeFilter{" +
+                "startAt='" + startAt + '\'' +
+                ", endAt='" + endAt + '\'' +
+                '}';
+    }
 }

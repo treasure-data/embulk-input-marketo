@@ -16,6 +16,8 @@ import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.type.Types;
 
+import java.util.Iterator;
+
 /**
  * Input plugin use to import Campaign
  * Created by tai.khuu on 9/18/17.
@@ -31,23 +33,9 @@ public class CampaignInputPlugin extends MarketoBaseInputPluginDelegate<Campaign
     }
 
     @Override
-    public TaskReport ingestServiceData(PluginTask task, RecordImporter recordImporter, int taskIndex, PageBuilder pageBuilder)
+    protected Iterator<ServiceRecord> getServiceRecords(MarketoService marketoService, PluginTask task)
     {
-        try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
-            MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            {
-                FluentIterable<ServiceRecord> serviceRecords = FluentIterable.from(marketoService.getCampaign()).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION);
-                int imported = 0;
-                for (ServiceRecord serviceRecord : serviceRecords) {
-                    if (imported >= PREVIEW_RECORD_LIMIT && Exec.isPreview()) {
-                        break;
-                    }
-                    recordImporter.importRecord(serviceRecord, pageBuilder);
-                    imported++;
-                }
-                return Exec.newTaskReport();
-            }
-        }
+        return FluentIterable.from(marketoService.getCampaign()).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION).iterator();
     }
 
     @Override

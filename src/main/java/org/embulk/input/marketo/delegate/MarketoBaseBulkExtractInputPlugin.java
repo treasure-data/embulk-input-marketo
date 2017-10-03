@@ -1,11 +1,13 @@
 package org.embulk.input.marketo.delegate;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.collect.Iterators;
 import org.embulk.base.restclient.jackson.JacksonServiceRecord;
 import org.embulk.base.restclient.jackson.JacksonServiceValue;
 import org.embulk.base.restclient.record.RecordImporter;
+import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
@@ -14,7 +16,10 @@ import org.embulk.config.ConfigException;
 import org.embulk.config.ConfigInject;
 import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.CsvTokenizer;
+import org.embulk.input.marketo.MarketoService;
+import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
+import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.BufferAllocator;
 import org.embulk.spi.Column;
 import org.embulk.spi.ColumnVisitor;
@@ -37,8 +42,11 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -52,9 +60,9 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
     private static final DateTimeFormatter ISO_DATETIME_FORMAT = ISODateTimeFormat.dateTimeParser();
 
-    private static final String IMPORTED_RECORD_COUNT = "imported";
-
     private static final String FROM_DATE = "from_date";
+
+    private static final int MARKETO_MAX_RANGE_EXTRACT = 30;
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, CsvTokenizer.PluginTask
     {
@@ -93,16 +101,17 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         Optional<Date> getToDate();
 
         void setToDate(Date toDate);
-    }
 
-    private String incrementalColumn;
+        @Config("incremental_column")
+        @ConfigDefault("\"createdAt\"")
+        Optional<String> getIncrementalColumn();
 
-    private String uidColumn;
+        void setIncrementalColumn(String incrementalColumn);
 
-    public MarketoBaseBulkExtractInputPlugin(String incrementalColumn, String uidColumn)
-    {
-        this.incrementalColumn = incrementalColumn;
-        this.uidColumn = uidColumn;
+        @Config("uid_column")
+        @ConfigDefault("null")
+        Optional<String> getUidColumn();
+        void setUidColumn(String uidColumn);
     }
 
     @Override
@@ -111,9 +120,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         super.validateInputTask(task);
         if (task.getFromDate() == null) {
             throw new ConfigException("From date is required for Bulk Extract");
-        }
-        if (task.getFetchDays() > 30) {
-            throw new ConfigException("Marketo bulk extract fetch days can't be more than 30");
         }
         //Calculate to date
         DateTime toDate = getToDate(task);
@@ -138,8 +144,8 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
         Long currentLatestFetchTime = 0L;
         Set latestUIds = null;
+        String incrementalColumn = task.getIncrementalColumn().orNull();
         if (incrementalColumn != null && task.getIncremental()) {
-            int imported = 0;
             DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
             for (TaskReport taskReport : taskReports) {
                 Long latestFetchTime = taskReport.get(Long.class, LATEST_FETCH_TIME);
@@ -150,7 +156,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                     currentLatestFetchTime = latestFetchTime;
                     latestUIds = taskReport.get(Set.class, LATEST_UID_LIST);
                 }
-                imported = imported + taskReport.get(Integer.class, IMPORTED_RECORD_COUNT);
             }
             // in case of we didn't import anything but search range is entirely in the past. Then we should move the the range anyway.
             configDiff.set(FROM_DATE, df.format(task.getToDate().orNull()));
@@ -161,15 +166,66 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     }
 
     @Override
-    public TaskReport ingestServiceData(T task, RecordImporter recordImporter, int taskIndex, PageBuilder pageBuilder)
+    public TaskReport ingestServiceData(final T task, RecordImporter recordImporter, int taskIndex, PageBuilder pageBuilder)
     {
-        InputStream extractedStream;
+        TaskReport taskReport = Exec.newTaskReport();
+        String incrementalColumn = task.getIncrementalColumn().orNull();
+        String uidColumn = task.getUidColumn().orNull();
         if (Exec.isPreview()) {
             return importMockPreviewData(pageBuilder);
         }
         else {
-            extractedStream = getExtractedStream(task, pageBuilder.getSchema());
-            return importRecordFromFile(task, extractedStream, recordImporter, pageBuilder);
+            try (LineDecoderIterator decoderIterator = getLineDecoderIterator(task)) {
+                Iterator<Map<String, String>> csvRecords = Iterators.concat(Iterators.transform(decoderIterator, new Function<LineDecoder, Iterator<Map<String, String>>>()
+                {
+                    @Override
+                    public Iterator<Map<String, String>> apply(LineDecoder input)
+                    {
+                        return new CsvRecordIterator(input, task);
+                    }
+                }));
+                long currentTimestamp = 0L;
+                Set<String> latestUids = task.getPreviousUids();
+                //Keep the preview code here when we can enable real preview
+                if (Exec.isPreview()) {
+                    csvRecords = Iterators.limit(csvRecords, PREVIEW_RECORD_LIMIT);
+                }
+                while (csvRecords.hasNext()) {
+                    Map<String, String> csvRecord = csvRecords.next();
+                    if (task.getIncremental()) {
+                        if (!csvRecord.containsKey(incrementalColumn)) {
+                            throw new DataException("Extracted record doesn't have incremental column " + incrementalColumn);
+                        }
+                        if (uidColumn != null) {
+                            String uid = csvRecord.get(uidColumn);
+                            if (latestUids.contains(uid)) {
+                                //Duplicate value
+                                continue;
+                            }
+                        }
+                        String incrementalTimeStamp = csvRecord.get(incrementalColumn);
+                        long timestamp = ISO_DATETIME_FORMAT.parseDateTime(incrementalTimeStamp).getMillis();
+                        if (currentTimestamp < timestamp) {
+                            currentTimestamp = timestamp;
+                            //switch timestamp
+                            latestUids.clear();
+                        }
+                        else if (currentTimestamp == timestamp) {
+                            //timestamp is equal
+                            if (uidColumn != null) {
+                                String uuid = csvRecord.get(uidColumn);
+                                latestUids.add(uuid);
+                            }
+                        }
+                    }
+
+                    ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
+                    recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
+                }
+                taskReport.set(LATEST_FETCH_TIME, currentTimestamp);
+                taskReport.set(LATEST_UID_LIST, latestUids);
+                return taskReport;
+            }
         }
     }
 
@@ -227,76 +283,20 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         return Exec.newTaskReport();
     }
 
-    protected TaskReport importRecordFromFile(T task, InputStream inputStream, RecordImporter recordImporter, PageBuilder pageBuilder)
+    private LineDecoderIterator getLineDecoderIterator(T task)
     {
-        Set<String> latestUids = task.getPreviousUids();
-        TaskReport taskReport = Exec.newTaskReport();
-        int imported = 0;
-        long currentTimestamp = 0L;
-        if (task.getLatestFetchTime().isPresent()) {
-            currentTimestamp = task.getLatestFetchTime().get();
-        }
-        try (LineDecoder lineDecoder = new LineDecoder(new InputStreamFileInput(task.getBufferAllocator(), inputStream), task)) {
-            CsvTokenizer csvTokenizer = new CsvTokenizer(lineDecoder, task);
-            if (!csvTokenizer.nextFile()) {
-                throw new DataException("Can't read extract input stream");
-            }
-            csvTokenizer.nextRecord();
-            List<String> headers = new ArrayList<>();
-            while (csvTokenizer.hasNextColumn()) {
-                headers.add(csvTokenizer.nextColumn());
-            }
-            while (csvTokenizer.nextRecord() && (imported < PREVIEW_RECORD_LIMIT || !Exec.isPreview())) {
-                List<String> values = new ArrayList<>();
-                try {
-                    while (csvTokenizer.hasNextColumn()) {
-                        values.add(csvTokenizer.nextColumnOrNull());
-                    }
-                }
-                catch (CsvTokenizer.InvalidValueException ex) {
-                    throw new DataException("Encounter exception when parse csv file. Please check to see if you are using the correct" +
-                            "quote or escape character.", ex);
-                }
-                final Map<String, String> kvMap = MarketoUtils.zip(headers, values);
-                ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(kvMap);
-
-                if (task.getIncremental()) {
-                    if (!kvMap.containsKey(incrementalColumn)) {
-                        throw new DataException("Extracted record doesn't have incremental column " + incrementalColumn);
-                    }
-                    if (uidColumn != null) {
-                        String uid = kvMap.get(uidColumn);
-                        if (latestUids.contains(uid)) {
-                            //Duplicate value
-                            continue;
-                        }
-                    }
-                    String incrementalTimeStamp = kvMap.get(incrementalColumn);
-                    long timestamp = ISO_DATETIME_FORMAT.parseDateTime(incrementalTimeStamp).getMillis();
-                    if (currentTimestamp < timestamp) {
-                        currentTimestamp = timestamp;
-                        //switch timestamp
-                        latestUids.clear();
-                    }
-                    else if (currentTimestamp == timestamp) {
-                        //timestamp is equal
-                        if (uidColumn != null) {
-                            JsonNode uidField = objectNode.get(uidColumn);
-                            latestUids.add(uidField.asText());
-                        }
-                    }
-                }
-                recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
-                imported++;
-            }
-        }
-        taskReport.set(LATEST_FETCH_TIME, currentTimestamp);
-        taskReport.set(LATEST_UID_LIST, latestUids);
-        taskReport.set(IMPORTED_RECORD_COUNT, imported);
-        return taskReport;
+        List<MarketoUtils.DateRange> dateRanges = MarketoUtils.sliceRange(new DateTime(task.getFromDate()), new DateTime(task.getToDate().orNull()), MARKETO_MAX_RANGE_EXTRACT);
+        final Iterator<MarketoUtils.DateRange> iterator = dateRanges.iterator();
+        return new LineDecoderIterator(iterator, task);
     }
 
-    protected abstract InputStream getExtractedStream(T task, Schema schema);
+    @Override
+    protected final Iterator<ServiceRecord> getServiceRecords(MarketoService marketoService, T task)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    protected abstract InputStream getExtractedStream(MarketoService service, T task, DateTime fromDate, DateTime toDate);
 
     private static class AllStringJacksonServiceRecord extends JacksonServiceRecord
     {
@@ -364,6 +364,125 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         public Timestamp timestampValue(TimestampParser timestampParser)
         {
             return timestampParser.parse(textValue);
+        }
+    }
+
+    private final class LineDecoderIterator implements Iterator<LineDecoder>, AutoCloseable
+    {
+        private LineDecoder currentLineDecoder;
+
+        private Iterator<MarketoUtils.DateRange> dateRangeIterator;
+
+        private MarketoService marketoService;
+
+        private MarketoRestClient marketoRestClient;
+        private T task;
+        public LineDecoderIterator(Iterator<MarketoUtils.DateRange> dateRangeIterator, T task)
+        {
+            marketoRestClient = createMarketoRestClient(task);
+            marketoService = new MarketoServiceImpl(marketoRestClient);
+            this.dateRangeIterator = dateRangeIterator;
+            this.task = task;
+        }
+
+        @Override
+        public void close()
+        {
+            currentLineDecoder.close();
+            marketoRestClient.close();
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return dateRangeIterator.hasNext();
+        }
+
+        @Override
+        public LineDecoder next()
+        {
+            if (hasNext()) {
+                MarketoUtils.DateRange next = dateRangeIterator.next();
+                InputStream extractedStream = getExtractedStream(marketoService, task, next.fromDate, next.toDate);
+                currentLineDecoder = new LineDecoder(new InputStreamFileInput(task.getBufferAllocator(), extractedStream), task);
+                return currentLineDecoder;
+            }
+            throw new NoSuchElementException();
+        }
+
+        @Override
+        public void remove()
+        {
+            throw new UnsupportedOperationException("Removed are not supported");
+        }
+    }
+
+    private class CsvRecordIterator implements Iterator<Map<String, String>>
+    {
+        private CsvTokenizer tokenizer;
+
+        private List<String> headers;
+
+        private Map<String, String> currentCsvRecord;
+        public CsvRecordIterator(LineDecoder lineDecoder, T task)
+        {
+            tokenizer = new CsvTokenizer(lineDecoder, task);
+            if (!tokenizer.nextFile()) {
+                throw new DataException("Can't read extract input stream");
+            }
+            headers = new ArrayList<>();
+            tokenizer.nextRecord();
+            while (tokenizer.hasNextColumn()) {
+                headers.add(tokenizer.nextColumn());
+            }
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            if (currentCsvRecord == null) {
+                currentCsvRecord = getNextCSVRecord();
+            }
+            return currentCsvRecord != null;
+        }
+
+        @Override
+        public Map<String, String> next()
+        {
+            try {
+                if (hasNext()) {
+                    return currentCsvRecord;
+                }
+            }
+            finally {
+                currentCsvRecord = null;
+            }
+            throw new NoSuchElementException();
+        }
+
+        @Override
+        public void remove()
+        {
+            throw new UnsupportedOperationException();
+        }
+        private Map<String, String> getNextCSVRecord()
+        {
+            if (!tokenizer.nextRecord()) {
+                return null;
+            }
+            Map<String, String> kvMap = new HashMap<>();
+            try {
+                int i = 0;
+                while (tokenizer.hasNextColumn()) {
+                    kvMap.put(headers.get(i), tokenizer.nextColumnOrNull());
+                    i++;
+                }
+            }
+            catch (CsvTokenizer.InvalidValueException ex) {
+                throw new DataException("Encounter exception when parse csv file. Please check to see if you are using the correct" +
+                        "quote or escape character.", ex);
+            }
+            return kvMap;
         }
     }
 }

@@ -10,6 +10,7 @@ import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonTopLevelValueLocator;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
+import org.embulk.input.marketo.delegate.MarketoBaseBulkExtractInputPlugin;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.spi.Exec;
 import org.joda.time.DateTime;
@@ -85,6 +86,9 @@ public class MarketoUtils
     public static  <K, V> Map<K, V> zip(List<K> keys, List<V> values)
     {
         Map<K, V> kvMap = new HashMap<>();
+        if (values.size() < keys.size()) {
+            throw new IllegalArgumentException("");
+        }
         for (int i = 0; i < keys.size(); i++) {
             kvMap.put(keys.get(i), values.get(i));
         }
@@ -94,5 +98,47 @@ public class MarketoUtils
     public static String buildColumnName(String prefix, String columnName)
     {
         return prefix + "_" + columnName;
+    }
+    public static final List<DateRange> sliceRange(DateTime fromDate, DateTime toDate, int rangeSize) {
+        List<DateRange> ranges = new ArrayList<>();
+        while (true) {
+            DateTime nextToDate = fromDate.plusDays(rangeSize);
+            if (nextToDate.isAfter(toDate)) {
+                ranges.add(new DateRange(fromDate, toDate));
+                break;
+            }
+            ranges.add(new DateRange(fromDate, nextToDate));
+            fromDate = nextToDate.plusSeconds(1);
+        }
+        return ranges;
+    }
+
+    public static String getIdentityEndPoint(String accountId)
+    {
+        return "https://" + accountId + ".mktorest.com/identity";
+    }
+
+    public static String getEndPoint(String accountID)
+    {
+        return "https://" + accountID + ".mktorest.com";
+    }
+
+    public static  final class DateRange {
+        public final DateTime fromDate;
+        public final DateTime toDate;
+
+        public DateRange(DateTime fromDate, DateTime toDate) {
+            this.fromDate = fromDate;
+            this.toDate = toDate;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "DateRange{" +
+                    "fromDate=" + fromDate +
+                    ", toDate=" + toDate +
+                    '}';
+        }
     }
 }
