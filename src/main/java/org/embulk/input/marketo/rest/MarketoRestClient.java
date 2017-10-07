@@ -141,7 +141,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
         return marketoBulkExtractRequest;
     }
 
-    public String createActitvityExtract(Date startTime, Date endTime)
+    public String createActivityExtract(Date startTime, Date endTime)
     {
         MarketoBulkExtractRequest marketoBulkExtractRequest = getMarketoBulkExtractRequest(startTime, endTime, null, "createdAt");
         return sendCreateBulkExtractRequest(marketoBulkExtractRequest, MarketoRESTEndpoint.CREATE_ACTIVITY_EXTRACT);

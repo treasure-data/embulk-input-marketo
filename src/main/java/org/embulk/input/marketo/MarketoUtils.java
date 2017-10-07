@@ -99,9 +99,10 @@ public class MarketoUtils
     {
         return prefix + "_" + columnName;
     }
+
     public static final List<DateRange> sliceRange(DateTime fromDate, DateTime toDate, int rangeSize) {
         List<DateRange> ranges = new ArrayList<>();
-        while (true) {
+        while (true && fromDate.isBefore(toDate)) {
             DateTime nextToDate = fromDate.plusDays(rangeSize);
             if (nextToDate.isAfter(toDate)) {
                 ranges.add(new DateRange(fromDate, toDate));

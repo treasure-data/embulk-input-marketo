@@ -70,7 +70,7 @@ public class MarketoServiceImpl implements MarketoService
     @Override
     public File extractAllActivity(Date startTime, Date endTime, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond)
     {
-        String exportID = marketoRestClient.createActitvityExtract(startTime, endTime);
+        String exportID = marketoRestClient.createActivityExtract(startTime, endTime);
         marketoRestClient.startActitvityBulkExtract(exportID);
         try {
             marketoRestClient.waitActitvityExportJobComplete(exportID, pollingTimeIntervalSecond, bulkJobTimeoutSecond);
