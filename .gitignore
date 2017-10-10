@@ -1,5 +1,14 @@
 *~
 /pkg/
 /tmp/
-/.bundle/
-/Gemfile.lock
+*.gemspec
+.gradle/
+classpath/
+classes/
+build/
+.idea
+/.settings/
+/.metadata/
+.classpath
+.project
+

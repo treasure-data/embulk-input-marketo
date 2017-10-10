@@ -1,0 +1,71 @@
+{
+  "responses": [
+    {
+      "success": true,
+      "errors": [],
+      "requestId": "1611b#15f01e681c4",
+      "warnings": [],
+      "result": [
+        {
+          "id": 1004,
+          "name": "MB_Sep_25_test_program",
+          "description": "MB_Sep_25_test_program description",
+          "createdAt": "2017-09-25T21:51:20Z+0000",
+          "updatedAt": "2017-09-25T21:51:57Z+0000",
+          "url": "https://app-ab24.marketo.com/#NP1004A1",
+          "type": "Engagement",
+          "channel": "Nurture",
+          "folder": {
+            "type": "Folder",
+            "value": 75,
+            "folderName": "MB_Sep_25_test_campaign_folder"
+          },
+          "status": "on",
+          "workspace": "Default"
+        },
+        {
+          "id": 1001,
+          "name": "TD Output Test Program",
+          "description": "A test program to process list import from TD system",
+          "createdAt": "2017-08-10T03:23:19Z+0000",
+          "updatedAt": "2017-09-06T14:03:57Z+0000",
+          "url": "https://app-ab24.marketo.com/#PG1001A1",
+          "type": "Default",
+          "channel": "List Import",
+          "folder": {
+            "type": "Folder",
+            "value": 66,
+            "folderName": "TD Testing Campaign"
+          },
+          "status": "",
+          "workspace": "Default"
+        }
+      ]
+    },
+    {
+      "success": true,
+      "errors": [],
+      "requestId": "1611b#15f01e681c4",
+      "warnings": [],
+      "result": [
+        {
+          "id": 1003,
+          "name": "Bill_progream",
+          "description": "",
+          "createdAt": "2017-08-30T20:25:53Z+0000",
+          "updatedAt": "2017-08-31T05:55:49Z+0000",
+          "url": "https://app-ab24.marketo.com/#EBP1003A1",
+          "type": "Email",
+          "channel": "Email Send",
+          "folder": {
+            "type": "Folder",
+            "value": 71,
+            "folderName": "Bill_Campaign_folder"
+          },
+          "status": "completed",
+          "workspace": "Default"
+        }
+      ]
+    }
+  ]
+}

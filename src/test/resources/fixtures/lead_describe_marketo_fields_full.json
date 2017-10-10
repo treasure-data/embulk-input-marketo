@@ -1,0 +1,518 @@
+[
+  {
+    "name": "company",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "site",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "billingStreet",
+    "marketoDataType": "TEXT"
+  },
+  {
+    "name": "billingCity",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "billingState",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "billingCountry",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "billingPostalCode",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "website",
+    "marketoDataType": "URL"
+  },
+  {
+    "name": "mainPhone",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "annualRevenue",
+    "marketoDataType": "CURRENCY"
+  },
+  {
+    "name": "numberOfEmployees",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "industry",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "sicCode",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "mktoCompanyNotes",
+    "marketoDataType": "TEXT"
+  },
+  {
+    "name": "externalCompanyId",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "id",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "mktoName",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "personType",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "mktoIsPartner",
+    "marketoDataType": "BOOLEAN"
+  },
+  {
+    "name": "isLead",
+    "marketoDataType": "BOOLEAN"
+  },
+  {
+    "name": "mktoIsCustomer",
+    "marketoDataType": "BOOLEAN"
+  },
+  {
+    "name": "isAnonymous",
+    "marketoDataType": "BOOLEAN"
+  },
+  {
+    "name": "salutation",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "firstName",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "middleName",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "lastName",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "email",
+    "marketoDataType": "EMAIL"
+  },
+  {
+    "name": "phone",
+    "marketoDataType": "PHONE"
+  },
+  {
+    "name": "mobilePhone",
+    "marketoDataType": "PHONE"
+  },
+  {
+    "name": "fax",
+    "marketoDataType": "PHONE"
+  },
+  {
+    "name": "title",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "contactCompany",
+    "marketoDataType": "REFERENCE"
+  },
+  {
+    "name": "dateOfBirth",
+    "marketoDataType": "DATE"
+  },
+  {
+    "name": "address",
+    "marketoDataType": "TEXT"
+  },
+  {
+    "name": "city",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "state",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "country",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "postalCode",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "originalSourceType",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "originalSourceInfo",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "registrationSourceType",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "registrationSourceInfo",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "originalSearchEngine",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "originalSearchPhrase",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "originalReferrer",
+    "marketoDataType": "URL"
+  },
+  {
+    "name": "emailInvalid",
+    "marketoDataType": "BOOLEAN"
+  },
+  {
+    "name": "emailInvalidCause",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "unsubscribed",
+    "marketoDataType": "BOOLEAN"
+  },
+  {
+    "name": "unsubscribedReason",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "doNotCall",
+    "marketoDataType": "BOOLEAN"
+  },
+  {
+    "name": "mktoDoNotCallCause",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "doNotCallReason",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "mktoPersonNotes",
+    "marketoDataType": "TEXT"
+  },
+  {
+    "name": "anonymousIP",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "inferredCompany",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "inferredCountry",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "inferredCity",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "inferredStateRegion",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "inferredPostalCode",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "inferredMetropolitanArea",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "inferredPhoneAreaCode",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "department",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "createdAt",
+    "marketoDataType": "DATETIME"
+  },
+  {
+    "name": "updatedAt",
+    "marketoDataType": "DATETIME"
+  },
+  {
+    "name": "cookies",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "externalSalesPersonId",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "leadPerson",
+    "marketoDataType": "REFERENCE"
+  },
+  {
+    "name": "leadRole",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "leadSource",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "leadStatus",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "leadScore",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "urgency",
+    "marketoDataType": "FLOAT"
+  },
+  {
+    "name": "priority",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "relativeScore",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "relativeUrgency",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "rating",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "personPrimaryLeadInterest",
+    "marketoDataType": "REFERENCE"
+  },
+  {
+    "name": "leadPartitionId",
+    "marketoDataType": "REFERENCE"
+  },
+  {
+    "name": "leadRevenueCycleModelId",
+    "marketoDataType": "REFERENCE"
+  },
+  {
+    "name": "leadRevenueStageId",
+    "marketoDataType": "REFERENCE"
+  },
+  {
+    "name": "gender",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "facebookDisplayName",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "twitterDisplayName",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "linkedInDisplayName",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "facebookProfileURL",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "twitterProfileURL",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "linkedInProfileURL",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "facebookPhotoURL",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "twitterPhotoURL",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "linkedInPhotoURL",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "facebookReach",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "twitterReach",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "linkedInReach",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "facebookReferredVisits",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "twitterReferredVisits",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "linkedInReferredVisits",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "totalReferredVisits",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "facebookReferredEnrollments",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "twitterReferredEnrollments",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "linkedInReferredEnrollments",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "totalReferredEnrollments",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "lastReferredVisit",
+    "marketoDataType": "DATETIME"
+  },
+  {
+    "name": "lastReferredEnrollment",
+    "marketoDataType": "DATETIME"
+  },
+  {
+    "name": "syndicationId",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "facebookId",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "twitterId",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "linkedInId",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "acquisitionProgramId",
+    "marketoDataType": "REFERENCE"
+  },
+  {
+    "name": "mktoAcquisitionDate",
+    "marketoDataType": "DATETIME"
+  },
+  {
+    "name": "tdglobalid",
+    "marketoDataType": "TEXT"
+  },
+  {
+    "name": "tdid",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "mbtesttextarea",
+    "marketoDataType": "TEXT"
+  },
+  {
+    "name": "customFieldInt",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "tdidint",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "time",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "mBtestboolean24",
+    "marketoDataType": "BOOLEAN"
+  },
+  {
+    "name": "mBtestcurrency24",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "mBtestdate24",
+    "marketoDataType": "DATE"
+  },
+  {
+    "name": "mBtestDatetime24",
+    "marketoDataType": "DATETIME"
+  },
+  {
+    "name": "mBtestemail24",
+    "marketoDataType": "EMAIL"
+  },
+  {
+    "name": "mBtestfloat24",
+    "marketoDataType": "FLOAT"
+  },
+  {
+    "name": "mBtestinteger24",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "mBtestpercent24",
+    "marketoDataType": "PERCENT"
+  },
+  {
+    "name": "mBtestphone24",
+    "marketoDataType": "PHONE"
+  },
+  {
+    "name": "mBtestscore24",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "mBteststring24",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "mBtesttextarea24",
+    "marketoDataType": "TEXT"
+  },
+  {
+    "name": "mBtesturl24",
+    "marketoDataType": "URL"
+  },
+  {
+    "name": "marketoTimeZone",
+    "marketoDataType": "STRING"
+  }
+]

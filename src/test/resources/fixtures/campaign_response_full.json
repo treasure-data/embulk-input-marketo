@@ -1,0 +1,102 @@
+[
+    {
+      "id": 1003,
+      "name": "Opened Sales Email",
+      "description": " ",
+      "type": "trigger",
+      "workspaceName": "Default",
+      "createdAt": "2017-08-09T18:48:26Z",
+      "updatedAt": "2017-08-09T18:48:26Z",
+      "active": false
+    },
+    {
+      "id": 1004,
+      "name": "Clicks Link in Email",
+      "description": " ",
+      "type": "trigger",
+      "workspaceName": "Default",
+      "createdAt": "2017-08-09T18:48:26Z",
+      "updatedAt": "2017-08-09T18:48:26Z",
+      "active": false
+    },
+    {
+      "id": 1005,
+      "name": "Fills out Form",
+      "description": " ",
+      "type": "trigger",
+      "workspaceName": "Default",
+      "createdAt": "2017-08-09T18:48:26Z",
+      "updatedAt": "2017-08-09T18:48:26Z",
+      "active": false
+    },
+    {
+      "id": 1006,
+      "name": "Multiple web visits in 1 day",
+      "description": " ",
+      "type": "trigger",
+      "workspaceName": "Default",
+      "createdAt": "2017-08-09T18:48:26Z",
+      "updatedAt": "2017-08-09T18:48:26Z",
+      "active": false
+    },
+    {
+      "id": 1007,
+      "name": "Visits Key Web Page",
+      "description": " ",
+      "type": "trigger",
+      "workspaceName": "Default",
+      "createdAt": "2017-08-09T18:48:26Z",
+      "updatedAt": "2017-08-09T18:48:26Z",
+      "active": false
+    },
+    {
+      "id": 1008,
+      "name": "Unsubscribed",
+      "description": " ",
+      "type": "trigger",
+      "workspaceName": "Default",
+      "createdAt": "2017-08-09T18:48:26Z",
+      "updatedAt": "2017-08-09T18:48:27Z",
+      "active": false
+    },
+    {
+      "id": 1029,
+      "name": "Bill_test_Campaign",
+      "type": "batch",
+      "workspaceName": "Default",
+      "createdAt": "2017-08-30T20:23:40Z",
+      "updatedAt": "2017-08-30T20:32:04Z",
+      "active": false
+    },
+    {
+      "id": 1048,
+      "name": "MB_test_Sep_25_campaign_1",
+      "type": "batch",
+      "workspaceName": "Default",
+      "createdAt": "2017-09-25T21:47:29Z",
+      "updatedAt": "2017-09-27T00:02:50Z",
+      "active": false
+    },
+    {
+      "id": 1051,
+      "name": "MB_Sep_25_test_campaign_3",
+      "description": "MB_Sep_25_test_campaign_3 description",
+      "type": "batch",
+      "workspaceName": "Default",
+      "createdAt": "2017-09-25T21:52:58Z",
+      "updatedAt": "2017-09-25T21:53:20Z",
+      "active": false
+    },
+    {
+      "id": 1065,
+      "name": "MB_Sep_26_test_smart_campaign",
+      "description": "MB_Sep_26_test_smart_campaign description",
+      "type": "batch",
+      "programName": "MB_Sep_25_test_program",
+      "programId": 1004,
+      "workspaceName": "Default",
+      "createdAt": "2017-09-26T22:53:53Z",
+      "updatedAt": "2017-09-26T22:55:34Z",
+      "active": false
+    }
+  ]

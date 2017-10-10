@@ -1,0 +1,8 @@
+from_date: "2017-07-01"
+account_id: 'account_id'
+client_id: client_id
+client_secret: client_secret
+fetch_days: "60"
+escape: "\""
+incremental: true
+use_updated_at: true
