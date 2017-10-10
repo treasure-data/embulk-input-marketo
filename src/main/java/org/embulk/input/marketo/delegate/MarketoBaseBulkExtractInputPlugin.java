@@ -100,18 +100,18 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         @ConfigDefault("null")
         Optional<Date> getToDate();
 
-        void setToDate(Date toDate);
+        void setToDate(Optional<Date> toDate);
 
         @Config("incremental_column")
         @ConfigDefault("\"createdAt\"")
         Optional<String> getIncrementalColumn();
 
-        void setIncrementalColumn(String incrementalColumn);
+        void setIncrementalColumn(Optional<String> incrementalColumn);
 
         @Config("uid_column")
         @ConfigDefault("null")
         Optional<String> getUidColumn();
-        void setUidColumn(String uidColumn);
+        void setUidColumn(Optional<String> uidColumn);
     }
 
     @Override
@@ -123,7 +123,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         }
         //Calculate to date
         DateTime toDate = getToDate(task);
-        task.setToDate(toDate.toDate());
+        task.setToDate(Optional.of(toDate.toDate()));
     }
 
     public DateTime getToDate(T task)
@@ -155,6 +155,9 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 if (currentLatestFetchTime < latestFetchTime) {
                     currentLatestFetchTime = latestFetchTime;
                     latestUIds = taskReport.get(Set.class, LATEST_UID_LIST);
+                }
+                else if (currentLatestFetchTime == latestFetchTime) {
+                    latestUIds.addAll(taskReport.get(Set.class, LATEST_UID_LIST));
                 }
             }
             // in case of we didn't import anything but search range is entirely in the past. Then we should move the the range anyway.
@@ -213,8 +216,8 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                         else if (currentTimestamp == timestamp) {
                             //timestamp is equal
                             if (uidColumn != null) {
-                                String uuid = csvRecord.get(uidColumn);
-                                latestUids.add(uuid);
+                                String uid = csvRecord.get(uidColumn);
+                                latestUids.add(uid);
                             }
                         }
                     }
@@ -388,8 +391,12 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         @Override
         public void close()
         {
-            currentLineDecoder.close();
-            marketoRestClient.close();
+            if (currentLineDecoder != null) {
+                currentLineDecoder.close();
+            }
+            if (marketoRestClient != null) {
+                marketoRestClient.close();
+            }
         }
 
         @Override

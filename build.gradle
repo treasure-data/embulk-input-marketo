@@ -16,7 +16,7 @@ repositories {
 configurations {
     provided
 }
-version = "0.5.7.alpha.6"
+version = "0.6.0.alpha.1"
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
@@ -81,13 +81,13 @@ task gemspec {
 Gem::Specification.new do |spec|
   spec.name          = "${project.name}"
   spec.version       = "${project.version}"
-  spec.authors       = ["Tai Khuu"]
+  spec.authors       = ["uu59", "yoshihara", "taikhuu"]
   spec.summary       = %[Marketo input plugin for Embulk]
   spec.description   = %[Loads records from Marketo.]
-  spec.email         = ["tai@treasuredata.com"]
-  spec.licenses      = ["MIT"]
-  # TODO set this: spec.homepage      = "https://github.com/khuutantai/embulk-input-marketo"
-
+  spec.email         = ["k@uu59.org", "h.yoshihara@everyleaf.com", "tai@treasuredata.com"]
+  spec.licenses      = ["Apache2"]
+  spec.homepage      = "https://github.com/treasure-data/embulk-input-marketo"
+  
   spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
   spec.test_files    = spec.files.grep(%r"^(test|spec)/")
   spec.require_paths = ["lib"]

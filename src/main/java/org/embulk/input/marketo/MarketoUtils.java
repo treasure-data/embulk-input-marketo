@@ -10,20 +10,13 @@ import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonTopLevelValueLocator;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
-import org.embulk.input.marketo.delegate.MarketoBaseBulkExtractInputPlugin;
 import org.embulk.input.marketo.model.MarketoField;
-import org.embulk.spi.Exec;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -72,7 +65,7 @@ public class MarketoUtils
 
     public static List<String> getFieldNameFromMarketoFields(List<MarketoField> columns, String... excludedFields)
     {
-        Set<String> excludeFields= Sets.newHashSet(excludedFields);
+        Set<String> excludeFields = Sets.newHashSet(excludedFields);
         List<String> extractedFields = new ArrayList<>();
         for (MarketoField column : columns) {
             if (excludeFields.contains(column.getName())) {
@@ -83,26 +76,15 @@ public class MarketoUtils
         return extractedFields;
     }
 
-    public static  <K, V> Map<K, V> zip(List<K> keys, List<V> values)
-    {
-        Map<K, V> kvMap = new HashMap<>();
-        if (values.size() < keys.size()) {
-            throw new IllegalArgumentException("");
-        }
-        for (int i = 0; i < keys.size(); i++) {
-            kvMap.put(keys.get(i), values.get(i));
-        }
-        return kvMap;
-    }
-
     public static String buildColumnName(String prefix, String columnName)
     {
         return prefix + "_" + columnName;
     }
 
-    public static final List<DateRange> sliceRange(DateTime fromDate, DateTime toDate, int rangeSize) {
+    public static final List<DateRange> sliceRange(DateTime fromDate, DateTime toDate, int rangeSize)
+    {
         List<DateRange> ranges = new ArrayList<>();
-        while (true && fromDate.isBefore(toDate)) {
+        while (fromDate.isBefore(toDate)) {
             DateTime nextToDate = fromDate.plusDays(rangeSize);
             if (nextToDate.isAfter(toDate)) {
                 ranges.add(new DateRange(fromDate, toDate));
@@ -124,11 +106,13 @@ public class MarketoUtils
         return "https://" + accountID + ".mktorest.com";
     }
 
-    public static  final class DateRange {
+    public static  final class DateRange
+    {
         public final DateTime fromDate;
         public final DateTime toDate;
 
-        public DateRange(DateTime fromDate, DateTime toDate) {
+        public DateRange(DateTime fromDate, DateTime toDate)
+        {
             this.fromDate = fromDate;
             this.toDate = toDate;
         }

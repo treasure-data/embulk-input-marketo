@@ -36,13 +36,11 @@ import static org.mockito.Mockito.*;
  */
 public class MarketoBaseRestClientTest
 {
-
     private static final String IDENTITY_END_POINT = "identityEndPoint";
 
     private static final int MARKETO_LIMIT_INTERVAL_MILIS = 1000;
 
     private MarketoBaseRestClient marketoBaseRestClient;
-
 
     private Jetty92RetryHelper mockJetty92;
 
@@ -53,12 +51,6 @@ public class MarketoBaseRestClientTest
     {
         mockJetty92 = mock(Jetty92RetryHelper.class);
         marketoBaseRestClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", MARKETO_LIMIT_INTERVAL_MILIS, mockJetty92);
-    }
-
-    @Test
-    public void doGet() throws Exception
-    {
-
     }
 
     @Test
@@ -77,7 +69,6 @@ public class MarketoBaseRestClientTest
     @Test
     public void testGetAccessTokenRequester()
     {
-
         ArgumentCaptor<Jetty92SingleRequester> jetty92SingleRequesterArgumentCaptor = ArgumentCaptor.forClass(Jetty92SingleRequester.class);
         when(mockJetty92.requestWithRetry(any(StringJetty92ResponseEntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn("{\"access_token\": \"access_token\"}");
         String accessToken = marketoBaseRestClient.getAccessToken();
@@ -105,7 +96,8 @@ public class MarketoBaseRestClientTest
                 "}");
         try {
             marketoBaseRestClient.getAccessToken();
-        } catch (DataException ex) {
+        }
+        catch (DataException ex) {
             assertEquals("Bad client credentials", ex.getMessage());
             return;
         }
@@ -163,7 +155,6 @@ public class MarketoBaseRestClientTest
         verify(mockRequest, times(1)).header(eq("Authorization"), eq("Bearer access_token"));
         verify(mockRequest, times(1)).param(eq("param"), eq("param1"));
         verify(mockRequest, times(1)).content(eq(contentProvider), eq("application/json"));
-
     }
 
     @Test
@@ -188,7 +179,6 @@ public class MarketoBaseRestClientTest
         jetty92SingleRequester.requestOnce(client, listener);
         assertTrue(jetty92SingleRequester.toRetry(createHttpResponseException(502)));
 
-
         assertFalse(jetty92SingleRequester.toRetry(createHttpResponseException(400)));
 
         assertFalse(jetty92SingleRequester.toRetry(createMarketoAPIException("ERR", "ERR")));
@@ -197,7 +187,6 @@ public class MarketoBaseRestClientTest
         assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("602", "")));
 
         verify(mockJetty92, times(2)).requestWithRetry(any(StringJetty92ResponseEntityReader.class), any(Jetty92SingleRequester.class));
-
     }
 
     private HttpResponseException createHttpResponseException(int statusCode)
@@ -216,5 +205,4 @@ public class MarketoBaseRestClientTest
         marketoError.setMessage(error);
         return new MarketoAPIException(Lists.newArrayList(marketoError));
     }
-
 }

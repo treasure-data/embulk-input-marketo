@@ -1,5 +1,6 @@
 package org.embulk.input.marketo.delegate;
 
+import com.google.common.base.Optional;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
 import org.embulk.base.restclient.record.ValueLocator;
@@ -29,8 +30,8 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
     @Override
     public void validateInputTask(PluginTask task)
     {
-        task.setIncrementalColumn(INCREMENTAL_COLUMN);
-        task.setUidColumn(UID_COLUMN);
+        task.setIncrementalColumn(Optional.of(INCREMENTAL_COLUMN));
+        task.setUidColumn(Optional.of(UID_COLUMN));
         super.validateInputTask(task);
     }
 

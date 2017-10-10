@@ -1,0 +1,31 @@
+{
+  "responses": [
+    {
+      "requestId": "2",
+      "result": [
+        {
+          "id": 1007,
+          "name": "Test list 1",
+          "workspaceName": "Default",
+          "createdAt": "2017-08-30T18:31:28Z",
+          "updatedAt": "2017-09-21T21:48:10Z"
+        }
+      ],
+      "success": true,
+      "nextPageToken": "GWP55GLCVCZLPE6SS7OCG5IEXQ======"
+    },
+    {
+      "requestId": "1",
+      "result": [
+        {
+          "id": 1008,
+          "name": "Test list 2",
+          "workspaceName": "Default",
+          "createdAt": "2017-08-30T18:31:28Z",
+          "updatedAt": "2017-09-21T21:48:10Z"
+        }
+      ],
+      "success": true
+    }
+  ]
+}

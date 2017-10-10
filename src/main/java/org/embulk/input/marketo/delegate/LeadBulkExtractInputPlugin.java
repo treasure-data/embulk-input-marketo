@@ -1,5 +1,6 @@
 package org.embulk.input.marketo.delegate;
 
+import com.google.common.base.Optional;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.Config;
@@ -11,7 +12,6 @@ import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
-import org.embulk.spi.Schema;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 
@@ -31,7 +31,6 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
 
     public interface PluginTask extends MarketoBaseBulkExtractInputPlugin.PluginTask
     {
-
         @Config("use_updated_at")
         @ConfigDefault("false")
         boolean getUseUpdatedAt();
@@ -41,17 +40,19 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
     public void validateInputTask(PluginTask task)
     {
         if (task.getUseUpdatedAt()) {
-            task.setIncrementalColumn("updatedAt");
+            task.setIncrementalColumn(Optional.of(UPDATED_AT));
         }
         super.validateInputTask(task);
     }
 
     @Override
-    protected InputStream getExtractedStream(MarketoService service, PluginTask task, DateTime fromDate, DateTime toDate) {
+    protected InputStream getExtractedStream(MarketoService service, PluginTask task, DateTime fromDate, DateTime toDate)
+    {
         try {
             List<String> fieldNames = task.getExtractedFields();
             return new FileInputStream(service.extractLead(fromDate.toDate(), toDate.toDate(), fieldNames, task.getIncrementalColumn().orNull(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
             LOGGER.error("File not found", e);
             throw new DataException("Error when extract lead");
         }

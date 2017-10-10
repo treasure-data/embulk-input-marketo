@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by tai.khuu on 9/5/17.
  */
-public class MarketoFileResponseEntityReader implements Jetty92ResponseReader<InputStream>
+public class MarketoInputStreamResponseEntityReader implements Jetty92ResponseReader<InputStream>
 {
     private static final ObjectReader OBJECT_READER = new ObjectMapper().readerFor(new TypeReference<MarketoResponse<ObjectNode>>(){ });
 
@@ -27,7 +27,7 @@ public class MarketoFileResponseEntityReader implements Jetty92ResponseReader<In
 
     private long timeout;
 
-    public MarketoFileResponseEntityReader(long timeout)
+    public MarketoInputStreamResponseEntityReader(long timeout)
     {
         this.listener = new InputStreamResponseListener();
         this.timeout = timeout;

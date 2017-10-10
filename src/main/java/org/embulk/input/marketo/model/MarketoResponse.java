@@ -1,5 +1,6 @@
 package org.embulk.input.marketo.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,7 +18,7 @@ public class MarketoResponse<T>
 
     private List<MarketoError> errors;
 
-    private List<T> result;
+    private List<T> result = new ArrayList<>();
 
     public String getRequestId()
     {

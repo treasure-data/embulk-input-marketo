@@ -1,0 +1,17 @@
+[
+  {
+    "id": 102519,
+    "updatedAt": "2017-09-11T03:14:12Z",
+    "lastName": "Nguyen",
+    "email": "robert@treasure-data.com",
+    "createdAt": "2017-09-11T03:14:13Z",
+    "firstName": "Robert",
+    "membership": {
+      "progressionStatus": "Member",
+      "isExhausted": false,
+      "acquiredBy": true,
+      "reachedSuccess": false,
+      "membershipDate": "2017-09-11T03:14:13Z"
+    }
+  }
+]

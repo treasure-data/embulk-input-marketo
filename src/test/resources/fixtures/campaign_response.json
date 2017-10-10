@@ -1,0 +1,38 @@
+
+{
+  "responses": [
+    {
+      "requestId": "2",
+      "result": [
+        {
+          "id": 1003,
+          "name": "Opened Sales Email",
+          "description": " ",
+          "type": "trigger",
+          "workspaceName": "Default",
+          "createdAt": "2017-08-09T18:48:26Z",
+          "updatedAt": "2017-08-09T18:48:26Z",
+          "active": false
+        }
+      ],
+      "success": true,
+      "nextPageToken": "z4MgsIiC5C======"
+    },
+    {
+      "requestId": "1",
+      "result": [
+        {
+          "id": 1004,
+          "name": "Clicks Link in Email",
+          "description": " ",
+          "type": "trigger",
+          "workspaceName": "Default",
+          "createdAt": "2017-08-09T18:48:26Z",
+          "updatedAt": "2017-08-09T18:48:26Z",
+          "active": false
+        }
+      ],
+      "success": true
+    }
+  ]
+}

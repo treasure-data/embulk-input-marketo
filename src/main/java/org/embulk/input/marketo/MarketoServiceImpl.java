@@ -92,9 +92,8 @@ public class MarketoServiceImpl implements MarketoService
             final String id = node.get("id").asText();
             iterables.add(Iterables.transform(marketoRestClient.getLeadsByList(id, fieldNames), new Function<ObjectNode, ObjectNode>()
             {
-                @Nullable
                 @Override
-                public ObjectNode apply(@Nullable ObjectNode input)
+                public ObjectNode apply(ObjectNode input)
                 {
                     input.put(MarketoUtils.LIST_ID_COLUMN_NAME, id);
                     return input;

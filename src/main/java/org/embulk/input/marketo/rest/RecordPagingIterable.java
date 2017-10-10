@@ -12,7 +12,7 @@ import java.util.NoSuchElementException;
  */
 public class RecordPagingIterable<T> implements Iterable<T>
 {
-    private PagingFunction pagingFunction;
+    private PagingFunction<Page<T>> pagingFunction;
 
     public RecordPagingIterable(PagingFunction pagingFunction)
     {
@@ -27,7 +27,7 @@ public class RecordPagingIterable<T> implements Iterable<T>
 
     private class RecordIterator implements Iterator<T>
     {
-        Page currentPage;
+        Page<T> currentPage;
         private Iterator<T> currentIterator;
 
         public RecordIterator()
@@ -39,9 +39,18 @@ public class RecordPagingIterable<T> implements Iterable<T>
         {
             if (currentPage == null) {
                 currentPage = pagingFunction.getFirstPage();
-                this.currentIterator = currentPage.getRecords().iterator();
+                this.currentIterator = currentPage.getRecordsIter();
             }
-            return currentIterator.hasNext() || currentPage.hasNext;
+            if (currentIterator.hasNext()) {
+                return true;
+            }
+            if (!currentPage.hasNext) {
+                return false;
+            }
+            Page<T> nextPage = pagingFunction.getNextPage(currentPage);
+            currentIterator = nextPage.getRecordsIter();
+            currentPage = nextPage;
+            return currentIterator.hasNext();
         }
 
         @Override
@@ -49,10 +58,6 @@ public class RecordPagingIterable<T> implements Iterable<T>
         {
             if (!hasNext()) {
                 throw new NoSuchElementException("Call next on an empty iterator");
-            }
-            if (!currentIterator.hasNext()) {
-                currentPage = pagingFunction.getNextPage(currentPage);
-                currentIterator = currentPage.getRecords().iterator();
             }
             return currentIterator.next();
         }
@@ -90,7 +95,10 @@ public class RecordPagingIterable<T> implements Iterable<T>
         {
             return records;
         }
-
+        public Iterator<T> getRecordsIter()
+        {
+            return records.iterator();
+        }
         public void setRecords(List<T> records)
         {
             this.records = records;
@@ -107,11 +115,11 @@ public class RecordPagingIterable<T> implements Iterable<T>
         }
     }
 
-    public static class MarketoPage<T> extends Page<T>
+    public static class TokenPage<T> extends Page<T>
     {
         private String nextPageToken;
 
-        public MarketoPage(Iterable<T> records, String nextPageToken, boolean moreResult)
+        public TokenPage(Iterable<T> records, String nextPageToken, boolean moreResult)
         {
             super(records, moreResult);
             this.nextPageToken = nextPageToken;
@@ -125,6 +133,22 @@ public class RecordPagingIterable<T> implements Iterable<T>
         public void setNextPageToken(String nextPageToken)
         {
             this.nextPageToken = nextPageToken;
+        }
+    }
+
+    public static class OffsetPage<T> extends Page<T>
+    {
+        private int nextOffSet;
+
+        public OffsetPage(Iterable<T> records, int nextOffSet, boolean moreResult)
+        {
+            super(records, moreResult);
+            this.nextOffSet = nextOffSet;
+        }
+
+        public int getNextOffSet()
+        {
+            return nextOffSet;
         }
     }
 }

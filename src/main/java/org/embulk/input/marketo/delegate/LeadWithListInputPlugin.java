@@ -2,17 +2,13 @@ package org.embulk.input.marketo.delegate;
 
 import com.google.common.collect.FluentIterable;
 import org.embulk.base.restclient.ServiceResponseMapper;
-import org.embulk.base.restclient.record.RecordImporter;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
-import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
-import org.embulk.spi.Exec;
-import org.embulk.spi.PageBuilder;
 
 import java.util.Iterator;
 import java.util.List;

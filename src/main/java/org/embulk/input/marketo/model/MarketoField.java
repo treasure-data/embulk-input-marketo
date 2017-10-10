@@ -1,6 +1,5 @@
 package org.embulk.input.marketo.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.google.common.base.Optional;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.spi.type.Type;

@@ -1,0 +1,47 @@
+{
+  "responses": [
+    {
+      "requestId": "2",
+      "result": [
+        {
+          "id": 102519,
+          "updatedAt": "2017-09-11T03:14:12Z",
+          "lastName": "Khuu 1",
+          "email": "tai1@treasure-data.com",
+          "createdAt": "2017-09-11T03:14:13Z",
+          "firstName": "Tai 1",
+          "membership": {
+            "progressionStatus": "Member",
+            "isExhausted": false,
+            "acquiredBy": true,
+            "reachedSuccess": false,
+            "membershipDate": "2017-09-11T03:14:13Z"
+          }
+        }
+      ],
+      "success": true,
+      "nextPageToken": "z4MgsIiC5C======"
+    },
+    {
+      "requestId": "1",
+      "result": [
+        {
+          "id": 102719,
+          "updatedAt": "2017-09-11T03:14:12Z",
+          "lastName": "Khuu",
+          "email": "tai@treasure-data.com",
+          "createdAt": "2017-09-11T03:14:13Z",
+          "firstName": "Tai",
+          "membership": {
+            "progressionStatus": "Member",
+            "isExhausted": false,
+            "acquiredBy": true,
+            "reachedSuccess": false,
+            "membershipDate": "2017-09-11T03:14:13Z"
+          }
+        }
+      ],
+      "success": true
+    }
+  ]
+}

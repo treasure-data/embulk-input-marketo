@@ -21,6 +21,7 @@ import org.embulk.util.retryhelper.jetty92.Jetty92SingleRequester;
 import org.embulk.util.retryhelper.jetty92.StringJetty92ResponseEntityReader;
 import org.slf4j.Logger;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
@@ -185,6 +186,9 @@ public class MarketoBaseRestClient implements AutoCloseable
             {
                 if (exception instanceof ExecutionException) {
                     this.toRetry((Exception) exception.getCause());
+                }
+                if (exception instanceof EOFException) {
+                    return true;
                 }
                 if (exception instanceof MarketoAPIException) {
                     //Retry Authenticate Exception
