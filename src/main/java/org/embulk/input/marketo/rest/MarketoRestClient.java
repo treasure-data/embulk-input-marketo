@@ -6,17 +6,13 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.config.Task;
 import org.embulk.input.marketo.MarketoUtils;
-import org.embulk.input.marketo.model.MarketoBulkExtractRequest;
-import org.embulk.input.marketo.model.MarketoError;
-import org.embulk.input.marketo.model.MarketoField;
-import org.embulk.input.marketo.model.MarketoResponse;
+import org.embulk.input.marketo.model.*;
 import org.embulk.input.marketo.model.filter.DateRangeFilter;
 import org.embulk.input.marketo.model.filter.MarketoFilter;
 import org.embulk.spi.DataException;
@@ -46,6 +42,8 @@ public class MarketoRestClient extends MarketoBaseRestClient
     private static final String MAX_BATCH_SIZE = "300";
 
     private static final String DEFAULT_MAX_RETURN = "200";
+
+    private static final String RANGE_HEADER = "Range";
 
     private String endPoint;
 
@@ -265,20 +263,25 @@ public class MarketoRestClient extends MarketoBaseRestClient
         }
     }
 
-    public InputStream getLeadBulkExtractResult(String exportId)
+    public InputStream getLeadBulkExtractResult(String exportId, BulkExtractRangeHeader bulkExtractRangeHeader)
     {
-        return getBulkExtractResult(MarketoRESTEndpoint.GET_LEAD_EXPORT_RESULT, exportId);
+        return getBulkExtractResult(MarketoRESTEndpoint.GET_LEAD_EXPORT_RESULT, exportId, bulkExtractRangeHeader);
     }
 
-    public InputStream getActivitiesBulkExtractResult(String exportId)
+    public InputStream getActivitiesBulkExtractResult(String exportId, BulkExtractRangeHeader bulkExtractRangeHeader)
     {
-        return getBulkExtractResult(MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_RESULT, exportId);
+        return getBulkExtractResult(MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_RESULT, exportId, bulkExtractRangeHeader);
     }
 
-    private InputStream getBulkExtractResult(MarketoRESTEndpoint endpoint, String exportId)
+    private InputStream getBulkExtractResult(MarketoRESTEndpoint endpoint, String exportId, BulkExtractRangeHeader bulkExtractRangeHeader)
     {
         LOGGER.info("Download bulk export job [{}]", exportId);
-        return doGet(this.endPoint + endpoint.getEndpoint(new ImmutableMap.Builder().put("export_id", exportId).build()), null, null, new MarketoInputStreamResponseEntityReader(READ_TIMEOUT_MILLIS));
+        Map<String, String> headers = new HashMap<>();
+        if (bulkExtractRangeHeader != null) {
+            headers.put(RANGE_HEADER, bulkExtractRangeHeader.toRangeHeaderValue());
+            LOGGER.info("Range header value [{}]", bulkExtractRangeHeader.toRangeHeaderValue());
+        }
+        return doGet(this.endPoint + endpoint.getEndpoint(new ImmutableMap.Builder().put("export_id", exportId).build()), headers, null, new MarketoInputStreamResponseEntityReader(READ_TIMEOUT_MILLIS));
     }
 
     public RecordPagingIterable<ObjectNode> getLists()

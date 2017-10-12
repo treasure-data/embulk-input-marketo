@@ -6,6 +6,7 @@ import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.ConfigLoader;
 import org.embulk.config.ConfigSource;
 import org.embulk.config.TaskReport;
+import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
@@ -58,8 +59,8 @@ public class ActivityBulkExtractInputPluginTest
         String exportId1 = "exportId1";
         String exportId2 = "exportId2";
         when(mockMarketoRestclient.createActivityExtract(any(Date.class), any(Date.class))).thenReturn(exportId1).thenReturn(exportId2).thenReturn(null);
-        when(mockMarketoRestclient.getActivitiesBulkExtractResult(eq(exportId1))).thenReturn(this.getClass().getResourceAsStream("/fixtures/activity_extract1.csv"));
-        when(mockMarketoRestclient.getActivitiesBulkExtractResult(eq(exportId2))).thenReturn(this.getClass().getResourceAsStream("/fixtures/activity_extract2.csv"));
+        when(mockMarketoRestclient.getActivitiesBulkExtractResult(eq(exportId1), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/activity_extract1.csv"));
+        when(mockMarketoRestclient.getActivitiesBulkExtractResult(eq(exportId2), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/activity_extract2.csv"));
         ServiceResponseMapper<? extends ValueLocator> mapper = activityBulkExtractInputPlugin.buildServiceResponseMapper(task);
         activityBulkExtractInputPlugin.validateInputTask(task);
         TaskReport taskReport = activityBulkExtractInputPlugin.ingestServiceData(task, mapper.createRecordImporter(), 1, pageBuilder);

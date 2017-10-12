@@ -9,6 +9,7 @@ import org.embulk.config.ConfigLoader;
 import org.embulk.config.ConfigSource;
 import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.MarketoUtils;
+import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Column;
@@ -68,8 +69,8 @@ public class LeadBulkExtractInputPluginTest
         List<String> fieldNameFromMarketoFields = MarketoUtils.getFieldNameFromMarketoFields(marketoFields);
         when(mockMarketoRestclient.describeLead()).thenReturn(marketoFields);
         when(mockMarketoRestclient.createLeadBulkExtract(any(Date.class), any(Date.class), any(List.class), any(String.class))).thenReturn(exportId1).thenReturn(exportId2).thenReturn(null);
-        when(mockMarketoRestclient.getLeadBulkExtractResult(eq(exportId1))).thenReturn(this.getClass().getResourceAsStream("/fixtures/lead_extract1.csv"));
-        when(mockMarketoRestclient.getLeadBulkExtractResult(eq(exportId2))).thenReturn(this.getClass().getResourceAsStream("/fixtures/leads_extract2.csv"));
+        when(mockMarketoRestclient.getLeadBulkExtractResult(eq(exportId1), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/lead_extract1.csv"));
+        when(mockMarketoRestclient.getLeadBulkExtractResult(eq(exportId2), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/leads_extract2.csv"));
         ServiceResponseMapper<? extends ValueLocator> mapper = bulkExtractInputPlugin.buildServiceResponseMapper(task);
         bulkExtractInputPlugin.validateInputTask(task);
         TaskReport taskReport = bulkExtractInputPlugin.ingestServiceData(task, mapper.createRecordImporter(), 1, pageBuilder);

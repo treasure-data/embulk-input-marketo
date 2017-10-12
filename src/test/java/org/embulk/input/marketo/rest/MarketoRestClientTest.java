@@ -15,6 +15,7 @@ import org.eclipse.jetty.client.util.FormContentProvider;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.config.ConfigSource;
 import org.embulk.input.marketo.MarketoUtils;
+import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.model.MarketoError;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.model.MarketoResponse;
@@ -30,7 +31,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -85,18 +91,6 @@ public class MarketoRestClientTest
         List<MarketoField> expectedFields = OBJECT_MAPPER.readValue(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/lead_describe_expected.json"))), marketoFieldType);
         assertArrayEquals(expectedFields.toArray(), marketoFields.toArray());
     }
-
-//    @Test
-//    public void describeLead2() throws Exception {
-//        String leadSchema = new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/lead_describe_full.json")));
-//        MarketoResponse<ObjectNode> marketoResponse = OBJECT_MAPPER.readValue(leadSchema, RESPONSE_TYPE);
-//        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.DESCRIBE_LEAD.getEndpoint()), isNull(Map.class), isNull(ImmutableListMultimap.class), any(MarketoResponseJetty92EntityReader.class));
-//        List<MarketoField> marketoFields = marketoRestClient.describeLead();
-//        assertEquals(16, marketoFields.size());
-//        JavaType marketoFieldType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
-//        List<MarketoField> expectedFields = OBJECT_MAPPER.readValue(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/lead_describe_expected.json"))), marketoFieldType);
-//        assertArrayEquals(expectedFields.toArray(), marketoFields.toArray());
-//    }
 
     @Test
     public void createLeadBulkExtract() throws Exception
@@ -316,9 +310,9 @@ public class MarketoRestClientTest
         String exportId = "exportId";
         Map<String, String> pathParamMap = new HashMap<>();
         pathParamMap.put("export_id", exportId);
-        doReturn(mock(InputStream.class)).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_RESULT.getEndpoint(pathParamMap)), isNull(Map.class), isNull(ImmutableListMultimap.class), any(MarketoInputStreamResponseEntityReader.class));
-        marketoRestClient.getLeadBulkExtractResult(exportId);
-        verify(marketoRestClient, times(1)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_RESULT.getEndpoint(pathParamMap)), isNull(Map.class), isNull(ImmutableListMultimap.class), any(MarketoInputStreamResponseEntityReader.class));
+        doReturn(mock(InputStream.class)).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_RESULT.getEndpoint(pathParamMap)), any(Map.class), isNull(ImmutableListMultimap.class), any(MarketoInputStreamResponseEntityReader.class));
+        marketoRestClient.getLeadBulkExtractResult(exportId, null);
+        verify(marketoRestClient, times(1)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_RESULT.getEndpoint(pathParamMap)), any(Map.class), isNull(ImmutableListMultimap.class), any(MarketoInputStreamResponseEntityReader.class));
     }
 
     @Test
@@ -327,9 +321,9 @@ public class MarketoRestClientTest
         String exportId = "exportId";
         Map<String, String> pathParamMap = new HashMap<>();
         pathParamMap.put("export_id", exportId);
-        doReturn(mock(InputStream.class)).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_RESULT.getEndpoint(pathParamMap)), isNull(Map.class), isNull(ImmutableListMultimap.class), any(MarketoInputStreamResponseEntityReader.class));
-        marketoRestClient.getActivitiesBulkExtractResult(exportId);
-        verify(marketoRestClient, times(1)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_RESULT.getEndpoint(pathParamMap)), isNull(Map.class), isNull(ImmutableListMultimap.class), any(MarketoInputStreamResponseEntityReader.class));
+        doReturn(mock(InputStream.class)).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_RESULT.getEndpoint(pathParamMap)), any(Map.class), isNull(ImmutableListMultimap.class), any(MarketoInputStreamResponseEntityReader.class));
+        marketoRestClient.getActivitiesBulkExtractResult(exportId, null);
+        verify(marketoRestClient, times(1)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_RESULT.getEndpoint(pathParamMap)), any(Map.class), isNull(ImmutableListMultimap.class), any(MarketoInputStreamResponseEntityReader.class));
     }
 
     @Test

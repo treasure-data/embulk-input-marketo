@@ -3,21 +3,16 @@ package org.embulk.input.marketo;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
-import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
+import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.input.marketo.rest.RecordPagingIterable;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
-import org.embulk.spi.util.RetryExecutor;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Date;
 import java.util.List;
 
@@ -30,11 +25,10 @@ public class MarketoServiceImpl implements MarketoService
 
     private static final String DEFAULT_FILE_FORMAT = "csv";
 
-    private static final int MAXIMUM_RETRIES = 3;
 
-    private static final int INITIAL_RETRY_INTERVAL_MILLIS = 20000;
+    private static final int BUF_SIZE = 0x1000;
 
-    private static final int MAXIMUM_RETRY_INTERVAL_MILLIS = 120000;
+    private static final int MAX_RESUME_TIME = 50;
 
     private MarketoRestClient marketoRestClient;
 
@@ -44,7 +38,7 @@ public class MarketoServiceImpl implements MarketoService
     }
 
     @Override
-    public File extractLead(Date startTime, Date endTime, List<String> extractedFields, String filterField, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond)
+    public File extractLead(final Date startTime, Date endTime, List<String> extractedFields, String filterField, int pollingTimeIntervalSecond, final int bulkJobTimeoutSecond)
     {
         final String exportID = marketoRestClient.createLeadBulkExtract(startTime, endTime, extractedFields, filterField);
         marketoRestClient.startLeadBulkExtract(exportID);
@@ -55,36 +49,34 @@ public class MarketoServiceImpl implements MarketoService
             LOGGER.error("Exception when waiting for export job id: {}", exportID, e);
             throw new DataException("Error when wait for bulk extract");
         }
-        try{
-            return MarketoUtils.executeWithRetry(MAXIMUM_RETRIES, INITIAL_RETRY_INTERVAL_MILLIS, MAXIMUM_RETRY_INTERVAL_MILLIS, new MarketoUtils.AlwaysRetryRetryable<File>()
+        return downloadBulkExtract(new Function<BulkExtractRangeHeader, InputStream>()
+        {
+            @Override
+            public InputStream apply(BulkExtractRangeHeader bulkExtractRangeHeader)
             {
-                @Override
-                public File call() throws Exception
-                {
-
-                    InputStream leadBulkExtractResult = marketoRestClient.getLeadBulkExtractResult(exportID);
-                    return saveExtractedFile(exportID, leadBulkExtractResult);
-                }
-            });
-        }
-        catch (InterruptedException | RetryExecutor.RetryGiveupException ex) {
-            LOGGER.error("Exception when download result for lead export job id: {}", exportID, ex);
-            throw new DataException("Error when download result for lead bulk extract");
-        }
+                return marketoRestClient.getLeadBulkExtractResult(exportID, bulkExtractRangeHeader);
+            }
+        });
     }
 
-    private File saveExtractedFile(String exportID, InputStream leadBulkExtractResult)
+    private long saveExtractedFile(InputStream extractResult, File tempFile) throws DownloadBulkExtractException
     {
-        LOGGER.info("Save bulk export file", exportID);
-        File tempFile = Exec.getTempFileSpace().createTempFile(DEFAULT_FILE_FORMAT);
-        try (OutputStream fileOuputStream = new FileOutputStream(tempFile)) {
-            ByteStreams.copy(leadBulkExtractResult, fileOuputStream);
+        long total = 0;
+        try (OutputStream fileOuputStream = new FileOutputStream(tempFile, true)) {
+            byte[] buf = new byte[BUF_SIZE];
+            while (true) {
+                int r = extractResult.read(buf);
+                if (r == -1) {
+                    break;
+                }
+                fileOuputStream.write(buf, 0, r);
+                total += r;
+            }
+        } catch (IOException e) {
+            LOGGER.error("Encounter exception when download bulk extract file", e);
+            throw new DownloadBulkExtractException("Encounter exception when download bulk extract file", e, total);
         }
-        catch (IOException e) {
-            LOGGER.error("Encounter exception when download bulk extract file, job id [{}]", exportID, e);
-            throw new DataException("Can't download bulk extract file");
-        }
-        return tempFile;
+        return total;
     }
 
     @Override
@@ -99,23 +91,35 @@ public class MarketoServiceImpl implements MarketoService
             LOGGER.error("Exception when waiting for export job id: {}", exportID, e);
             throw new DataException("Error when wait for bulk extract");
         }
-        try {
-            return MarketoUtils.executeWithRetry(MAXIMUM_RETRIES, INITIAL_RETRY_INTERVAL_MILLIS, MAXIMUM_RETRY_INTERVAL_MILLIS, new MarketoUtils.AlwaysRetryRetryable<File>()
+        return downloadBulkExtract(new Function<BulkExtractRangeHeader, InputStream>()
+        {
+            @Override
+            public InputStream apply(BulkExtractRangeHeader bulkExtractRangeHeader)
             {
-                @Override
-                public File call() throws Exception
-                {
-                    InputStream activitiesBulkExtractResult = marketoRestClient.getActivitiesBulkExtractResult(exportID);
-                    return saveExtractedFile(exportID, activitiesBulkExtractResult);
-                }
-            });
-        }
-        catch (InterruptedException | RetryExecutor.RetryGiveupException ex) {
-            LOGGER.error("Exception when download result for activity export job id: {}", exportID, ex);
-            throw new DataException("Error when download result for activity bulk extract");
-        }
+                return marketoRestClient.getActivitiesBulkExtractResult(exportID, bulkExtractRangeHeader);
+            }
+        });
     }
-
+    private File downloadBulkExtract(Function<BulkExtractRangeHeader, InputStream> getBulkExtractfunction)
+    {
+        final File tempFile = Exec.getTempFileSpace().createTempFile(DEFAULT_FILE_FORMAT);
+        long startByte = 0;
+        int resumeTime = 0;
+        while (resumeTime < MAX_RESUME_TIME) {
+            BulkExtractRangeHeader bulkExtractRangeHeader = new BulkExtractRangeHeader(startByte);
+            InputStream bulkExtractResult = getBulkExtractfunction.apply(bulkExtractRangeHeader);
+            try {
+                saveExtractedFile(bulkExtractResult, tempFile);
+                return tempFile;
+            } catch (DownloadBulkExtractException e) {
+                startByte = startByte + e.getByteWritten();
+                LOGGER.warn("will resume activity bulk extract at byte [{}]", startByte);
+            }
+            resumeTime = resumeTime + 1;
+        }
+        //Too many resume we still can't get the file
+        throw new DataException("Can't down load bulk extract");
+    }
     @Override
     public Iterable<ObjectNode> getAllListLead(List<String> fieldNames)
     {
@@ -191,4 +195,26 @@ public class MarketoServiceImpl implements MarketoService
         columns.add(new MarketoField(MarketoUtils.LIST_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
         return columns;
     }
+    private static class DownloadBulkExtractException extends Exception {
+
+        private long byteWritten = 0L;
+
+        public DownloadBulkExtractException(String message, Throwable cause, long byteWritten)
+        {
+            super(message, cause);
+            this.byteWritten = byteWritten;
+        }
+
+        public DownloadBulkExtractException(Throwable cause, long byteWritten)
+        {
+            super(cause);
+            this.byteWritten = byteWritten;
+        }
+
+        public long getByteWritten()
+        {
+            return byteWritten;
+        }
+    }
+
 }

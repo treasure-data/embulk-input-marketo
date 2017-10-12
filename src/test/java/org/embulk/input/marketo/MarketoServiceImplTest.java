@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
 import org.embulk.EmbulkTestRuntime;
+import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.input.marketo.rest.RecordPagingIterable;
@@ -48,7 +49,7 @@ public class MarketoServiceImplTest
         String exportId = "exportId";
         when(mockMarketoRestClient.createLeadBulkExtract(eq(startDate), eq(endDate), eq(extractedFields), eq(filerField))).thenReturn(exportId);
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream("Test File Content".getBytes());
-        when(mockMarketoRestClient.getLeadBulkExtractResult(eq(exportId))).thenReturn(byteArrayInputStream);
+        when(mockMarketoRestClient.getLeadBulkExtractResult(eq(exportId), any(BulkExtractRangeHeader.class))).thenReturn(byteArrayInputStream);
         File file = marketoService.extractLead(startDate, endDate, extractedFields, filerField, 1, 3);
         assertEquals("Test File Content", new String(ByteStreams.toByteArray(new FileInputStream(file))));
         verify(mockMarketoRestClient, times(1)).startLeadBulkExtract(eq(exportId));
@@ -63,7 +64,7 @@ public class MarketoServiceImplTest
         String exportId = "exportId";
         when(mockMarketoRestClient.createActivityExtract(eq(startDate), eq(endDate))).thenReturn(exportId);
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream("Test File Content".getBytes());
-        when(mockMarketoRestClient.getActivitiesBulkExtractResult(eq(exportId))).thenReturn(byteArrayInputStream);
+        when(mockMarketoRestClient.getActivitiesBulkExtractResult(eq(exportId), any(BulkExtractRangeHeader.class))).thenReturn(byteArrayInputStream);
         File file = marketoService.extractAllActivity(startDate, endDate, 1, 3);
         assertEquals("Test File Content", new String(ByteStreams.toByteArray(new FileInputStream(file))));
         verify(mockMarketoRestClient, times(1)).startActitvityBulkExtract(eq(exportId));
