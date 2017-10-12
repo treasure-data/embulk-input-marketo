@@ -12,7 +12,11 @@ import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.config.Task;
 import org.embulk.input.marketo.MarketoUtils;
-import org.embulk.input.marketo.model.*;
+import org.embulk.input.marketo.model.BulkExtractRangeHeader;
+import org.embulk.input.marketo.model.MarketoBulkExtractRequest;
+import org.embulk.input.marketo.model.MarketoError;
+import org.embulk.input.marketo.model.MarketoField;
+import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.input.marketo.model.filter.DateRangeFilter;
 import org.embulk.input.marketo.model.filter.MarketoFilter;
 import org.embulk.spi.DataException;
@@ -24,7 +28,11 @@ import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by tai.khuu on 8/22/17.

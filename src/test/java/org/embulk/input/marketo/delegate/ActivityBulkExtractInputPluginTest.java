@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -24,7 +25,6 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by khuutantaitai on 10/3/17.
@@ -43,11 +43,11 @@ public class ActivityBulkExtractInputPluginTest
     @Before
     public void prepare() throws IOException
     {
-        activityBulkExtractInputPlugin = spy(new ActivityBulkExtractInputPlugin());
+        activityBulkExtractInputPlugin = Mockito.spy(new ActivityBulkExtractInputPlugin());
         ConfigLoader configLoader = embulkTestRuntime.getInjector().getInstance(ConfigLoader.class);
         configSource = configLoader.fromYaml(this.getClass().getResourceAsStream("/config/activity_bulk_extract_config.yaml"));
-        mockMarketoRestclient = mock(MarketoRestClient.class);
-        doReturn(mockMarketoRestclient).when(activityBulkExtractInputPlugin).createMarketoRestClient(any(ActivityBulkExtractInputPlugin.PluginTask.class));
+        mockMarketoRestclient = Mockito.mock(MarketoRestClient.class);
+        Mockito.doReturn(mockMarketoRestclient).when(activityBulkExtractInputPlugin).createMarketoRestClient(any(ActivityBulkExtractInputPlugin.PluginTask.class));
     }
 
     @Test
@@ -55,25 +55,25 @@ public class ActivityBulkExtractInputPluginTest
     {
         ActivityBulkExtractInputPlugin.PluginTask task = configSource.loadConfig(ActivityBulkExtractInputPlugin.PluginTask.class);
         DateTime startDate = new DateTime(task.getFromDate());
-        PageBuilder pageBuilder = mock(PageBuilder.class);
+        PageBuilder pageBuilder = Mockito.mock(PageBuilder.class);
         String exportId1 = "exportId1";
         String exportId2 = "exportId2";
-        when(mockMarketoRestclient.createActivityExtract(any(Date.class), any(Date.class))).thenReturn(exportId1).thenReturn(exportId2).thenReturn(null);
-        when(mockMarketoRestclient.getActivitiesBulkExtractResult(eq(exportId1), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/activity_extract1.csv"));
-        when(mockMarketoRestclient.getActivitiesBulkExtractResult(eq(exportId2), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/activity_extract2.csv"));
+        Mockito.when(mockMarketoRestclient.createActivityExtract(any(Date.class), any(Date.class))).thenReturn(exportId1).thenReturn(exportId2).thenReturn(null);
+        Mockito.when(mockMarketoRestclient.getActivitiesBulkExtractResult(Mockito.eq(exportId1), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/activity_extract1.csv"));
+        Mockito.when(mockMarketoRestclient.getActivitiesBulkExtractResult(Mockito.eq(exportId2), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/activity_extract2.csv"));
         ServiceResponseMapper<? extends ValueLocator> mapper = activityBulkExtractInputPlugin.buildServiceResponseMapper(task);
         activityBulkExtractInputPlugin.validateInputTask(task);
         TaskReport taskReport = activityBulkExtractInputPlugin.ingestServiceData(task, mapper.createRecordImporter(), 1, pageBuilder);
         ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
         Column marketoGUID = mapper.getEmbulkSchema().lookupColumn("marketoGUID");
-        verify(pageBuilder, times(55)).setString(eq(marketoGUID), argumentCaptor.capture());
-        verify(mockMarketoRestclient, times(1)).startActitvityBulkExtract(eq(exportId1));
-        verify(mockMarketoRestclient, times(1)).waitActitvityExportJobComplete(eq(exportId1), eq(task.getPollingIntervalSecond()), eq(task.getBulkJobTimeoutSecond()));
-        verify(mockMarketoRestclient, times(1)).startActitvityBulkExtract(eq(exportId2));
-        verify(mockMarketoRestclient, times(1)).waitActitvityExportJobComplete(eq(exportId2), eq(task.getPollingIntervalSecond()), eq(task.getBulkJobTimeoutSecond()));
-        verify(mockMarketoRestclient, times(1)).createActivityExtract(startDate.toDate(), startDate.plusDays(30).toDate());
+        Mockito.verify(pageBuilder, Mockito.times(55)).setString(Mockito.eq(marketoGUID), argumentCaptor.capture());
+        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).startActitvityBulkExtract(Mockito.eq(exportId1));
+        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).waitActitvityExportJobComplete(Mockito.eq(exportId1), Mockito.eq(task.getPollingIntervalSecond()), Mockito.eq(task.getBulkJobTimeoutSecond()));
+        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).startActitvityBulkExtract(Mockito.eq(exportId2));
+        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).waitActitvityExportJobComplete(Mockito.eq(exportId2), Mockito.eq(task.getPollingIntervalSecond()), Mockito.eq(task.getBulkJobTimeoutSecond()));
+        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createActivityExtract(startDate.toDate(), startDate.plusDays(30).toDate());
         DateTime startDate2 = startDate.plusDays(30).plusSeconds(1);
-        verify(mockMarketoRestclient, times(1)).createActivityExtract(startDate2.toDate(), startDate.plusDays(task.getFetchDays()).toDate());
+        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createActivityExtract(startDate2.toDate(), startDate.plusDays(task.getFetchDays()).toDate());
         List<String> marketoUids = argumentCaptor.getAllValues();
         assertEquals(55, marketoUids.size());
         long latestFetchTime = taskReport.get(Long.class, "latest_fetch_time");

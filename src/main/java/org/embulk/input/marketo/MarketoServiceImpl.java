@@ -12,7 +12,11 @@ import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
 
@@ -24,7 +28,6 @@ public class MarketoServiceImpl implements MarketoService
     private static final Logger LOGGER = Exec.getLogger(MarketoServiceImpl.class);
 
     private static final String DEFAULT_FILE_FORMAT = "csv";
-
 
     private static final int BUF_SIZE = 0x1000;
 
@@ -72,7 +75,8 @@ public class MarketoServiceImpl implements MarketoService
                 fileOuputStream.write(buf, 0, r);
                 total += r;
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOGGER.error("Encounter exception when download bulk extract file", e);
             throw new DownloadBulkExtractException("Encounter exception when download bulk extract file", e, total);
         }
@@ -111,7 +115,8 @@ public class MarketoServiceImpl implements MarketoService
             try {
                 saveExtractedFile(bulkExtractResult, tempFile);
                 return tempFile;
-            } catch (DownloadBulkExtractException e) {
+            }
+            catch (DownloadBulkExtractException e) {
                 startByte = startByte + e.getByteWritten();
                 LOGGER.warn("will resume activity bulk extract at byte [{}]", startByte);
             }
@@ -195,9 +200,10 @@ public class MarketoServiceImpl implements MarketoService
         columns.add(new MarketoField(MarketoUtils.LIST_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
         return columns;
     }
-    private static class DownloadBulkExtractException extends Exception {
 
-        private long byteWritten = 0L;
+    private static class DownloadBulkExtractException extends Exception
+    {
+        private final long byteWritten;
 
         public DownloadBulkExtractException(String message, Throwable cause, long byteWritten)
         {
@@ -216,5 +222,4 @@ public class MarketoServiceImpl implements MarketoService
             return byteWritten;
         }
     }
-
 }

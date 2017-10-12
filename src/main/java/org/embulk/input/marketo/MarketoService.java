@@ -2,7 +2,6 @@ package org.embulk.input.marketo;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.embulk.input.marketo.model.MarketoField;
-import org.embulk.spi.util.RetryExecutor;
 
 import java.io.File;
 import java.util.Date;

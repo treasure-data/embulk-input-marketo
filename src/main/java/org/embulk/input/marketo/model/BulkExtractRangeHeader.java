@@ -19,7 +19,8 @@ public class BulkExtractRangeHeader
         this.end = end;
     }
 
-    public String toRangeHeaderValue(){
+    public String toRangeHeaderValue()
+    {
         return "bytes=" + start + "-" + (end != null ? end : "");
     }
 }

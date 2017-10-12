@@ -17,12 +17,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by tai.khuu on 10/10/17.
@@ -43,30 +43,30 @@ public class CampaignInputPluginTest
     @Before
     public void setUp() throws Exception
     {
-        campaignInputPlugin = spy(new CampaignInputPlugin());
+        campaignInputPlugin = Mockito.spy(new CampaignInputPlugin());
         ConfigLoader configLoader = embulkTestRuntime.getInjector().getInstance(ConfigLoader.class);
         configSource = configLoader.fromYaml(this.getClass().getResourceAsStream("/config/rest_config.yaml"));
-        mockMarketoRestClient = mock(MarketoRestClient.class);
-        doReturn(mockMarketoRestClient).when(campaignInputPlugin).createMarketoRestClient(any(CampaignInputPlugin.PluginTask.class));
+        mockMarketoRestClient = Mockito.mock(MarketoRestClient.class);
+        Mockito.doReturn(mockMarketoRestClient).when(campaignInputPlugin).createMarketoRestClient(Mockito.any(CampaignInputPlugin.PluginTask.class));
     }
 
     @Test
     public void testRun() throws IOException
     {
-        RecordPagingIterable<ObjectNode> mockRecordPagingIterable = mock(RecordPagingIterable.class);
+        RecordPagingIterable<ObjectNode> mockRecordPagingIterable = Mockito.mock(RecordPagingIterable.class);
         JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, ObjectNode.class);
         List<ObjectNode> objectNodeList = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/campaign_response_full.json"), javaType);
-        when(mockRecordPagingIterable.iterator()).thenReturn(objectNodeList.iterator());
-        when(mockMarketoRestClient.getCampaign()).thenReturn(mockRecordPagingIterable);
+        Mockito.when(mockRecordPagingIterable.iterator()).thenReturn(objectNodeList.iterator());
+        Mockito.when(mockMarketoRestClient.getCampaign()).thenReturn(mockRecordPagingIterable);
         CampaignInputPlugin.PluginTask task = configSource.loadConfig(CampaignInputPlugin.PluginTask.class);
         ServiceResponseMapper<? extends ValueLocator> mapper = campaignInputPlugin.buildServiceResponseMapper(task);
         RecordImporter recordImporter = mapper.createRecordImporter();
-        PageBuilder mockPageBuilder = mock(PageBuilder.class);
+        PageBuilder mockPageBuilder = Mockito.mock(PageBuilder.class);
         campaignInputPlugin.ingestServiceData(task, recordImporter, 1, mockPageBuilder);
-        verify(mockMarketoRestClient, times(1)).getCampaign();
+        Mockito.verify(mockMarketoRestClient, Mockito.times(1)).getCampaign();
         Schema embulkSchema = mapper.getEmbulkSchema();
         ArgumentCaptor<Long> longArgumentCaptor = ArgumentCaptor.forClass(Long.class);
-        verify(mockPageBuilder, times(10)).setLong(eq(embulkSchema.lookupColumn("id")), longArgumentCaptor.capture());
+        Mockito.verify(mockPageBuilder, Mockito.times(10)).setLong(Mockito.eq(embulkSchema.lookupColumn("id")), longArgumentCaptor.capture());
         List<Long> allValues = longArgumentCaptor.getAllValues();
         assertArrayEquals(new Long[]{1003L, 1004L, 1005L, 1006L, 1007L, 1008L, 1029L, 1048L, 1051L, 1065L}, allValues.toArray());
     }

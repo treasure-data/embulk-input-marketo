@@ -20,6 +20,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,7 +29,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by tai.khuu on 10/10/17.
@@ -49,50 +49,50 @@ public class LeadWithListInputPluginTest
     @Before
     public void setUp() throws Exception
     {
-        leadWithListInputPlugin = spy(new LeadWithListInputPlugin());
+        leadWithListInputPlugin = Mockito.spy(new LeadWithListInputPlugin());
         ConfigLoader configLoader = embulkTestRuntime.getInjector().getInstance(ConfigLoader.class);
         configSource = configLoader.fromYaml(this.getClass().getResourceAsStream("/config/rest_config.yaml"));
-        mockMarketoRestClient = mock(MarketoRestClient.class);
-        doReturn(mockMarketoRestClient).when(leadWithListInputPlugin).createMarketoRestClient(any(LeadWithListInputPlugin.PluginTask.class));
+        mockMarketoRestClient = Mockito.mock(MarketoRestClient.class);
+        Mockito.doReturn(mockMarketoRestClient).when(leadWithListInputPlugin).createMarketoRestClient(any(LeadWithListInputPlugin.PluginTask.class));
     }
 
     @Test
     public void testRun() throws IOException
     {
-        RecordPagingIterable<ObjectNode> mockLeadRecordPagingIterable = mock(RecordPagingIterable.class);
-        RecordPagingIterable<ObjectNode> mockLeadEmptyRecordPagingIterable = mock(RecordPagingIterable.class);
-        RecordPagingIterable<ObjectNode> mocklistRecords = mock(RecordPagingIterable.class);
+        RecordPagingIterable<ObjectNode> mockLeadRecordPagingIterable = Mockito.mock(RecordPagingIterable.class);
+        RecordPagingIterable<ObjectNode> mockLeadEmptyRecordPagingIterable = Mockito.mock(RecordPagingIterable.class);
+        RecordPagingIterable<ObjectNode> mocklistRecords = Mockito.mock(RecordPagingIterable.class);
 
-        when(mockLeadEmptyRecordPagingIterable.iterator()).thenReturn(new ArrayList<ObjectNode>().iterator());
+        Mockito.when(mockLeadEmptyRecordPagingIterable.iterator()).thenReturn(new ArrayList<ObjectNode>().iterator());
         JavaType objectNodeListType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, ObjectNode.class);
         JavaType marketoFieldsType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
         List<ObjectNode> leads = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/lead_response_full.json"), objectNodeListType);
         List<ObjectNode> lists = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/list_reponse_full.json"), objectNodeListType);
-        when(mocklistRecords.iterator()).thenReturn(lists.iterator());
+        Mockito.when(mocklistRecords.iterator()).thenReturn(lists.iterator());
         List<MarketoField> marketoFields = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/lead_describe_marketo_fields_full.json"), marketoFieldsType);
-        when(mockLeadRecordPagingIterable.iterator()).thenReturn(leads.iterator());
-        when(mockMarketoRestClient.describeLead()).thenReturn(marketoFields);
-        when(mockMarketoRestClient.getLists()).thenReturn(mocklistRecords);
+        Mockito.when(mockLeadRecordPagingIterable.iterator()).thenReturn(leads.iterator());
+        Mockito.when(mockMarketoRestClient.describeLead()).thenReturn(marketoFields);
+        Mockito.when(mockMarketoRestClient.getLists()).thenReturn(mocklistRecords);
         List<String> fieldNameFromMarketoFields = MarketoUtils.getFieldNameFromMarketoFields(marketoFields);
         String fieldNameString = StringUtils.join(fieldNameFromMarketoFields, ",");
-        when(mockMarketoRestClient.getLeadsByList(anyString(), eq(fieldNameString))).thenReturn(mockLeadEmptyRecordPagingIterable);
-        when(mockMarketoRestClient.getLeadsByList("1009", fieldNameString)).thenReturn(mockLeadRecordPagingIterable);
+        Mockito.when(mockMarketoRestClient.getLeadsByList(Mockito.anyString(), eq(fieldNameString))).thenReturn(mockLeadEmptyRecordPagingIterable);
+        Mockito.when(mockMarketoRestClient.getLeadsByList("1009", fieldNameString)).thenReturn(mockLeadRecordPagingIterable);
 
         LeadWithListInputPlugin.PluginTask task = configSource.loadConfig(LeadWithListInputPlugin.PluginTask.class);
         ServiceResponseMapper<? extends ValueLocator> mapper = leadWithListInputPlugin.buildServiceResponseMapper(task);
 
         RecordImporter recordImporter = mapper.createRecordImporter();
-        PageBuilder mockPageBuilder = mock(PageBuilder.class);
+        PageBuilder mockPageBuilder = Mockito.mock(PageBuilder.class);
         leadWithListInputPlugin.ingestServiceData(task, recordImporter, 1, mockPageBuilder);
-        verify(mockMarketoRestClient, times(1)).getLists();
-        verify(mockMarketoRestClient, times(24)).getLeadsByList(anyString(), eq(fieldNameString));
-        verify(mockMarketoRestClient, times(1)).describeLead();
+        Mockito.verify(mockMarketoRestClient, Mockito.times(1)).getLists();
+        Mockito.verify(mockMarketoRestClient, Mockito.times(24)).getLeadsByList(Mockito.anyString(), eq(fieldNameString));
+        Mockito.verify(mockMarketoRestClient, Mockito.times(1)).describeLead();
 
         Schema embulkSchema = mapper.getEmbulkSchema();
         ArgumentCaptor<Long> longArgumentCaptor = ArgumentCaptor.forClass(Long.class);
 
-        verify(mockPageBuilder, times(300)).setLong(eq(embulkSchema.lookupColumn("mk_id")), longArgumentCaptor.capture());
-        verify(mockPageBuilder, times(300)).setString(eq(embulkSchema.lookupColumn("mk_listId")), eq("1009"));
+        Mockito.verify(mockPageBuilder, Mockito.times(300)).setLong(eq(embulkSchema.lookupColumn("mk_id")), longArgumentCaptor.capture());
+        Mockito.verify(mockPageBuilder, Mockito.times(300)).setString(eq(embulkSchema.lookupColumn("mk_listId")), eq("1009"));
 
         List<Long> allValues = longArgumentCaptor.getAllValues();
         long actualValue = allValues.get(0);
