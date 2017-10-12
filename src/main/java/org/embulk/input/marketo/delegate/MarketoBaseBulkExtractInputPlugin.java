@@ -64,6 +64,8 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
     private static final int MARKETO_MAX_RANGE_EXTRACT = 30;
 
+    private static final String IMPORTED = "imported";
+
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, CsvTokenizer.PluginTask
     {
         @Config("from_date")
@@ -145,6 +147,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         Long currentLatestFetchTime = 0L;
         Set latestUIds = null;
         String incrementalColumn = task.getIncrementalColumn().orNull();
+        int imported = 0;
         if (incrementalColumn != null && task.getIncremental()) {
             DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
             for (TaskReport taskReport : taskReports) {
@@ -156,12 +159,21 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                     currentLatestFetchTime = latestFetchTime;
                     latestUIds = taskReport.get(Set.class, LATEST_UID_LIST);
                 }
-                else if (currentLatestFetchTime == latestFetchTime) {
+                else if (currentLatestFetchTime.equals(latestFetchTime)) {
                     latestUIds.addAll(taskReport.get(Set.class, LATEST_UID_LIST));
+                }
+                if (taskReport.has(IMPORTED)) {
+                    imported = imported + taskReport.get(Integer.class, IMPORTED);
                 }
             }
             // in case of we didn't import anything but search range is entirely in the past. Then we should move the the range anyway.
-            configDiff.set(FROM_DATE, df.format(task.getToDate().orNull()));
+            if (imported == 0) {
+                configDiff.set(FROM_DATE, df.format(task.getToDate().orNull()));
+            }
+            else {
+            // Otherwise it's should start from the currentLastFetchTime. If Marketo could guaranteed that they always return data of full range we could just set it to_date
+                configDiff.set(FROM_DATE, df.format(new Date(currentLatestFetchTime)));
+            }
             configDiff.set(LATEST_FETCH_TIME, currentLatestFetchTime);
             configDiff.set(LATEST_UID_LIST, latestUIds);
         }
@@ -193,6 +205,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 if (Exec.isPreview()) {
                     csvRecords = Iterators.limit(csvRecords, PREVIEW_RECORD_LIMIT);
                 }
+                int imported = 0;
                 while (csvRecords.hasNext()) {
                     Map<String, String> csvRecord = csvRecords.next();
                     if (task.getIncremental()) {
@@ -221,12 +234,13 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                             }
                         }
                     }
-
                     ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
                     recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
+                    imported = imported + 1;
                 }
                 taskReport.set(LATEST_FETCH_TIME, currentTimestamp);
                 taskReport.set(LATEST_UID_LIST, latestUids);
+                taskReport.set(IMPORTED, imported);
                 return taskReport;
             }
         }

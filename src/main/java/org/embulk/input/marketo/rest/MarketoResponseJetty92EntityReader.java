@@ -36,7 +36,6 @@ public class MarketoResponseJetty92EntityReader<T> implements Jetty92ResponseRea
 
     public MarketoResponseJetty92EntityReader(long timeout)
     {
-        this.listener = new InputStreamResponseListener();
         this.timeout = timeout;
         javaType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(MarketoResponse.class, MarketoResponse.class, ObjectNode.class);
     }
@@ -51,7 +50,8 @@ public class MarketoResponseJetty92EntityReader<T> implements Jetty92ResponseRea
     @Override
     public Response.Listener getListener()
     {
-        return listener;
+        this.listener = new InputStreamResponseListener();
+        return this.listener;
     }
 
     @Override
@@ -83,8 +83,6 @@ public class MarketoResponseJetty92EntityReader<T> implements Jetty92ResponseRea
         InputStream inputStream = this.listener.getInputStream();
         try (InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
             String reponseContent = CharStreams.toString(inputStreamReader);
-            //Reset this listener
-            this.listener = new InputStreamResponseListener();
             return reponseContent;
         }
     }

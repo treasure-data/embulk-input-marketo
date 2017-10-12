@@ -19,17 +19,16 @@ import org.embulk.spi.DataException;
 import org.embulk.util.retryhelper.jetty92.Jetty92RetryHelper;
 import org.embulk.util.retryhelper.jetty92.Jetty92SingleRequester;
 import org.embulk.util.retryhelper.jetty92.StringJetty92ResponseEntityReader;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by tai.khuu on 9/21/17.
@@ -49,48 +48,48 @@ public class MarketoBaseRestClientTest
     @Before
     public void prepare()
     {
-        mockJetty92 = mock(Jetty92RetryHelper.class);
+        mockJetty92 = Mockito.mock(Jetty92RetryHelper.class);
         marketoBaseRestClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", MARKETO_LIMIT_INTERVAL_MILIS, mockJetty92);
     }
 
     @Test
     public void testGetAccessToken()
     {
-        when(mockJetty92.requestWithRetry(any(StringJetty92ResponseEntityReader.class), any(Jetty92SingleRequester.class))).thenReturn("{\n" +
+        Mockito.when(mockJetty92.requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), Mockito.any(Jetty92SingleRequester.class))).thenReturn("{\n" +
                 "    \"access_token\": \"access_token\",\n" +
                 "    \"token_type\": \"bearer\",\n" +
                 "    \"expires_in\": 3599,\n" +
                 "    \"scope\": \"tai@treasure-data.com\"\n" +
                 "}");
         String accessToken = marketoBaseRestClient.getAccessToken();
-        assertEquals("access_token", accessToken);
+        Assert.assertEquals("access_token", accessToken);
     }
 
     @Test
     public void testGetAccessTokenRequester()
     {
         ArgumentCaptor<Jetty92SingleRequester> jetty92SingleRequesterArgumentCaptor = ArgumentCaptor.forClass(Jetty92SingleRequester.class);
-        when(mockJetty92.requestWithRetry(any(StringJetty92ResponseEntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn("{\"access_token\": \"access_token\"}");
+        Mockito.when(mockJetty92.requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn("{\"access_token\": \"access_token\"}");
         String accessToken = marketoBaseRestClient.getAccessToken();
-        assertEquals("access_token", accessToken);
+        Assert.assertEquals("access_token", accessToken);
         Jetty92SingleRequester value = jetty92SingleRequesterArgumentCaptor.getValue();
-        HttpClient client = mock(HttpClient.class);
-        Response.Listener listener = mock(Response.Listener.class);
-        Request mockRequest = mock(Request.class);
-        when(client.newRequest(eq(IDENTITY_END_POINT + MarketoRESTEndpoint.ACCESS_TOKEN.getEndpoint()))).thenReturn(mockRequest);
-        Request request1 = mock(Request.class);
-        when(mockRequest.method(eq(HttpMethod.GET))).thenReturn(request1);
+        HttpClient client = Mockito.mock(HttpClient.class);
+        Response.Listener listener = Mockito.mock(Response.Listener.class);
+        Request mockRequest = Mockito.mock(Request.class);
+        Mockito.when(client.newRequest(Mockito.eq(IDENTITY_END_POINT + MarketoRESTEndpoint.ACCESS_TOKEN.getEndpoint()))).thenReturn(mockRequest);
+        Request request1 = Mockito.mock(Request.class);
+        Mockito.when(mockRequest.method(Mockito.eq(HttpMethod.GET))).thenReturn(request1);
         value.requestOnce(client, listener);
-        verify(request1, times(1)).param(eq("client_id"), eq("clientId"));
-        verify(request1, times(1)).param(eq("client_secret"), eq("clientSecret"));
-        verify(request1, times(1)).param(eq("grant_type"), eq("client_credentials"));
-        assertTrue(value.toRetry(createHttpResponseException(502)));
+        Mockito.verify(request1, Mockito.times(1)).param(Mockito.eq("client_id"), Mockito.eq("clientId"));
+        Mockito.verify(request1, Mockito.times(1)).param(Mockito.eq("client_secret"), Mockito.eq("clientSecret"));
+        Mockito.verify(request1, Mockito.times(1)).param(Mockito.eq("grant_type"), Mockito.eq("client_credentials"));
+        Assert.assertTrue(value.toRetry(createHttpResponseException(502)));
     }
     @Test
     public void testGetAccessTokenWithError()
     {
         ArgumentCaptor<Jetty92SingleRequester> jetty92SingleRequesterArgumentCaptor = ArgumentCaptor.forClass(Jetty92SingleRequester.class);
-        when(mockJetty92.requestWithRetry(any(StringJetty92ResponseEntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn("{\n" +
+        Mockito.when(mockJetty92.requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn("{\n" +
                 "    \"error\": \"invalid_client\",\n" +
                 "    \"error_description\": \"Bad client credentials\"\n" +
                 "}");
@@ -98,39 +97,39 @@ public class MarketoBaseRestClientTest
             marketoBaseRestClient.getAccessToken();
         }
         catch (DataException ex) {
-            assertEquals("Bad client credentials", ex.getMessage());
+            Assert.assertEquals("Bad client credentials", ex.getMessage());
             return;
         }
-        fail();
+        Assert.fail();
     }
 
     @Test
     public void testDoPost() throws Exception
     {
-        MarketoBaseRestClient spy = spy(marketoBaseRestClient);
+        MarketoBaseRestClient spy = Mockito.spy(marketoBaseRestClient);
         spy.doPost("target", Maps.<String, String>newHashMap(), new ImmutableListMultimap.Builder<String, String>().build(), "test_content", new StringJetty92ResponseEntityReader(10));
-        verify(spy, times(1)).doRequest(anyString(), eq(HttpMethod.POST), any(Map.class), any(Multimap.class), any(StringContentProvider.class), any(StringJetty92ResponseEntityReader.class));
+        Mockito.verify(spy, Mockito.times(1)).doRequest(Mockito.anyString(), Mockito.eq(HttpMethod.POST), Mockito.any(Map.class), Mockito.any(Multimap.class), Mockito.any(StringContentProvider.class), Mockito.any(StringJetty92ResponseEntityReader.class));
     }
 
     @Test
     public void testDoGet() throws Exception
     {
-        MarketoBaseRestClient spy = spy(marketoBaseRestClient);
+        MarketoBaseRestClient spy = Mockito.spy(marketoBaseRestClient);
         spy.doGet("target", Maps.<String, String>newHashMap(), new ImmutableListMultimap.Builder<String, String>().build(), new StringJetty92ResponseEntityReader(10));
-        verify(spy, times(1)).doRequest(anyString(), eq(HttpMethod.GET), any(Map.class), any(Multimap.class), isNull(ContentProvider.class), any(StringJetty92ResponseEntityReader.class));
+        Mockito.verify(spy, Mockito.times(1)).doRequest(Mockito.anyString(), Mockito.eq(HttpMethod.GET), Mockito.any(Map.class), Mockito.any(Multimap.class), Mockito.isNull(ContentProvider.class), Mockito.any(StringJetty92ResponseEntityReader.class));
     }
 
     @Test
     public void testDoRequestRequester() throws Exception
     {
-        MarketoBaseRestClient spy = spy(marketoBaseRestClient);
+        MarketoBaseRestClient spy = Mockito.spy(marketoBaseRestClient);
         StringContentProvider contentProvider = new StringContentProvider("Content", StandardCharsets.UTF_8);
         ArgumentCaptor<Jetty92SingleRequester> jetty92SingleRequesterArgumentCaptor = ArgumentCaptor.forClass(Jetty92SingleRequester.class);
 
         MarketoResponse<Object> expectedMarketoResponse = new MarketoResponse<>();
 
-        when(mockJetty92.requestWithRetry(any(MarketoResponseJetty92EntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn(expectedMarketoResponse);
-        when(mockJetty92.requestWithRetry(any(StringJetty92ResponseEntityReader.class), any(Jetty92SingleRequester.class))).thenReturn("{\"access_token\": \"access_token\"}");
+        Mockito.when(mockJetty92.requestWithRetry(Mockito.any(MarketoResponseJetty92EntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn(expectedMarketoResponse);
+        Mockito.when(mockJetty92.requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), Mockito.any(Jetty92SingleRequester.class))).thenReturn("{\"access_token\": \"access_token\"}");
 
         String target = "target";
         HashMap<String, String> headers = Maps.<String, String>newHashMap();
@@ -140,61 +139,61 @@ public class MarketoBaseRestClientTest
 
         MarketoResponse<Object> marketoResponse = spy.doRequest(target, HttpMethod.POST, headers, build, contentProvider, new MarketoResponseJetty92EntityReader<Object>(10));
 
-        HttpClient client = mock(HttpClient.class);
-        Response.Listener listener = mock(Response.Listener.class);
-        Request mockRequest = mock(Request.class);
-        when(client.newRequest(eq(target))).thenReturn(mockRequest);
+        HttpClient client = Mockito.mock(HttpClient.class);
+        Response.Listener listener = Mockito.mock(Response.Listener.class);
+        Request mockRequest = Mockito.mock(Request.class);
+        Mockito.when(client.newRequest(Mockito.eq(target))).thenReturn(mockRequest);
 
-        when(mockRequest.method(eq(HttpMethod.POST))).thenReturn(mockRequest);
+        Mockito.when(mockRequest.method(Mockito.eq(HttpMethod.POST))).thenReturn(mockRequest);
         Jetty92SingleRequester jetty92SingleRequester = jetty92SingleRequesterArgumentCaptor.getValue();
         jetty92SingleRequester.requestOnce(client, listener);
 
-        assertEquals(expectedMarketoResponse, marketoResponse);
+        Assert.assertEquals(expectedMarketoResponse, marketoResponse);
 
-        verify(mockRequest, times(1)).header(eq("testHeader1"), eq("testHeaderValue1"));
-        verify(mockRequest, times(1)).header(eq("Authorization"), eq("Bearer access_token"));
-        verify(mockRequest, times(1)).param(eq("param"), eq("param1"));
-        verify(mockRequest, times(1)).content(eq(contentProvider), eq("application/json"));
+        Mockito.verify(mockRequest, Mockito.times(1)).header(Mockito.eq("testHeader1"), Mockito.eq("testHeaderValue1"));
+        Mockito.verify(mockRequest, Mockito.times(1)).header(Mockito.eq("Authorization"), Mockito.eq("Bearer access_token"));
+        Mockito.verify(mockRequest, Mockito.times(1)).param(Mockito.eq("param"), Mockito.eq("param1"));
+        Mockito.verify(mockRequest, Mockito.times(1)).content(Mockito.eq(contentProvider), Mockito.eq("application/json"));
     }
 
     @Test
     public void testDoRequesterRetry() throws Exception
     {
-        MarketoBaseRestClient spy = spy(marketoBaseRestClient);
+        MarketoBaseRestClient spy = Mockito.spy(marketoBaseRestClient);
         ArgumentCaptor<Jetty92SingleRequester> jetty92SingleRequesterArgumentCaptor = ArgumentCaptor.forClass(Jetty92SingleRequester.class);
 
-        when(mockJetty92.requestWithRetry(any(MarketoResponseJetty92EntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn(new MarketoResponse<>());
-        when(mockJetty92.requestWithRetry(any(StringJetty92ResponseEntityReader.class), any(Jetty92SingleRequester.class))).thenReturn("{\"access_token\": \"access_token\"}");
+        Mockito.when(mockJetty92.requestWithRetry(Mockito.any(MarketoResponseJetty92EntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn(new MarketoResponse<>());
+        Mockito.when(mockJetty92.requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), Mockito.any(Jetty92SingleRequester.class))).thenReturn("{\"access_token\": \"access_token\"}");
 
         spy.doRequest("", HttpMethod.POST, null, null, null, new MarketoResponseJetty92EntityReader<Object>(10));
 
-        HttpClient client = mock(HttpClient.class);
-        Response.Listener listener = mock(Response.Listener.class);
-        Request mockRequest = mock(Request.class);
-        when(client.newRequest(anyString())).thenReturn(mockRequest);
+        HttpClient client = Mockito.mock(HttpClient.class);
+        Response.Listener listener = Mockito.mock(Response.Listener.class);
+        Request mockRequest = Mockito.mock(Request.class);
+        Mockito.when(client.newRequest(Mockito.anyString())).thenReturn(mockRequest);
 
-        when(mockRequest.method(eq(HttpMethod.POST))).thenReturn(mockRequest);
+        Mockito.when(mockRequest.method(Mockito.eq(HttpMethod.POST))).thenReturn(mockRequest);
 
         Jetty92SingleRequester jetty92SingleRequester = jetty92SingleRequesterArgumentCaptor.getValue();
         jetty92SingleRequester.requestOnce(client, listener);
-        assertTrue(jetty92SingleRequester.toRetry(createHttpResponseException(502)));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createHttpResponseException(502)));
 
-        assertFalse(jetty92SingleRequester.toRetry(createHttpResponseException(400)));
+        Assert.assertFalse(jetty92SingleRequester.toRetry(createHttpResponseException(400)));
 
-        assertFalse(jetty92SingleRequester.toRetry(createMarketoAPIException("ERR", "ERR")));
-        assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("606", "")));
-        assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("615", "")));
-        assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("602", "")));
+        Assert.assertFalse(jetty92SingleRequester.toRetry(createMarketoAPIException("ERR", "ERR")));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("606", "")));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("615", "")));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("602", "")));
 
-        verify(mockJetty92, times(2)).requestWithRetry(any(StringJetty92ResponseEntityReader.class), any(Jetty92SingleRequester.class));
+        Mockito.verify(mockJetty92, Mockito.times(2)).requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), Mockito.any(Jetty92SingleRequester.class));
     }
 
     private HttpResponseException createHttpResponseException(int statusCode)
     {
-        HttpResponseException exception = mock(HttpResponseException.class);
-        Response response = mock(Response.class);
-        when(exception.getResponse()).thenReturn(response);
-        when(response.getStatus()).thenReturn(statusCode);
+        HttpResponseException exception = Mockito.mock(HttpResponseException.class);
+        Response response = Mockito.mock(Response.class);
+        Mockito.when(exception.getResponse()).thenReturn(response);
+        Mockito.when(response.getStatus()).thenReturn(statusCode);
         return exception;
     }
 

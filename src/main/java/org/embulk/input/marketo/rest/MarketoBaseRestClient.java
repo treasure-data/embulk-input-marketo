@@ -141,7 +141,12 @@ public class MarketoBaseRestClient implements AutoCloseable
         if (content != null) {
             contentProvider = new StringContentProvider(APPLICATION_JSON, content, StandardCharsets.UTF_8);
         }
-        return doRequest(target, HttpMethod.POST, headers, params, contentProvider, responseReader);
+        return doPost(target, headers, params, responseReader, contentProvider);
+    }
+
+    protected <T> T doPost(final String target, final Map<String, String> headers, final Multimap<String, String> params, Jetty92ResponseReader<T> responseReader, final ContentProvider content)
+    {
+        return doRequest(target, HttpMethod.POST, headers, params, content, responseReader);
     }
 
     protected <T> T doRequest(final String target, final HttpMethod method, final Map<String, String> headers, final Multimap<String, String> params, final ContentProvider contentProvider, Jetty92ResponseReader<T> responseReader)
@@ -152,7 +157,6 @@ public class MarketoBaseRestClient implements AutoCloseable
             public void requestOnce(HttpClient client, Response.Listener responseListener)
             {
                 Request request = client.newRequest(target).method(method);
-
                 if (headers != null) {
                     for (String key : headers.keySet()) {
                         request.header(key, headers.get(key));
@@ -187,7 +191,8 @@ public class MarketoBaseRestClient implements AutoCloseable
                 if (exception instanceof ExecutionException) {
                     this.toRetry((Exception) exception.getCause());
                 }
-                if (exception instanceof EOFException) {
+                //Anything that is EOFException or cause by EOF exception
+                if (exception instanceof EOFException || exception.getCause() instanceof EOFException) {
                     return true;
                 }
                 if (exception instanceof MarketoAPIException) {
