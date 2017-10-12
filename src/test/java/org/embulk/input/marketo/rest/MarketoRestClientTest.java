@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
+import org.eclipse.jetty.client.api.ContentProvider;
+import org.eclipse.jetty.client.util.FormContentProvider;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.config.ConfigSource;
 import org.embulk.input.marketo.MarketoUtils;
@@ -26,6 +28,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -341,18 +344,22 @@ public class MarketoRestClientTest
         assertEquals("Test list 1", list1.get("name").asText());
         assertEquals("Test list 2", list2.get("name").asText());
         ArgumentCaptor<Multimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(Multimap.class);
-        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LISTS.getEndpoint()), isNull(Map.class), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class));
+        ArgumentCaptor<FormContentProvider> formContentProviderArgumentCaptor = ArgumentCaptor.forClass(FormContentProvider.class);
+        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LISTS.getEndpoint()), isNull(Map.class), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class), formContentProviderArgumentCaptor.capture());
         List<Multimap> params = immutableListMultimapArgumentCaptor.getAllValues();
         Multimap params1 = params.get(0);
-        assertEquals("300", params1.get("batchSize").iterator().next());
-        Multimap params2 = params.get(1);
-        assertEquals("GWP55GLCVCZLPE6SS7OCG5IEXQ======", params2.get("nextPageToken").iterator().next());
+        assertEquals("GET", params1.get("_method").iterator().next());
+        assertEquals("nextPageToken=GWP55GLCVCZLPE6SS7OCG5IEXQ%3D%3D%3D%3D%3D%3D&batchSize=300", fromContentProviderToString(formContentProviderArgumentCaptor.getValue()));
+
     }
 
     @Test
     public void getPrograms() throws Exception
     {
-        mockMarketoPageResponse("/fixtures/program_response.json", END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint());
+        ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/program_response.json")))).get("responses");
+        MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
+        MarketoResponse<ObjectNode> page2 = OBJECT_MAPPER.readValue(listPages.get(1).toString(), RESPONSE_TYPE);
+        doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), isNull(Map.class), any(Multimap.class), any(MarketoResponseJetty92EntityReader.class));
         RecordPagingIterable<ObjectNode> lists = marketoRestClient.getPrograms();
         Iterator<ObjectNode> iterator = lists.iterator();
         ObjectNode program1 = iterator.next();
@@ -377,7 +384,7 @@ public class MarketoRestClientTest
         ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream(fixtureName)))).get("responses");
         MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
         MarketoResponse<ObjectNode> page2 = OBJECT_MAPPER.readValue(listPages.get(1).toString(), RESPONSE_TYPE);
-        doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(eq(mockEndpoint), isNull(Map.class), any(Multimap.class), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(page1).doReturn(page2).when(marketoRestClient).doPost(eq(mockEndpoint), isNull(Map.class), any(Multimap.class), any(MarketoResponseJetty92EntityReader.class), any(FormContentProvider.class));
     }
 
     @Test
@@ -387,7 +394,7 @@ public class MarketoRestClientTest
         Map<String, String> pathParamPath = new HashMap<>();
         pathParamPath.put("program_id", programId);
         mockMarketoPageResponse("/fixtures/lead_by_program_response.json", END_POINT + MarketoRESTEndpoint.GET_LEADS_BY_PROGRAM.getEndpoint(pathParamPath));
-        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getLeadsByProgram(programId, Arrays.asList("firstName", "lastName"));
+        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getLeadsByProgram(programId, "firstName,lastName");
         Iterator<ObjectNode> iterator = lists.iterator();
         ObjectNode lead1 = iterator.next();
         ObjectNode lead2 = iterator.next();
@@ -395,13 +402,24 @@ public class MarketoRestClientTest
         assertEquals("Tai 1", lead1.get("firstName").asText());
         assertEquals("Tai", lead2.get("firstName").asText());
         ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
-        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEADS_BY_PROGRAM.getEndpoint(pathParamPath)), isNull(Map.class), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class));
+        ArgumentCaptor<FormContentProvider> formContentProviderArgumentCaptor = ArgumentCaptor.forClass(FormContentProvider.class);
+        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LEADS_BY_PROGRAM.getEndpoint(pathParamPath)), isNull(Map.class), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class), formContentProviderArgumentCaptor.capture());
+        String formContent = fromContentProviderToString(formContentProviderArgumentCaptor.getValue());
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
         Multimap params1 = params.get(0);
-        assertEquals("300", params1.get("batchSize").iterator().next());
-        assertEquals("firstName,lastName", params1.get("fields").iterator().next());
-        Multimap params2 = params.get(1);
-        assertEquals("z4MgsIiC5C======", params2.get("nextPageToken").iterator().next());
+        assertEquals("GET", params1.get("_method").iterator().next());
+        assertEquals("nextPageToken=z4MgsIiC5C%3D%3D%3D%3D%3D%3D&batchSize=300&fields=firstName%2ClastName", formContent);
+    }
+
+    private String fromContentProviderToString(ContentProvider formContentProvider)
+    {
+        Iterator<ByteBuffer> byteBufferIterator = formContentProvider.iterator();
+        StringBuilder stringBuilder = new StringBuilder();
+        while (byteBufferIterator.hasNext()) {
+            ByteBuffer next = byteBufferIterator.next();
+            stringBuilder.append(new String(next.array()));
+        }
+        return stringBuilder.toString();
     }
 
     @Test
@@ -411,7 +429,7 @@ public class MarketoRestClientTest
         Map<String, String> pathParamPath = new HashMap<>();
         pathParamPath.put("list_id", listId);
         mockMarketoPageResponse("/fixtures/lead_by_list.json", END_POINT + MarketoRESTEndpoint.GET_LEADS_BY_LIST.getEndpoint(pathParamPath));
-        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getLeadsByList(listId, Arrays.asList("firstName", "lastName"));
+        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getLeadsByList(listId, "firstName,lastName");
         Iterator<ObjectNode> iterator = lists.iterator();
         ObjectNode lead1 = iterator.next();
         ObjectNode lead2 = iterator.next();
@@ -419,13 +437,13 @@ public class MarketoRestClientTest
         assertEquals("John10093", lead1.get("firstName").asText());
         assertEquals("John10094", lead2.get("firstName").asText());
         ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
-        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEADS_BY_LIST.getEndpoint(pathParamPath)), isNull(Map.class), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class));
+        ArgumentCaptor<FormContentProvider> formContentProviderArgumentCaptor = ArgumentCaptor.forClass(FormContentProvider.class);
+        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LEADS_BY_LIST.getEndpoint(pathParamPath)), isNull(Map.class), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class), formContentProviderArgumentCaptor.capture());
+        String formContent = fromContentProviderToString(formContentProviderArgumentCaptor.getValue());
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
         Multimap params1 = params.get(0);
-        assertEquals("300", params1.get("batchSize").iterator().next());
-        assertEquals("firstName,lastName", params1.get("fields").iterator().next());
-        Multimap params2 = params.get(1);
-        assertEquals("z4MgsIiC5C======", params2.get("nextPageToken").iterator().next());
+        assertEquals("GET", params1.get("_method").iterator().next());
+        assertEquals("nextPageToken=z4MgsIiC5C%3D%3D%3D%3D%3D%3D&batchSize=300&fields=firstName%2ClastName", formContent);
     }
 
     @Test
@@ -440,11 +458,13 @@ public class MarketoRestClientTest
         assertEquals("Opened Sales Email", campaign1.get("name").asText());
         assertEquals("Clicks Link in Email", campaign2.get("name").asText());
         ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
-        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_CAMPAIGN.getEndpoint()), isNull(Map.class), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class));
+        ArgumentCaptor<FormContentProvider> formContentProviderArgumentCaptor = ArgumentCaptor.forClass(FormContentProvider.class);
+        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_CAMPAIGN.getEndpoint()), isNull(Map.class), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class), formContentProviderArgumentCaptor.capture());
+        String content = fromContentProviderToString(formContentProviderArgumentCaptor.getValue());
+
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
         Multimap params1 = params.get(0);
-        assertEquals("300", params1.get("batchSize").iterator().next());
-        Multimap params2 = params.get(1);
-        assertEquals("z4MgsIiC5C======", params2.get("nextPageToken").iterator().next());
+        assertEquals("GET", params1.get("_method").iterator().next());
+        assertEquals("nextPageToken=z4MgsIiC5C%3D%3D%3D%3D%3D%3D&batchSize=300", content);
     }
 }

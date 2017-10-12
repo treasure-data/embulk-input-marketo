@@ -7,6 +7,8 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jetty.client.util.FormContentProvider;
+import org.eclipse.jetty.util.Fields;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.config.Task;
@@ -26,11 +28,7 @@ import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by tai.khuu on 8/22/17.
@@ -44,6 +42,10 @@ public class MarketoRestClient extends MarketoBaseRestClient
     private static final String OFFSET = "offset";
 
     private static final String MAX_RETURN = "maxReturn";
+
+    private static final String MAX_BATCH_SIZE = "300";
+
+    private static final String DEFAULT_MAX_RETURN = "200";
 
     private String endPoint;
 
@@ -119,9 +121,11 @@ public class MarketoRestClient extends MarketoBaseRestClient
         for (int i = 0; i < fields.size(); i++) {
             ObjectNode field = fields.get(i);
             String dataType = field.get("dataType").asText();
-            ObjectNode restField = (ObjectNode) field.get("rest");
-            String name = restField.get("name").asText();
-            marketoFields.add(new MarketoField(name, dataType));
+            if (field.has("rest")) {
+                ObjectNode restField = (ObjectNode) field.get("rest");
+                String name = restField.get("name").asText();
+                marketoFields.add(new MarketoField(name, dataType));
+            }
         }
         return marketoFields;
     }
@@ -273,30 +277,31 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     private InputStream getBulkExtractResult(MarketoRESTEndpoint endpoint, String exportId)
     {
+        LOGGER.info("Download bulk export job [{}]", exportId);
         return doGet(this.endPoint + endpoint.getEndpoint(new ImmutableMap.Builder().put("export_id", exportId).build()), null, null, new MarketoInputStreamResponseEntityReader(READ_TIMEOUT_MILLIS));
     }
 
     public RecordPagingIterable<ObjectNode> getLists()
     {
-        return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_LISTS.getEndpoint(), null, ObjectNode.class);
+        return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_LISTS.getEndpoint(), new ImmutableListMultimap.Builder<String, String>().put(BATCH_SIZE, MAX_BATCH_SIZE).build(), ObjectNode.class);
     }
 
     public RecordPagingIterable<ObjectNode> getPrograms()
     {
-        return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint(), null, ObjectNode.class);
+        return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint(), new ImmutableListMultimap.Builder<String, String>().put(MAX_RETURN, DEFAULT_MAX_RETURN).build(), ObjectNode.class);
     }
 
-    public RecordPagingIterable<ObjectNode> getLeadsByProgram(String programId, List<String> fieldNames)
+    public RecordPagingIterable<ObjectNode> getLeadsByProgram(String programId, String fieldNames)
     {
         Multimap<String, String> multimap = ArrayListMultimap.create();
-        multimap.put("fields", StringUtils.join(fieldNames, ","));
+        multimap.put("fields", fieldNames);
         return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_LEADS_BY_PROGRAM.getEndpoint(new ImmutableMap.Builder().put("program_id", programId).build()), multimap, ObjectNode.class);
     }
 
-    public RecordPagingIterable<ObjectNode> getLeadsByList(String listId, List<String> fieldNames)
+    public RecordPagingIterable<ObjectNode> getLeadsByList(String listId, String fieldNames)
     {
         Multimap<String, String> multimap = ArrayListMultimap.create();
-        multimap.put("fields", StringUtils.join(fieldNames, ","));
+        multimap.put("fields", fieldNames);
         return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_LEADS_BY_LIST.getEndpoint(new ImmutableMap.Builder().put("list_id", listId).build()), multimap, ObjectNode.class);
     }
 
@@ -348,17 +353,28 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 return getTokenPage(null);
             }
 
+            @SuppressWarnings("unchecked")
             private RecordPagingIterable.TokenPage<T> getTokenPage(RecordPagingIterable.TokenPage page)
             {
                 ImmutableListMultimap.Builder params = new ImmutableListMultimap.Builder<>();
+                params.put("_method", "GET");
+                Fields fields = new Fields();
                 if (page != null) {
-                    params.put(NEXT_PAGE_TOKEN, page.getNextPageToken());
+                    fields.add(NEXT_PAGE_TOKEN, page.getNextPageToken());
                 }
-                params.put(BATCH_SIZE, String.valueOf(batchSize));
+                fields.add(BATCH_SIZE, String.valueOf(batchSize));
                 if (parameters != null) {
-                    params.putAll(parameters);
+                    for (String key : parameters.keySet()) {
+                        //params that is passed in should overwrite default
+                        fields.remove(key);
+                        for (String value : parameters.get(key)) {
+                            fields.add(key, value);
+                        }
+                    }
                 }
-                MarketoResponse<T> marketoResponse = doGet(endPoint, null, params.build(), new MarketoResponseJetty92EntityReader<>(READ_TIMEOUT_MILLIS, recordClass));
+                //Let do GET Disguise in POST here to overcome Marketo URI Too long error
+                FormContentProvider formContentProvider = new FormContentProvider(fields);
+                MarketoResponse<T> marketoResponse = doPost(endPoint, null, params.build(), new MarketoResponseJetty92EntityReader<>(READ_TIMEOUT_MILLIS, recordClass), formContentProvider);
                 return new RecordPagingIterable.TokenPage<>(marketoResponse.getResult(), marketoResponse.getNextPageToken(), marketoResponse.getNextPageToken() != null);
             }
         });

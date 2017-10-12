@@ -3,6 +3,7 @@ package org.embulk.input.marketo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.ByteStreams;
+import org.apache.commons.lang3.StringUtils;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
@@ -87,8 +88,8 @@ public class MarketoServiceImplTest
         RecordPagingIterable leadsIterable2 = mock(RecordPagingIterable.class);
         when(leadIterable1.iterator()).thenReturn(leadList1.iterator());
         when(leadsIterable2.iterator()).thenReturn(leadList2.iterator());
-        when(mockMarketoRestClient.getLeadsByList(eq("1"), eq(extractFields))).thenReturn(leadIterable1);
-        when(mockMarketoRestClient.getLeadsByList(eq("2"), eq(extractFields))).thenReturn(leadsIterable2);
+        when(mockMarketoRestClient.getLeadsByList(eq("1"), eq("field1,field2"))).thenReturn(leadIterable1);
+        when(mockMarketoRestClient.getLeadsByList(eq("2"), eq("field1,field2"))).thenReturn(leadsIterable2);
         Iterable<ObjectNode> allListLead = marketoService.getAllListLead(extractFields);
         assertEquals(leadList1.get(0), allListLead.iterator().next());
         assertEquals(leadList2.get(0), allListLead.iterator().next());
@@ -97,7 +98,6 @@ public class MarketoServiceImplTest
     @Test
     public void getAllProgramLead() throws Exception
     {
-        List<String> extractFields = Arrays.asList("field1", "field2");
         RecordPagingIterable<ObjectNode> listObjectNodes = mock(RecordPagingIterable.class);
         Iterator listIterator = mock(Iterator.class);
         when(listIterator.hasNext()).thenReturn(true).thenReturn(true).thenReturn(false);
@@ -112,9 +112,9 @@ public class MarketoServiceImplTest
         RecordPagingIterable leadsIterable2 = mock(RecordPagingIterable.class);
         when(leadIterable1.iterator()).thenReturn(leadList1.iterator());
         when(leadsIterable2.iterator()).thenReturn(leadList2.iterator());
-        when(mockMarketoRestClient.getLeadsByProgram(eq("1"), eq(extractFields))).thenReturn(leadIterable1);
-        when(mockMarketoRestClient.getLeadsByProgram(eq("2"), eq(extractFields))).thenReturn(leadsIterable2);
-        Iterable<ObjectNode> allListLead = marketoService.getAllProgramLead(extractFields);
+        when(mockMarketoRestClient.getLeadsByProgram(eq("1"), eq("field1,field2"))).thenReturn(leadIterable1);
+        when(mockMarketoRestClient.getLeadsByProgram(eq("2"), eq("field1,field2"))).thenReturn(leadsIterable2);
+        Iterable<ObjectNode> allListLead = marketoService.getAllProgramLead(Arrays.asList("field1", "field2"));
         assertEquals(leadList1.get(0), allListLead.iterator().next());
         assertEquals(leadList2.get(0), allListLead.iterator().next());
     }

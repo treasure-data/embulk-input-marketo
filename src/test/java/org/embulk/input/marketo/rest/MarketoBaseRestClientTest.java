@@ -24,6 +24,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.io.EOFException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;

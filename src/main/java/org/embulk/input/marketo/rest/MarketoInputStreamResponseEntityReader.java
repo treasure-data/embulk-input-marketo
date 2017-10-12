@@ -29,13 +29,13 @@ public class MarketoInputStreamResponseEntityReader implements Jetty92ResponseRe
 
     public MarketoInputStreamResponseEntityReader(long timeout)
     {
-        this.listener = new InputStreamResponseListener();
         this.timeout = timeout;
     }
 
     @Override
     public Response.Listener getListener()
     {
+        this.listener = new InputStreamResponseListener();
         return this.listener;
     }
 

@@ -11,12 +11,17 @@ import org.embulk.base.restclient.jackson.JacksonTopLevelValueLocator;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.input.marketo.model.MarketoField;
+import org.embulk.spi.Exec;
+import org.embulk.spi.util.RetryExecutor;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -125,5 +130,83 @@ public class MarketoUtils
                     ", toDate=" + toDate +
                     '}';
         }
+    }
+
+    public static <T> T executeWithRetry(int maximumRetries, int initialRetryIntervalMillis, int maximumRetryIntervalMillis, AlwaysRetryRetryable<T> alwaysRetryRetryable) throws RetryExecutor.RetryGiveupException, InterruptedException
+    {
+        return RetryExecutor
+                .retryExecutor()
+                .withRetryLimit(maximumRetries)
+                .withInitialRetryWait(initialRetryIntervalMillis)
+                .withMaxRetryWait(maximumRetryIntervalMillis)
+                .runInterruptible(alwaysRetryRetryable);
+    }
+
+    public abstract static class AlwaysRetryRetryable<T> implements  RetryExecutor.Retryable<T>
+    {
+        private static final Logger LOGGER = Exec.getLogger(AlwaysRetryRetryable.class);
+
+        @Override
+        public abstract T call() throws Exception;
+
+        @Override
+        public boolean isRetryableException(Exception exception)
+        {
+            return true;
+        }
+
+        @Override
+        public void onRetry(Exception exception, int retryCount, int retryLimit, int retryWait) throws RetryExecutor.RetryGiveupException
+        {
+            LOGGER.info("Retry [{}]/[{}] with retryWait [{}] on exception {}", retryCount, retryLimit, retryWait, exception.getMessage());
+        }
+
+        @Override
+        public void onGiveup(Exception firstException, Exception lastException) throws RetryExecutor.RetryGiveupException
+        {
+            LOGGER.info("Giving up execution on exception", lastException);
+        }
+    }
+    public static <T, R> Iterable<R> flatMap(final Iterable<T> iterable, final Function<T, Iterable<R>> function)
+    {
+        final Iterator<T> iterator = iterable.iterator();
+        return new Iterable<R>()
+        {
+            @Override
+            public Iterator<R> iterator()
+            {
+                return new Iterator<R>()
+                {
+                    Iterator<R> currentIterator;
+                    @Override
+                    public boolean hasNext()
+                    {
+                        if (currentIterator != null && currentIterator.hasNext()) {
+                            return true;
+                        }
+                        while (iterator.hasNext()) {
+                            currentIterator = function.apply(iterator.next()).iterator();
+                            if (currentIterator.hasNext()) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                    @Override
+                    public R next()
+                    {
+                        if (hasNext()) {
+                            return currentIterator.next();
+                        }
+                        throw new NoSuchElementException();
+                    }
+                    @Override
+                    public void remove()
+                    {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+        };
     }
 }

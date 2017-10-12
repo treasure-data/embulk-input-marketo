@@ -3,6 +3,7 @@ package org.embulk.input.marketo.delegate;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.commons.lang3.StringUtils;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.RecordImporter;
@@ -74,8 +75,9 @@ public class LeadWithProgramInputPluginTest
         when(mockMarketoRestClient.describeLead()).thenReturn(marketoFields);
         when(mockMarketoRestClient.getPrograms()).thenReturn(mockProgramRecords);
         List<String> fieldNameFromMarketoFields = MarketoUtils.getFieldNameFromMarketoFields(marketoFields);
-        when(mockMarketoRestClient.getLeadsByProgram(anyString(), eq(fieldNameFromMarketoFields))).thenReturn(mockLeadEmptyRecordPagingIterable);
-        when(mockMarketoRestClient.getLeadsByProgram("1003", fieldNameFromMarketoFields)).thenReturn(mockLeadRecordPagingIterable);
+        String fieldNameString = StringUtils.join(fieldNameFromMarketoFields, ",");
+        when(mockMarketoRestClient.getLeadsByProgram(anyString(), eq(fieldNameString))).thenReturn(mockLeadEmptyRecordPagingIterable);
+        when(mockMarketoRestClient.getLeadsByProgram("1003", fieldNameString)).thenReturn(mockLeadRecordPagingIterable);
 
         LeadWithProgramInputPlugin.PluginTask task = configSource.loadConfig(LeadWithProgramInputPlugin.PluginTask.class);
         ServiceResponseMapper<? extends ValueLocator> mapper = leadWithProgramInputPlugin.buildServiceResponseMapper(task);
@@ -85,7 +87,7 @@ public class LeadWithProgramInputPluginTest
 
         leadWithProgramInputPlugin.ingestServiceData(task, recordImporter, 1, mockPageBuilder);
         verify(mockMarketoRestClient, times(1)).getPrograms();
-        verify(mockMarketoRestClient, times(3)).getLeadsByProgram(anyString(), eq(fieldNameFromMarketoFields));
+        verify(mockMarketoRestClient, times(3)).getLeadsByProgram(anyString(), eq(fieldNameString));
         verify(mockMarketoRestClient, times(1)).describeLead();
 
         Schema embulkSchema = mapper.getEmbulkSchema();
