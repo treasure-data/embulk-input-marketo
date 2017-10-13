@@ -1,10 +1,14 @@
+## 0.6.1 - 2017-10-12
+* [fixed] OutOfMemeory when run Lead by list, Lead by program   [#69](https://github.com/treasure-data/embulk-input-marketo/pull/69)
+* [fixed] SOAP only field cause NullPointerException [#69](https://github.com/treasure-data/embulk-input-marketo/pull/69)
+* [enhancement] Implement file download resume in Bulk extract [#69](https://github.com/treasure-data/embulk-input-marketo/pull/69)
+
 ## 0.6.0 - 2017-10-10
 * [major] Migrate to Java by embulk-base-restclient [#66](https://github.com/treasure-data/embulk-input-marketo/pull/66)
 * [major] Migrate to REST API [#66](https://github.com/treasure-data/embulk-input-marketo/pull/66)
 * [major] Add 3 more target, Campaign, Lead by list and Lead by program [#66](https://github.com/treasure-data/embulk-input-marketo/pull/66)
 * [major] Support Marketo bulk extract API for lead and activity targets [#66](https://github.com/treasure-data/embulk-input-marketo/pull/66)
 * [major] Support incremental ingestion for lead and activity targets [#66](https://github.com/treasure-data/embulk-input-marketo/pull/66)
-
 
 ## 0.5.6 - 2016-12-14
 * [maintenance] Enable tcp keepalive [#64](https://github.com/treasure-data/embulk-input-marketo/pull/64)
