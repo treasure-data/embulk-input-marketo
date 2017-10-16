@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Created by khuutantaitai on 10/3/17.
@@ -52,13 +53,33 @@ public class MarketoBaseBulkExtractInputPluginTest
     public void validateInputTaskToDateLessThanJobStartTime()
     {
         Date fromDate = new Date(1504224000000L);
+        DateTime jobStartTime = new DateTime(1506842144000L);
         MarketoBaseBulkExtractInputPlugin.PluginTask pluginTask = Mockito.mock(MarketoBaseBulkExtractInputPlugin.PluginTask.class);
         Mockito.when(pluginTask.getFromDate()).thenReturn(fromDate);
+        Mockito.when(pluginTask.getJobStartTime()).thenReturn(jobStartTime);
         Mockito.when(pluginTask.getFetchDays()).thenReturn(7);
         baseBulkExtractInputPlugin.validateInputTask(pluginTask);
         ArgumentCaptor<Optional<Date>> argumentCaptor = ArgumentCaptor.forClass(Optional.class);
         Mockito.verify(pluginTask, Mockito.times(1)).setToDate(argumentCaptor.capture());
         assertEquals(1504828800000L, argumentCaptor.getValue().get().getTime());
+    }
+
+    @Test()
+    public void validateInputTaskFromDateMoreThanJobStartTime()
+    {
+        Date fromDate = new Date(1507619744000L);
+        DateTime jobStartTime = new DateTime(1506842144000L);
+        MarketoBaseBulkExtractInputPlugin.PluginTask pluginTask = Mockito.mock(MarketoBaseBulkExtractInputPlugin.PluginTask.class);
+        Mockito.when(pluginTask.getFromDate()).thenReturn(fromDate);
+        Mockito.when(pluginTask.getJobStartTime()).thenReturn(jobStartTime);
+
+        try {
+            baseBulkExtractInputPlugin.validateInputTask(pluginTask);
+        }
+        catch (ConfigException ex) {
+            return;
+        }
+        fail();
     }
 
     @Test()
@@ -73,7 +94,7 @@ public class MarketoBaseBulkExtractInputPluginTest
         baseBulkExtractInputPlugin.validateInputTask(pluginTask);
         ArgumentCaptor<Optional<Date>> toDateArgumentCaptor = ArgumentCaptor.forClass(Optional.class);
         Mockito.verify(pluginTask, Mockito.times(1)).setToDate(toDateArgumentCaptor.capture());
-        assertEquals(jobStartTime.minusHours(1).getMillis(), toDateArgumentCaptor.getValue().get().getTime());
+        assertEquals(jobStartTime.getMillis(), toDateArgumentCaptor.getValue().get().getTime());
     }
 
     @Test

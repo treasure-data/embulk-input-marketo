@@ -139,20 +139,6 @@ public class MarketoRestClientTest
         Assert.fail();
     }
 
-    @Test()
-    public void createLeadBulkExtractWithParseError() throws Exception
-    {
-        Mockito.doThrow(JsonProcessingException.class).when(marketoRestClient).doPost(Mockito.eq(END_POINT + MarketoRESTEndpoint.CREATE_LEAD_EXTRACT.getEndpoint()), Mockito.isNull(Map.class), Mockito.isNull(ImmutableListMultimap.class), Mockito.anyString(), Mockito.any(MarketoResponseJetty92EntityReader.class));
-        String filterField = "filterField";
-        try {
-            marketoRestClient.createLeadBulkExtract(new Date(), new Date(), Arrays.asList("extract_field1", "extract_field2"), filterField);
-        }
-        catch (DataException ex) {
-            return;
-        }
-        Assert.fail();
-    }
-
     @Test
     public void createActitvityExtract() throws Exception
     {

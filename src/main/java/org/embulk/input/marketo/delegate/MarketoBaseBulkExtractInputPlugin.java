@@ -43,6 +43,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -123,6 +124,9 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         if (task.getFromDate() == null) {
             throw new ConfigException("From date is required for Bulk Extract");
         }
+        if (task.getFromDate().getTime() >= task.getJobStartTime().getMillis()) {
+            throw new ConfigException("From date can't not be in future");
+        }
         //Calculate to date
         DateTime toDate = getToDate(task);
         task.setToDate(Optional.of(toDate.toDate()));
@@ -134,8 +138,8 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         DateTime dateTime = new DateTime(fromDate);
         DateTime toDate = dateTime.plusDays(task.getFetchDays());
         if (toDate.isAfter(task.getJobStartTime())) {
-            //Minus 1 hour and lock down toDate
-            toDate = task.getJobStartTime().minusHours(1);
+            //Lock down to date
+            toDate = task.getJobStartTime();
         }
         return toDate;
     }
@@ -145,7 +149,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     {
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
         Long currentLatestFetchTime = 0L;
-        Set latestUIds = null;
+        Set latestUIds = new HashSet();
         String incrementalColumn = task.getIncrementalColumn().orNull();
         int imported = 0;
         if (incrementalColumn != null && task.getIncremental()) {
@@ -168,11 +172,12 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
             }
             // in case of we didn't import anything but search range is entirely in the past. Then we should move the the range anyway.
             if (imported == 0) {
-                configDiff.set(FROM_DATE, df.format(task.getToDate().orNull()));
+                Date toDate = task.getToDate().orNull();
+                configDiff.set(FROM_DATE, df.format(toDate));
             }
             else {
-            // Otherwise it's should start from the currentLastFetchTime. If Marketo could guaranteed that they always return data of full range we could just set it to_date
-                configDiff.set(FROM_DATE, df.format(new Date(currentLatestFetchTime)));
+            // Otherwise it's should start from the currentLastFetchTime plus 1 second.
+                configDiff.set(FROM_DATE, df.format(new DateTime(currentLatestFetchTime).plusSeconds(1).toDate()));
             }
             configDiff.set(LATEST_FETCH_TIME, currentLatestFetchTime);
             configDiff.set(LATEST_UID_LIST, latestUIds);
@@ -199,7 +204,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                         return new CsvRecordIterator(input, task);
                     }
                 }));
-                long currentTimestamp = 0L;
+                long currentTimestamp = task.getLatestFetchTime().or(0L);
                 Set<String> latestUids = task.getPreviousUids();
                 //Keep the preview code here when we can enable real preview
                 if (Exec.isPreview()) {
