@@ -204,7 +204,8 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                         return new CsvRecordIterator(input, task);
                     }
                 }));
-                long currentTimestamp = task.getLatestFetchTime().or(0L);
+                Long latestFetchTime = task.getLatestFetchTime().or(0L);
+                long currentTimestamp = latestFetchTime;
                 Set<String> latestUids = task.getPreviousUids();
                 //Keep the preview code here when we can enable real preview
                 if (Exec.isPreview()) {
@@ -214,6 +215,12 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 while (csvRecords.hasNext()) {
                     Map<String, String> csvRecord = csvRecords.next();
                     if (task.getIncremental()) {
+                        String incrementalTimeStamp = csvRecord.get(incrementalColumn);
+                        long timestamp = ISO_DATETIME_FORMAT.parseDateTime(incrementalTimeStamp).getMillis();
+                        //Ignore records that have timestamp smaller or equal with latestFetchTime
+                        if (latestFetchTime >= timestamp) {
+                            continue;
+                        }
                         if (!csvRecord.containsKey(incrementalColumn)) {
                             throw new DataException("Extracted record doesn't have incremental column " + incrementalColumn);
                         }
@@ -224,8 +231,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                                 continue;
                             }
                         }
-                        String incrementalTimeStamp = csvRecord.get(incrementalColumn);
-                        long timestamp = ISO_DATETIME_FORMAT.parseDateTime(incrementalTimeStamp).getMillis();
                         if (currentTimestamp < timestamp) {
                             currentTimestamp = timestamp;
                             //switch timestamp
