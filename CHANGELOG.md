@@ -1,3 +1,6 @@
+## 0.6.2 - 2017-10-16
+* [fixed] NullPointerException when building config diff [#73](https://github.com/treasure-data/embulk-input-marketo/pull/73)
+
 ## 0.6.1 - 2017-10-12
 * [fixed] OutOfMemeory when run Lead by list, Lead by program   [#69](https://github.com/treasure-data/embulk-input-marketo/pull/69)
 * [fixed] SOAP only field cause NullPointerException [#69](https://github.com/treasure-data/embulk-input-marketo/pull/69)
