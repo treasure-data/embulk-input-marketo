@@ -256,6 +256,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 switch (status) {
                     case "Completed":
                         LOGGER.info("Total wait time ms is [{}]", waitTime);
+                        LOGGER.info("File size is [{}] bytes", objectNode.get("fileSize"));
                         return;
                     case "Failed":
                         throw new DataException("Bulk extract job failed exportId: " + exportId + " errorMessage: " + objectNode.get("errorMsg").asText());
