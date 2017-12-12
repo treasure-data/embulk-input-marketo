@@ -1,3 +1,6 @@
+## 0.6.3 - 2017-11-13
+* [enhance] Ignore records with timestamp smaller or equal to latest_fetch_time  [#74](https://github.com/treasure-data/embulk-input-marketo/pull/74)
+
 ## 0.6.2 - 2017-10-16
 * [fixed] NullPointerException when building config diff [#73](https://github.com/treasure-data/embulk-input-marketo/pull/73)
 
