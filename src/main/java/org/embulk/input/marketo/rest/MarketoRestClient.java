@@ -264,7 +264,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 }
             }
             Thread.sleep(pollingInterval * 1000);
-            waitTime = waitTime + (System.currentTimeMillis() - now);
+            waitTime = System.currentTimeMillis() - now;
             if (waitTime >= waitTimeoutMs) {
                 throw new DataException("Job timeout exception, exportJob: " + exportId + ", run longer than " + waitTimeout + " seconds");
             }
