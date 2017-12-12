@@ -5,6 +5,8 @@ import com.google.common.collect.Sets;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
+import org.embulk.config.ConfigLoader;
+import org.embulk.config.ConfigSource;
 import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.MarketoInputPluginDelegate;
 import org.embulk.input.marketo.MarketoUtils;
@@ -16,6 +18,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -24,6 +27,9 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by khuutantaitai on 10/3/17.
@@ -34,11 +40,16 @@ public class MarketoBaseBulkExtractInputPluginTest
     public EmbulkTestRuntime embulkTestRuntime = new EmbulkTestRuntime();
 
     private MarketoBaseBulkExtractInputPlugin<MarketoBaseBulkExtractInputPlugin.PluginTask> baseBulkExtractInputPlugin;
+    private MarketoBaseBulkExtractInputPlugin.PluginTask validBaseTask;
 
     @Before
-    public void prepare()
+    public void prepare() throws IOException
     {
         baseBulkExtractInputPlugin = Mockito.mock(MarketoBaseBulkExtractInputPlugin.class, Mockito.CALLS_REAL_METHODS);
+        ConfigLoader configLoader = embulkTestRuntime.getInjector().getInstance(ConfigLoader.class);
+        ConfigSource configSource = configLoader.fromYaml(
+                this.getClass().getResourceAsStream("/config/activity_bulk_extract_config.yaml"));
+        validBaseTask = configSource.loadConfig(MarketoBaseBulkExtractInputPlugin.PluginTask.class);
     }
 
     @Test(expected = ConfigException.class)
@@ -47,6 +58,39 @@ public class MarketoBaseBulkExtractInputPluginTest
         MarketoBaseBulkExtractInputPlugin.PluginTask pluginTask = Mockito.mock(MarketoBaseBulkExtractInputPlugin.PluginTask.class);
         Mockito.when(pluginTask.getFromDate()).thenReturn(null);
         baseBulkExtractInputPlugin.validateInputTask(pluginTask);
+    }
+
+    @Test(expected = ConfigException.class)
+    public void invalidInputTaskWhenIncrementalByUpdatedAt()
+    {
+        MarketoBaseBulkExtractInputPlugin.PluginTask task = mock(
+                MarketoBaseBulkExtractInputPlugin.PluginTask.class,
+                delegatesTo(validBaseTask));
+        when(task.getIncrementalColumn()).thenReturn(Optional.of("updatedAt"));
+        when(task.getIncremental()).thenReturn(true);
+        baseBulkExtractInputPlugin.validateInputTask(task);
+    }
+
+    @Test
+    public void validInputTaskWhenIncrementalOtherThanUpdatedAt()
+    {
+        MarketoBaseBulkExtractInputPlugin.PluginTask task = mock(
+                MarketoBaseBulkExtractInputPlugin.PluginTask.class,
+                delegatesTo(validBaseTask));
+        when(task.getIncremental()).thenReturn(true);
+        when(task.getIncrementalColumn()).thenReturn(Optional.of("anythingButUpdatedAt"));
+        baseBulkExtractInputPlugin.validateInputTask(task);  // should not throw
+    }
+
+    @Test
+    public void validInputTaskWhenNonIncrementalWhileSetUpdatedAt()
+    {
+        MarketoBaseBulkExtractInputPlugin.PluginTask task = mock(
+                MarketoBaseBulkExtractInputPlugin.PluginTask.class,
+                delegatesTo(validBaseTask));
+        when(task.getIncremental()).thenReturn(false);
+        when(task.getIncrementalColumn()).thenReturn(Optional.of("updatedAt"));
+        baseBulkExtractInputPlugin.validateInputTask(task);  // should not throw
     }
 
     @Test()

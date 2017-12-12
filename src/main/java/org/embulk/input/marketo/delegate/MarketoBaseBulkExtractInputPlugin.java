@@ -127,6 +127,11 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         if (task.getFromDate().getTime() >= task.getJobStartTime().getMillis()) {
             throw new ConfigException("From date can't not be in future");
         }
+        if (task.getIncremental()
+                && task.getIncrementalColumn().isPresent()
+                && task.getIncrementalColumn().get().equals("updatedAt")) {
+            throw new ConfigException("Column 'updatedAt' cannot be incremental imported");
+        }
         //Calculate to date
         DateTime toDate = getToDate(task);
         task.setToDate(Optional.of(toDate.toDate()));
