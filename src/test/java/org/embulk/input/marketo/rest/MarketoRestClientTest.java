@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
+import com.sun.org.apache.xpath.internal.SourceTree;
 import org.eclipse.jetty.client.api.ContentProvider;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.embulk.EmbulkTestRuntime;
@@ -237,11 +238,11 @@ public class MarketoRestClientTest
         Mockito.when(result.get("status")).thenReturn(new TextNode("Queued")).thenReturn(new TextNode("Processing"));
         Mockito.doReturn(marketoResponse).when(marketoRestClient).doGet(Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), Mockito.isNull(Map.class), Mockito.isNull(ImmutableListMultimap.class), Mockito.any(MarketoResponseJetty92EntityReader.class));
         try {
-            marketoRestClient.waitLeadExportJobComplete(bulkExportId, 1, 4);
+            marketoRestClient.waitLeadExportJobComplete(bulkExportId, 2, 4);
         }
         catch (DataException e) {
             Assert.assertTrue(e.getMessage().contains("Job timeout exception"));
-            Mockito.verify(marketoRestClient, Mockito.times(3)).doGet(Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), Mockito.isNull(Map.class), Mockito.isNull(ImmutableListMultimap.class), Mockito.any(MarketoResponseJetty92EntityReader.class));
+            Mockito.verify(marketoRestClient, Mockito.times(2)).doGet(Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), Mockito.isNull(Map.class), Mockito.isNull(ImmutableListMultimap.class), Mockito.any(MarketoResponseJetty92EntityReader.class));
             return;
         }
         Assert.fail();
