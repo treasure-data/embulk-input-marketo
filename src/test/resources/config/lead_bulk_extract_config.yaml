@@ -5,4 +5,4 @@ client_secret: client_secret
 fetch_days: "60"
 escape: "\""
 incremental: true
-use_updated_at: true
+use_updated_at: false

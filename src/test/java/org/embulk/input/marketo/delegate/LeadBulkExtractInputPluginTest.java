@@ -81,7 +81,7 @@ public class LeadBulkExtractInputPluginTest
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).waitLeadExportJobComplete(eq(exportId1), eq(task.getPollingIntervalSecond()), eq(task.getBulkJobTimeoutSecond()));
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).startLeadBulkExtract(eq(exportId2));
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).waitLeadExportJobComplete(eq(exportId2), eq(task.getPollingIntervalSecond()), eq(task.getBulkJobTimeoutSecond()));
-        String filterField = "updatedAt";
+        String filterField = "createdAt";
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createLeadBulkExtract(startDate.toDate(), startDate.plusDays(30).toDate(), fieldNameFromMarketoFields, filterField);
         DateTime startDate2 = startDate.plusDays(30).plusSeconds(1);
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createLeadBulkExtract(startDate2.toDate(), startDate.plusDays(task.getFetchDays()).toDate(), fieldNameFromMarketoFields, filterField);
@@ -89,7 +89,7 @@ public class LeadBulkExtractInputPluginTest
         Assert.assertEquals(19, leadIds.size());
         long latestFetchTime = taskReport.get(Long.class, "latest_fetch_time");
         Assert.assertTrue(taskReport.get(Set.class, "latest_uids").isEmpty());
-        Assert.assertEquals(1504888753000L, latestFetchTime);
+        Assert.assertEquals(1504888754000L, latestFetchTime);
         Assert.assertArrayEquals(new Long[]{102488L, 102456L, 102445L, 102439L, 102471L, 102503L, 102424L, 102473L, 102505L, 102492L, 102495L, 102452L, 102435L, 102467L, 102420L, 102496L, 102448L, 102499L, 102431L}, leadIds.toArray());
     }
 }
