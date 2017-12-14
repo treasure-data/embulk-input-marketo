@@ -1,3 +1,9 @@
+## 0.6.4 - 2017-12-13
+* [fixed] Fix incorrect job timeout calculation  [#78](https://github.com/treasure-data/embulk-input-marketo/pull/78)
+* [enhance] Disable incremental import by updatedAt  [#77](https://github.com/treasure-data/embulk-input-marketo/pull/77)
+* [enhance] Add log for exported file size  [#76](https://github.com/treasure-data/embulk-input-marketo/pull/76)
+
+
 ## 0.6.3 - 2017-11-13
 * [enhance] Ignore records with timestamp smaller or equal to latest_fetch_time  [#74](https://github.com/treasure-data/embulk-input-marketo/pull/74)
 

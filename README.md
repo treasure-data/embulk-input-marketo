@@ -73,7 +73,7 @@ Configuration:
 
 | name               | required | default value | description                                                                                                                                                      |
 |--------------------|----------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **use_updated_at** | false    | false         | Lead data are not immutable so it better to do incremental ingesting with `updateAt` column, but not all Marketo Account have the feature to filter by updatedAt |
+| **use_updated_at** | false    | false       | Support filter with `updateAt` column, but not all Marketo Account have the feature to filter by updatedAt, updatedAt don't support incremental ingestion        |
 
 Schema type: Dynamic via describe lead endpoint.
 
