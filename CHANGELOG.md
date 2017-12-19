@@ -1,3 +1,6 @@
+## 0.6.4 - 2017-12-19
+* [fixed] Fix infinite loop when import non bulk extract targets [#80](https://github.com/treasure-data/embulk-input-marketo/pull/80)
+
 ## 0.6.4 - 2017-12-13
 * [fixed] Fix incorrect job timeout calculation  [#78](https://github.com/treasure-data/embulk-input-marketo/pull/78)
 * [enhance] Disable incremental import by updatedAt  [#77](https://github.com/treasure-data/embulk-input-marketo/pull/77)
