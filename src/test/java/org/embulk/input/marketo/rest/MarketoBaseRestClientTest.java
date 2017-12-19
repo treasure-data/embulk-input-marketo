@@ -153,7 +153,7 @@ public class MarketoBaseRestClientTest
         Mockito.verify(mockRequest, Mockito.times(1)).header(Mockito.eq("testHeader1"), Mockito.eq("testHeaderValue1"));
         Mockito.verify(mockRequest, Mockito.times(1)).header(Mockito.eq("Authorization"), Mockito.eq("Bearer access_token"));
         Mockito.verify(mockRequest, Mockito.times(1)).param(Mockito.eq("param"), Mockito.eq("param1"));
-        Mockito.verify(mockRequest, Mockito.times(1)).content(Mockito.eq(contentProvider), Mockito.eq("application/json"));
+        Mockito.verify(mockRequest, Mockito.times(1)).content(Mockito.eq(contentProvider));
     }
 
     @Test
