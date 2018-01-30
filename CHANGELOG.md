@@ -1,4 +1,7 @@
-## 0.6.4 - 2017-12-19
+## 0.6.6 - 2018-01-30
+* [fixed] Fix JettyRetryHelper not closed [#82](https://github.com/treasure-data/embulk-input-marketo/pull/82)
+
+## 0.6.5 - 2017-12-19
 * [fixed] Fix infinite loop when import non bulk extract targets [#80](https://github.com/treasure-data/embulk-input-marketo/pull/80)
 
 ## 0.6.4 - 2017-12-13
