@@ -77,15 +77,17 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
     @Override
     public TaskReport ingestServiceData(T task, RecordImporter recordImporter, int taskIndex, PageBuilder pageBuilder)
     {
-        MarketoService marketoService = new MarketoServiceImpl(createMarketoRestClient(task));
-        Iterator<ServiceRecord> serviceRecords = getServiceRecords(marketoService, task);
-        int imported = 0;
-        while (serviceRecords.hasNext() && (imported < PREVIEW_RECORD_LIMIT || !Exec.isPreview())) {
-            ServiceRecord next = serviceRecords.next();
-            recordImporter.importRecord(next, pageBuilder);
-            imported++;
+        try (MarketoRestClient restClient = createMarketoRestClient(task)) {
+            MarketoService marketoService = new MarketoServiceImpl(restClient);
+            Iterator<ServiceRecord> serviceRecords = getServiceRecords(marketoService, task);
+            int imported = 0;
+            while (serviceRecords.hasNext() && (imported < PREVIEW_RECORD_LIMIT || !Exec.isPreview())) {
+                ServiceRecord next = serviceRecords.next();
+                recordImporter.importRecord(next, pageBuilder);
+                imported++;
+            }
+            return Exec.newTaskReport();
         }
-        return Exec.newTaskReport();
     }
 
     protected abstract Iterator<ServiceRecord> getServiceRecords(MarketoService marketoService, T task);
