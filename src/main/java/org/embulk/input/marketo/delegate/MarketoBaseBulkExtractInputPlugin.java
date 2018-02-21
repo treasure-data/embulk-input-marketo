@@ -33,8 +33,6 @@ import org.embulk.spi.time.TimestampParser;
 import org.embulk.spi.util.InputStreamFileInput;
 import org.embulk.spi.util.LineDecoder;
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 import org.msgpack.value.Value;
 
 import java.io.InputStream;
@@ -43,7 +41,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -55,17 +52,9 @@ import java.util.Set;
  */
 public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBulkExtractInputPlugin.PluginTask> extends MarketoBaseInputPluginDelegate<T>
 {
-    private static final String LATEST_FETCH_TIME = "latest_fetch_time";
-
-    private static final String LATEST_UID_LIST = "latest_uids";
-
-    private static final DateTimeFormatter ISO_DATETIME_FORMAT = ISODateTimeFormat.dateTimeParser();
-
     private static final String FROM_DATE = "from_date";
 
     private static final int MARKETO_MAX_RANGE_EXTRACT = 30;
-
-    private static final String IMPORTED = "imported";
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, CsvTokenizer.PluginTask
     {
@@ -95,10 +84,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         @ConfigDefault("true")
         Boolean getIncremental();
 
-        @Config("latest_uids")
-        @ConfigDefault("[]")
-        Set<String> getPreviousUids();
-
         @Config("to_date")
         @ConfigDefault("null")
         Optional<Date> getToDate();
@@ -107,6 +92,8 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
         @Config("incremental_column")
         @ConfigDefault("\"createdAt\"")
+        //Incremental column are only keep here since we don't want to introduce too much change to plugin
+        //Consider remove it in next release
         Optional<String> getIncrementalColumn();
 
         void setIncrementalColumn(Optional<String> incrementalColumn);
@@ -153,39 +140,12 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     public ConfigDiff buildConfigDiff(T task, Schema schema, int taskCount, List<TaskReport> taskReports)
     {
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
-        Long currentLatestFetchTime = 0L;
-        Set latestUIds = new HashSet();
         String incrementalColumn = task.getIncrementalColumn().orNull();
-        int imported = 0;
         if (incrementalColumn != null && task.getIncremental()) {
             DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
-            for (TaskReport taskReport : taskReports) {
-                Long latestFetchTime = taskReport.get(Long.class, LATEST_FETCH_TIME);
-                if (latestFetchTime == null) {
-                    continue;
-                }
-                if (currentLatestFetchTime < latestFetchTime) {
-                    currentLatestFetchTime = latestFetchTime;
-                    latestUIds = taskReport.get(Set.class, LATEST_UID_LIST);
-                }
-                else if (currentLatestFetchTime.equals(latestFetchTime)) {
-                    latestUIds.addAll(taskReport.get(Set.class, LATEST_UID_LIST));
-                }
-                if (taskReport.has(IMPORTED)) {
-                    imported = imported + taskReport.get(Integer.class, IMPORTED);
-                }
-            }
-            // in case of we didn't import anything but search range is entirely in the past. Then we should move the the range anyway.
-            if (imported == 0) {
-                Date toDate = task.getToDate().orNull();
-                configDiff.set(FROM_DATE, df.format(toDate));
-            }
-            else {
-            // Otherwise it's should start from the currentLastFetchTime plus 1 second.
-                configDiff.set(FROM_DATE, df.format(new DateTime(currentLatestFetchTime).plusSeconds(1).toDate()));
-            }
-            configDiff.set(LATEST_FETCH_TIME, currentLatestFetchTime);
-            configDiff.set(LATEST_UID_LIST, latestUIds);
+            // We will always move the range forward.
+            Date toDate = task.getToDate().orNull();
+            configDiff.set(FROM_DATE, df.format(toDate));
         }
         return configDiff;
     }
@@ -194,8 +154,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     public TaskReport ingestServiceData(final T task, RecordImporter recordImporter, int taskIndex, PageBuilder pageBuilder)
     {
         TaskReport taskReport = Exec.newTaskReport();
-        String incrementalColumn = task.getIncrementalColumn().orNull();
-        String uidColumn = task.getUidColumn().orNull();
         if (Exec.isPreview()) {
             return importMockPreviewData(pageBuilder);
         }
@@ -209,9 +167,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                         return new CsvRecordIterator(input, task);
                     }
                 }));
-                Long latestFetchTime = task.getLatestFetchTime().or(0L);
-                long currentTimestamp = latestFetchTime;
-                Set<String> latestUids = task.getPreviousUids();
                 //Keep the preview code here when we can enable real preview
                 if (Exec.isPreview()) {
                     csvRecords = Iterators.limit(csvRecords, PREVIEW_RECORD_LIMIT);
@@ -219,43 +174,10 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 int imported = 0;
                 while (csvRecords.hasNext()) {
                     Map<String, String> csvRecord = csvRecords.next();
-                    if (task.getIncremental()) {
-                        String incrementalTimeStamp = csvRecord.get(incrementalColumn);
-                        long timestamp = ISO_DATETIME_FORMAT.parseDateTime(incrementalTimeStamp).getMillis();
-                        //Ignore records that have timestamp smaller or equal with latestFetchTime
-                        if (latestFetchTime >= timestamp) {
-                            continue;
-                        }
-                        if (!csvRecord.containsKey(incrementalColumn)) {
-                            throw new DataException("Extracted record doesn't have incremental column " + incrementalColumn);
-                        }
-                        if (uidColumn != null) {
-                            String uid = csvRecord.get(uidColumn);
-                            if (latestUids.contains(uid)) {
-                                //Duplicate value
-                                continue;
-                            }
-                        }
-                        if (currentTimestamp < timestamp) {
-                            currentTimestamp = timestamp;
-                            //switch timestamp
-                            latestUids.clear();
-                        }
-                        else if (currentTimestamp == timestamp) {
-                            //timestamp is equal
-                            if (uidColumn != null) {
-                                String uid = csvRecord.get(uidColumn);
-                                latestUids.add(uid);
-                            }
-                        }
-                    }
                     ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
                     recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
                     imported = imported + 1;
                 }
-                taskReport.set(LATEST_FETCH_TIME, currentTimestamp);
-                taskReport.set(LATEST_UID_LIST, latestUids);
-                taskReport.set(IMPORTED, imported);
                 return taskReport;
             }
         }

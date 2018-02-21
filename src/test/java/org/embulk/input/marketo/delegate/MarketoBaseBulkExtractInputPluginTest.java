@@ -158,20 +158,12 @@ public class MarketoBaseBulkExtractInputPluginTest
     public void buildConfigDiff() throws Exception
     {
         TaskReport taskReport1 = Mockito.mock(TaskReport.class);
-        TaskReport taskReport2 = Mockito.mock(TaskReport.class);
-        Mockito.when(taskReport1.get(Set.class, "latest_uids")).thenReturn(Sets.newHashSet("id1", "id2"));
-        Mockito.when(taskReport2.get(Set.class, "latest_uids")).thenReturn(Sets.newHashSet("id3", "id4"));
-        Mockito.when(taskReport1.get(Long.class, "latest_fetch_time")).thenReturn(1507539328000L);
-        Mockito.when(taskReport2.get(Long.class, "latest_fetch_time")).thenReturn(1507625728000L);
         MarketoInputPluginDelegate.PluginTask task = Mockito.mock(MarketoInputPluginDelegate.PluginTask.class);
         Mockito.when(task.getIncremental()).thenReturn(true);
         Mockito.when(task.getIncrementalColumn()).thenReturn(Optional.of("createdAt"));
         Date toDate = new Date(1507625728000L);
         Mockito.when(task.getToDate()).thenReturn(Optional.of(toDate));
-        ConfigDiff configDiff = baseBulkExtractInputPlugin.buildConfigDiff(task, Mockito.mock(Schema.class), 1, Arrays.asList(taskReport1, taskReport2));
-        long latestFetchTime = configDiff.get(Long.class, "latest_fetch_time");
-        assertEquals(1507625728000L, latestFetchTime);
-        assertEquals(Sets.newHashSet("id3", "id4"), configDiff.get(Set.class, "latest_uids"));
+        ConfigDiff configDiff = baseBulkExtractInputPlugin.buildConfigDiff(task, Mockito.mock(Schema.class), 1, Arrays.asList(taskReport1));
         DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
         assertEquals(df.format(toDate), configDiff.get(String.class, "from_date"));
     }
