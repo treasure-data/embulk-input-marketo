@@ -1,3 +1,6 @@
+## 0.6.7 - 2018-02-26
+* [fixed] Remove de-duplication logic [#83](https://github.com/treasure-data/embulk-input-marketo/pull/83)
+
 ## 0.6.6 - 2018-01-30
 * [fixed] Fix JettyRetryHelper not closed [#82](https://github.com/treasure-data/embulk-input-marketo/pull/82)
 
