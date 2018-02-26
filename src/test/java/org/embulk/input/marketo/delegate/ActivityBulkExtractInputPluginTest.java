@@ -3,14 +3,18 @@ package org.embulk.input.marketo.delegate;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.ValueLocator;
+import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigLoader;
 import org.embulk.config.ConfigSource;
 import org.embulk.config.TaskReport;
+import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
+import org.embulk.spi.Schema;
 import org.joda.time.DateTime;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -18,6 +22,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -74,12 +80,8 @@ public class ActivityBulkExtractInputPluginTest
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createActivityExtract(startDate.toDate(), startDate.plusDays(30).toDate());
         DateTime startDate2 = startDate.plusDays(30).plusSeconds(1);
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createActivityExtract(startDate2.toDate(), startDate.plusDays(task.getFetchDays()).toDate());
-        List<String> marketoUids = argumentCaptor.getAllValues();
-        assertEquals(55, marketoUids.size());
-        long latestFetchTime = taskReport.get(Long.class, "latest_fetch_time");
-        Set latestUids = taskReport.get(Set.class, "latest_uids");
-        assertEquals(1504888754000L, latestFetchTime);
-        assertEquals(Arrays.asList("558681", "558682", "558683", "558684", "558685", "558686", "558687", "558688", "558689", "558690", "558691", "558692", "558693", "558694", "558695", "558696", "558697", "558698", "558699", "558700", "558701", "558702", "558703", "558704", "558705", "558706", "558707", "558708", "558709", "558710", "558711", "558712", "558713", "558714", "558716", "558717", "558718", "558719", "558720", "558721", "558722", "558723", "558724", "558725", "558726", "558727", "558728", "558729", "558730", "558731", "558732", "558733", "558734", "558735", "558736"), marketoUids);
-        assertEquals(36, latestUids.size());
+        ConfigDiff configDiff = activityBulkExtractInputPlugin.buildConfigDiff(task, Mockito.mock(Schema.class), 1, Arrays.asList(taskReport));
+        DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
+        Assert.assertEquals(df.format(startDate.plusDays(task.getFetchDays()).toDate()), configDiff.get(String.class, "from_date"));
     }
 }
