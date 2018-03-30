@@ -26,9 +26,13 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.io.EOFException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by tai.khuu on 9/21/17.
@@ -72,18 +76,25 @@ public class MarketoBaseRestClientTest
         Mockito.when(mockJetty92.requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn("{\"access_token\": \"access_token\"}");
         String accessToken = marketoBaseRestClient.getAccessToken();
         Assert.assertEquals("access_token", accessToken);
-        Jetty92SingleRequester value = jetty92SingleRequesterArgumentCaptor.getValue();
+        Jetty92SingleRequester jetty92SingleRequester = jetty92SingleRequesterArgumentCaptor.getValue();
         HttpClient client = Mockito.mock(HttpClient.class);
         Response.Listener listener = Mockito.mock(Response.Listener.class);
         Request mockRequest = Mockito.mock(Request.class);
         Mockito.when(client.newRequest(Mockito.eq(IDENTITY_END_POINT + MarketoRESTEndpoint.ACCESS_TOKEN.getEndpoint()))).thenReturn(mockRequest);
         Request request1 = Mockito.mock(Request.class);
         Mockito.when(mockRequest.method(Mockito.eq(HttpMethod.GET))).thenReturn(request1);
-        value.requestOnce(client, listener);
+        jetty92SingleRequester.requestOnce(client, listener);
         Mockito.verify(request1, Mockito.times(1)).param(Mockito.eq("client_id"), Mockito.eq("clientId"));
         Mockito.verify(request1, Mockito.times(1)).param(Mockito.eq("client_secret"), Mockito.eq("clientSecret"));
         Mockito.verify(request1, Mockito.times(1)).param(Mockito.eq("grant_type"), Mockito.eq("client_credentials"));
-        Assert.assertTrue(value.toRetry(createHttpResponseException(502)));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createHttpResponseException(502)));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new TimeoutException())));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new EOFException())));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new SocketTimeoutException())));
+        // Retry SocketTimeoutException, TimeoutException and EOFException
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new SocketTimeoutException()));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new TimeoutException()));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new EOFException()));
     }
     @Test
     public void testGetAccessTokenWithError()
@@ -184,8 +195,18 @@ public class MarketoBaseRestClientTest
         Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("606", "")));
         Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("615", "")));
         Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("602", "")));
-
-        Mockito.verify(mockJetty92, Mockito.times(2)).requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), Mockito.any(Jetty92SingleRequester.class));
+        // Should retry 601 error too
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("601", "")));
+        // Retry wrap SocketTimeoutException, TimeoutException and EOFException
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new TimeoutException())));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new EOFException())));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new SocketTimeoutException())));
+        // Retry SocketTimeoutException, TimeoutException and EOFException
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new SocketTimeoutException()));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new TimeoutException()));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new EOFException()));
+       // Call 3 times First call then 602 error and  601 error
+        Mockito.verify(mockJetty92, Mockito.times(3)).requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), Mockito.any(Jetty92SingleRequester.class));
     }
 
     private HttpResponseException createHttpResponseException(int statusCode)
