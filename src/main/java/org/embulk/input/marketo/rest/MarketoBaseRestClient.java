@@ -112,6 +112,15 @@ public class MarketoBaseRestClient implements AutoCloseable
             {
                 return response.getStatus() == 502;
             }
+
+            @Override
+            protected boolean isExceptionToRetry(Exception exception)
+            {
+                if (exception instanceof ExecutionException) {
+                    return this.toRetry((Exception) exception.getCause());
+                }
+                return exception instanceof TimeoutException || exception instanceof SocketTimeoutException || exception instanceof EOFException || super.isExceptionToRetry(exception);
+            }
         });
 
         MarketoAccessTokenResponse accessTokenResponse;
@@ -189,11 +198,7 @@ public class MarketoBaseRestClient implements AutoCloseable
             protected boolean isExceptionToRetry(Exception exception)
             {
                 if (exception instanceof ExecutionException) {
-                    this.toRetry((Exception) exception.getCause());
-                }
-                //Anything that is EOFException or cause by EOF exception
-                if (exception instanceof EOFException || exception.getCause() instanceof EOFException) {
-                    return true;
+                    return this.toRetry((Exception) exception.getCause());
                 }
                 if (exception instanceof MarketoAPIException) {
                     //Retry Authenticate Exception
@@ -201,6 +206,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                     String code = error.getCode();
                     switch (code) {
                         case "602":
+                        case "601":
                             LOGGER.info("Access token expired");
                             renewAccessToken();
                             return true;
@@ -219,7 +225,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                             return false;
                     }
                 }
-                return exception instanceof TimeoutException || exception instanceof SocketTimeoutException || super.isExceptionToRetry(exception);
+                return exception instanceof EOFException || exception instanceof TimeoutException || exception instanceof SocketTimeoutException || super.isExceptionToRetry(exception);
             }
         });
     }
