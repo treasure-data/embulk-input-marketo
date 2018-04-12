@@ -1,3 +1,6 @@
+## 0.6.8 - 2018-04-12
+* [fixed] Fix incorrect incorrect retry logic [#84](https://github.com/treasure-data/embulk-input-marketo/pull/84)
+
 ## 0.6.7 - 2018-02-26
 * [fixed] Remove de-duplication logic [#83](https://github.com/treasure-data/embulk-input-marketo/pull/83)
 
