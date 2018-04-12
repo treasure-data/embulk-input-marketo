@@ -117,10 +117,14 @@ public class MarketoBaseRestClient implements AutoCloseable
             @Override
             protected boolean isExceptionToRetry(Exception exception)
             {
+                if (exception instanceof TimeoutException || exception instanceof SocketTimeoutException || exception instanceof EOFException || super.isExceptionToRetry(exception)) {
+                    return true;
+                }
+                // unwrap
                 if (exception instanceof ExecutionException || (exception instanceof IOException && exception.getCause() != null)) {
                     return this.toRetry((Exception) exception.getCause());
                 }
-                return exception instanceof TimeoutException || exception instanceof SocketTimeoutException || exception instanceof EOFException || super.isExceptionToRetry(exception);
+                return false;
             }
         });
 
@@ -198,6 +202,9 @@ public class MarketoBaseRestClient implements AutoCloseable
             @Override
             protected boolean isExceptionToRetry(Exception exception)
             {
+                if (exception instanceof EOFException || exception instanceof TimeoutException || exception instanceof SocketTimeoutException || super.isExceptionToRetry(exception)) {
+                    return true;
+                }
                 if (exception instanceof ExecutionException || (exception instanceof IOException && exception.getCause() != null)) {
                     return this.toRetry((Exception) exception.getCause());
                 }
@@ -226,7 +233,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                             return false;
                     }
                 }
-                return exception instanceof EOFException || exception instanceof TimeoutException || exception instanceof SocketTimeoutException || super.isExceptionToRetry(exception);
+                return false;
             }
         });
     }
