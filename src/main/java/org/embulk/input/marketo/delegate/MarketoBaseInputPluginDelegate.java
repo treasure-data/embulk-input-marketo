@@ -36,7 +36,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
             extends RestClientInputTaskBase, MarketoRestClient.PluginTask
     {
         @Config("maximum_retries")
-        @ConfigDefault("3")
+        @ConfigDefault("7")
         Integer getMaximumRetries();
 
         @Config("initial_retry_interval_milis")

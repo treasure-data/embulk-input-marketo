@@ -30,18 +30,6 @@ public class MarketoInputPluginDelegate
         @Config("target")
         Target getTarget();
 
-        @Config("maximum_retries")
-        @ConfigDefault("3")
-        Integer getMaximumRetries();
-
-        @Config("initial_retry_interval_milis")
-        @ConfigDefault("20000")
-        Integer getInitialRetryIntervalMilis();
-
-        @Config("maximum_retries_interval_milis")
-        @ConfigDefault("120000")
-        Integer getMaximumRetriesIntervalMilis();
-
         //We don't need to let the internal plugin know that it being dispatched and force it to set require field optional
         //We will hide the real from_date, and set it when validating task
         @Config("hidden_from_date")
