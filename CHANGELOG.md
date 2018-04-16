@@ -1,3 +1,7 @@
+## 0.6.9 - 2018-04-16
+* [fixed] Fix wrapped TimeoutException not retry [#85](https://github.com/treasure-data/embulk-input-marketo/pull/85)
+* [enhance] Make read_timeout configurable [#85](https://github.com/treasure-data/embulk-input-marketo/pull/85)
+
 ## 0.6.8 - 2018-04-12
 * [fixed] Fix incorrect incorrect retry logic [#84](https://github.com/treasure-data/embulk-input-marketo/pull/84)
 
