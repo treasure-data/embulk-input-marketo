@@ -27,6 +27,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.io.EOFException;
+import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -53,7 +54,7 @@ public class MarketoBaseRestClientTest
     public void prepare()
     {
         mockJetty92 = Mockito.mock(Jetty92RetryHelper.class);
-        marketoBaseRestClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", MARKETO_LIMIT_INTERVAL_MILIS, mockJetty92);
+        marketoBaseRestClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", MARKETO_LIMIT_INTERVAL_MILIS, 60000, mockJetty92);
     }
 
     @Test
@@ -95,6 +96,10 @@ public class MarketoBaseRestClientTest
         Assert.assertTrue(jetty92SingleRequester.toRetry(new SocketTimeoutException()));
         Assert.assertTrue(jetty92SingleRequester.toRetry(new TimeoutException()));
         Assert.assertTrue(jetty92SingleRequester.toRetry(new EOFException()));
+        // When EOFException is wrapped in IOException it should be retried too
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new IOException(new EOFException())));
+        // Retry TimeoutException when it is wrapped in IOException
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new IOException(new TimeoutException())));
     }
     @Test
     public void testGetAccessTokenWithError()
@@ -201,6 +206,11 @@ public class MarketoBaseRestClientTest
         Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new TimeoutException())));
         Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new EOFException())));
         Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new SocketTimeoutException())));
+        // When EOFException is wrapped in IOException it should be retried too
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new IOException(new EOFException())));
+        // Retry TimeoutException when it is wrapped in IOException
+        Assert.assertTrue(jetty92SingleRequester.toRetry(new IOException(new TimeoutException())));
+
         // Retry SocketTimeoutException, TimeoutException and EOFException
         Assert.assertTrue(jetty92SingleRequester.toRetry(new SocketTimeoutException()));
         Assert.assertTrue(jetty92SingleRequester.toRetry(new TimeoutException()));

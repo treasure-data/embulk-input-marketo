@@ -33,7 +33,7 @@ import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_CONTR
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 
 /**
- * Marketo base rest client that provide
+ * Marketo base rest client
  * Created by tai.khuu on 9/7/17.
  */
 public class MarketoBaseRestClient implements AutoCloseable
@@ -44,8 +44,6 @@ public class MarketoBaseRestClient implements AutoCloseable
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
-    protected static final long READ_TIMEOUT_MILLIS = 30000;
-
     private String identityEndPoint;
 
     private String clientId;
@@ -54,19 +52,22 @@ public class MarketoBaseRestClient implements AutoCloseable
 
     private String accessToken;
 
-    private int marketoLimitIntervalMilis;
+    private int marketoLimitIntervalMillis;
 
     private Jetty92RetryHelper retryHelper;
 
+    protected long readTimeoutMillis;
+
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false).configure(ALLOW_UNQUOTED_CONTROL_CHARS, false);
 
-    MarketoBaseRestClient(String identityEndPoint, String clientId, String clientSecret, int marketoLimitIntervalMilis, Jetty92RetryHelper retryHelper)
+    MarketoBaseRestClient(String identityEndPoint, String clientId, String clientSecret, int marketoLimitIntervalMillis, long readTimeoutMillis, Jetty92RetryHelper retryHelper)
     {
         this.identityEndPoint = identityEndPoint;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
+        this.readTimeoutMillis = readTimeoutMillis;
         this.retryHelper = retryHelper;
-        this.marketoLimitIntervalMilis = marketoLimitIntervalMilis;
+        this.marketoLimitIntervalMillis = marketoLimitIntervalMillis;
     }
 
     private void renewAccessToken()
@@ -93,7 +94,7 @@ public class MarketoBaseRestClient implements AutoCloseable
         params.put("client_id", clientId);
         params.put("client_secret", clientSecret);
         params.put("grant_type", "client_credentials");
-        String response = retryHelper.requestWithRetry(new StringJetty92ResponseEntityReader(READ_TIMEOUT_MILLIS), new Jetty92SingleRequester()
+        String response = retryHelper.requestWithRetry(new StringJetty92ResponseEntityReader(readTimeoutMillis), new Jetty92SingleRequester()
         {
             @Override
             public void requestOnce(HttpClient client, Response.Listener responseListener)
@@ -116,10 +117,14 @@ public class MarketoBaseRestClient implements AutoCloseable
             @Override
             protected boolean isExceptionToRetry(Exception exception)
             {
-                if (exception instanceof ExecutionException) {
+                if (exception instanceof TimeoutException || exception instanceof SocketTimeoutException || exception instanceof EOFException || super.isExceptionToRetry(exception)) {
+                    return true;
+                }
+                // unwrap
+                if (exception instanceof ExecutionException || (exception instanceof IOException && exception.getCause() != null)) {
                     return this.toRetry((Exception) exception.getCause());
                 }
-                return exception instanceof TimeoutException || exception instanceof SocketTimeoutException || exception instanceof EOFException || super.isExceptionToRetry(exception);
+                return false;
             }
         });
 
@@ -197,7 +202,10 @@ public class MarketoBaseRestClient implements AutoCloseable
             @Override
             protected boolean isExceptionToRetry(Exception exception)
             {
-                if (exception instanceof ExecutionException) {
+                if (exception instanceof EOFException || exception instanceof TimeoutException || exception instanceof SocketTimeoutException || super.isExceptionToRetry(exception)) {
+                    return true;
+                }
+                if (exception instanceof ExecutionException || (exception instanceof IOException && exception.getCause() != null)) {
                     return this.toRetry((Exception) exception.getCause());
                 }
                 if (exception instanceof MarketoAPIException) {
@@ -212,7 +220,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                             return true;
                         case "606":
                             try {
-                                Thread.sleep(marketoLimitIntervalMilis);
+                                Thread.sleep(marketoLimitIntervalMillis);
                             }
                             catch (InterruptedException e) {
                                 LOGGER.error("Encounter exception when waiting for interval limit", e);
@@ -225,7 +233,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                             return false;
                     }
                 }
-                return exception instanceof EOFException || exception instanceof TimeoutException || exception instanceof SocketTimeoutException || super.isExceptionToRetry(exception);
+                return false;
             }
         });
     }
