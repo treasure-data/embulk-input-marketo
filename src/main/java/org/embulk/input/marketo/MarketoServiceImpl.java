@@ -185,22 +185,6 @@ public class MarketoServiceImpl implements MarketoService
         return marketoRestClient.describeLead();
     }
 
-    @Override
-    public List<MarketoField> describeLeadByProgram()
-    {
-        List<MarketoField> columns = marketoRestClient.describeLead();
-        columns.add(new MarketoField(MarketoUtils.PROGRAM_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
-        return columns;
-    }
-
-    @Override
-    public List<MarketoField> describeLeadByLists()
-    {
-        List<MarketoField> columns = marketoRestClient.describeLead();
-        columns.add(new MarketoField(MarketoUtils.LIST_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
-        return columns;
-    }
-
     private static class DownloadBulkExtractException extends Exception
     {
         private final long byteWritten;

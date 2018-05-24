@@ -114,4 +114,13 @@ public class MarketoField
             return Optional.fromNullable(format);
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return "MarketoField{" +
+                "name='" + name + '\'' +
+                ", marketoDataType=" + marketoDataType +
+                '}';
+    }
 }

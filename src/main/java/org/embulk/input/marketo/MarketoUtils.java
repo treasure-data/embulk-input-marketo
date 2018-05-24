@@ -3,6 +3,9 @@ package org.embulk.input.marketo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceRecord;
@@ -18,11 +21,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by tai.khuu on 9/18/17.

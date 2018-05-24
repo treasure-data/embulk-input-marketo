@@ -14,10 +14,6 @@ public interface MarketoService
 {
     List<MarketoField> describeLead();
 
-    List<MarketoField> describeLeadByProgram();
-
-    List<MarketoField> describeLeadByLists();
-
     File extractLead(Date startTime, Date endTime, List<String> extractedFields, String filterField, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond);
 
     File extractAllActivity(Date startTime, Date endTime, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond);
