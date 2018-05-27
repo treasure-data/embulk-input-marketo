@@ -60,8 +60,8 @@ public class LeadServiceResponseMapperBuilder<T extends LeadServiceResponseMappe
                 }
             }
             columns = filteredColumns;
+            LOGGER.info("Included Fields option is set, included columns: [{}]", columns);
         }
-        LOGGER.info("Included Fields option is set, included columns: [{}]", columns);
         return columns;
     }
 

@@ -16,6 +16,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -82,4 +84,36 @@ public class LeadServiceResponseMapperBuilderTest
         Assert.assertEquals("mk_id", embulkSchema.getColumn(15).getName());
     }
 
+    @Test
+    public void getLeadColumnsIncludedEmpty() throws IOException
+    {
+        configSource = configSource.set("included_fields", MarketoUtils.OBJECT_MAPPER.readTree("[]"));
+        pluginTask = configSource.loadConfig(LeadServiceResponseMapperBuilder.PluginTask.class);
+        leadServiceResponseMapperBuilder = new LeadServiceResponseMapperBuilder<>(pluginTask, marketoService);
+        List<MarketoField> leadColumns = leadServiceResponseMapperBuilder.getLeadColumns();
+        Assert.assertEquals(129, leadColumns.size());
+    }
+
+    @Test
+    public void getLeadColumnsIncluded1() throws IOException
+    {
+        configSource = configSource.set("included_fields", MarketoUtils.OBJECT_MAPPER.readTree("[\"company\",\"incorrect_value\"]"));
+        pluginTask = configSource.loadConfig(LeadServiceResponseMapperBuilder.PluginTask.class);
+        leadServiceResponseMapperBuilder = new LeadServiceResponseMapperBuilder<>(pluginTask, marketoService);
+        List<MarketoField> leadColumns = leadServiceResponseMapperBuilder.getLeadColumns();
+        Assert.assertEquals(1, leadColumns.size());
+        Assert.assertEquals("company", leadColumns.get(0).getName());
+    }
+
+    @Test
+    public void getLeadColumnsIncluded2() throws IOException
+    {
+        configSource = configSource.set("included_fields", MarketoUtils.OBJECT_MAPPER.readTree("[\"company\",\"incorrect_value\"]"));
+        pluginTask = configSource.loadConfig(LeadServiceResponseMapperBuilder.PluginTask.class);
+        marketoService = Mockito.mock(MarketoService.class);
+        leadServiceResponseMapperBuilder = new LeadServiceResponseMapperBuilder<>(pluginTask, marketoService);
+        Mockito.when(marketoService.describeLead()).thenReturn(new ArrayList<MarketoField>());
+        List<MarketoField> leadColumns = leadServiceResponseMapperBuilder.getLeadColumns();
+        Assert.assertTrue(leadColumns.isEmpty());
+    }
 }
