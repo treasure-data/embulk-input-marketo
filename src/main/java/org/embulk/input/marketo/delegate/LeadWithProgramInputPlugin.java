@@ -26,6 +26,7 @@ public class LeadWithProgramInputPlugin extends MarketoBaseInputPluginDelegate<L
     protected Iterator<ServiceRecord> getServiceRecords(MarketoService marketoService, PluginTask task)
     {
         List<String> fieldNames = task.getExtractedFields();
+        // Remove PROGRAM_ID_COLUMN_NAME when sent fields to Marketo since PROGRAM_ID_COLUMN_NAME are added by plugin code
         fieldNames.remove(MarketoUtils.PROGRAM_ID_COLUMN_NAME);
         return FluentIterable.from(marketoService.getAllProgramLead(fieldNames)).
                 transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION).iterator();

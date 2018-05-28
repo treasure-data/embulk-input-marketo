@@ -31,6 +31,7 @@ public class LeadWithListInputPlugin extends MarketoBaseInputPluginDelegate<Lead
     protected Iterator<ServiceRecord> getServiceRecords(MarketoService marketoService, PluginTask task)
     {
         List<String> extractedFields = task.getExtractedFields();
+        // Remove LIST_ID_COLUMN_NAME when sent fields to Marketo since LIST_ID_COLUMN_NAME are added by plugin code
         extractedFields.remove(MarketoUtils.LIST_ID_COLUMN_NAME);
         return FluentIterable.from(marketoService.getAllListLead(extractedFields)).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION).iterator();
     }
