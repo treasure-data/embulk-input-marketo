@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class LeadWithProgramInputPlugin extends MarketoBaseInputPluginDelegate<LeadWithProgramInputPlugin.PluginTask>
 {
-    public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask
+    public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, LeadServiceResponseMapperBuilder.PluginTask
     {
     }
 
@@ -26,6 +26,8 @@ public class LeadWithProgramInputPlugin extends MarketoBaseInputPluginDelegate<L
     protected Iterator<ServiceRecord> getServiceRecords(MarketoService marketoService, PluginTask task)
     {
         List<String> fieldNames = task.getExtractedFields();
+        // Remove PROGRAM_ID_COLUMN_NAME when sent fields to Marketo since PROGRAM_ID_COLUMN_NAME are added by plugin code
+        fieldNames.remove(MarketoUtils.PROGRAM_ID_COLUMN_NAME);
         return FluentIterable.from(marketoService.getAllProgramLead(fieldNames)).
                 transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION).iterator();
     }
@@ -35,9 +37,24 @@ public class LeadWithProgramInputPlugin extends MarketoBaseInputPluginDelegate<L
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            List<MarketoField> columns = marketoService.describeLeadByProgram();
-            task.setExtractedFields(MarketoUtils.getFieldNameFromMarketoFields(columns, MarketoUtils.PROGRAM_ID_COLUMN_NAME));
-            return MarketoUtils.buildDynamicResponseMapper(task.getSchemaColumnPrefix(), columns);
+            LeadWithProgramServiceResponseMapper serviceResponseMapper = new LeadWithProgramServiceResponseMapper(task, marketoService);
+            return serviceResponseMapper.buildServiceResponseMapper(task);
+        }
+    }
+
+    private static class LeadWithProgramServiceResponseMapper extends LeadServiceResponseMapperBuilder<PluginTask>
+    {
+        public LeadWithProgramServiceResponseMapper(LeadWithProgramInputPlugin.PluginTask task, MarketoService marketoService)
+        {
+            super(task, marketoService);
+        }
+
+        @Override
+        protected List<MarketoField> getLeadColumns()
+        {
+            List<MarketoField> leadColumns = super.getLeadColumns();
+            leadColumns.add(new MarketoField(MarketoUtils.PROGRAM_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
+            return leadColumns;
         }
     }
 }

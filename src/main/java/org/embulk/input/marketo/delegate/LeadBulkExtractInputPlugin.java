@@ -7,8 +7,6 @@ import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
-import org.embulk.input.marketo.MarketoUtils;
-import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
@@ -29,7 +27,7 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
 
     private static final String UPDATED_AT = "updatedAt";
 
-    public interface PluginTask extends MarketoBaseBulkExtractInputPlugin.PluginTask
+    public interface PluginTask extends MarketoBaseBulkExtractInputPlugin.PluginTask, LeadServiceResponseMapperBuilder.PluginTask
     {
         @Config("use_updated_at")
         @ConfigDefault("false")
@@ -63,9 +61,8 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            List<MarketoField> columns = marketoService.describeLead();
-            task.setExtractedFields(MarketoUtils.getFieldNameFromMarketoFields(columns));
-            return MarketoUtils.buildDynamicResponseMapper(task.getSchemaColumnPrefix(), columns);
+            LeadServiceResponseMapperBuilder<PluginTask> leadServiceResponseMapperBuilder = new LeadServiceResponseMapperBuilder<>(task, marketoService);
+            return leadServiceResponseMapperBuilder.buildServiceResponseMapper(task);
         }
     }
 }

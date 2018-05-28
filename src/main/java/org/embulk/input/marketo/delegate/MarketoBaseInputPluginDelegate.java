@@ -1,16 +1,14 @@
 package org.embulk.input.marketo.delegate;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import org.embulk.base.restclient.DefaultServiceDataSplitter;
 import org.embulk.base.restclient.RestClientInputPluginDelegate;
 import org.embulk.base.restclient.RestClientInputTaskBase;
 import org.embulk.base.restclient.ServiceDataSplitter;
 import org.embulk.base.restclient.record.RecordImporter;
 import org.embulk.base.restclient.record.ServiceRecord;
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
-import org.embulk.config.ConfigDiff;
-import org.embulk.config.TaskReport;
+import org.embulk.config.*;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.rest.MarketoRestClient;
@@ -30,32 +28,12 @@ import java.util.List;
 public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputPluginDelegate.PluginTask> implements RestClientInputPluginDelegate<T>
 {
     public static final int PREVIEW_RECORD_LIMIT = 15;
-    private static final int CONNECT_TIMEOUT_IN_MILLIS = 30000;
-    private static final int IDLE_TIMEOUT_IN_MILLIS = 60000;
     public interface PluginTask
             extends RestClientInputTaskBase, MarketoRestClient.PluginTask
     {
-        @Config("maximum_retries")
-        @ConfigDefault("7")
-        Integer getMaximumRetries();
-
-        @Config("initial_retry_interval_milis")
-        @ConfigDefault("20000")
-        Integer getInitialRetryIntervalMilis();
-
-        @Config("maximum_retries_interval_milis")
-        @ConfigDefault("120000")
-        Integer getMaximumRetriesIntervalMilis();
-
         @Config("schema_column_prefix")
         @ConfigDefault("\"mk\"")
         String getSchemaColumnPrefix();
-
-        @Config("extracted_fields")
-        @ConfigDefault("[]")
-        List<String> getExtractedFields();
-
-        void setExtractedFields(List<String> extractedFields);
 
         DateTime getJobStartTime();
 
@@ -77,6 +55,9 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
     @Override
     public TaskReport ingestServiceData(T task, RecordImporter recordImporter, int taskIndex, PageBuilder pageBuilder)
     {
+        if (Exec.isPreview()) {
+            task.setBatchSize(PREVIEW_RECORD_LIMIT);
+        }
         try (MarketoRestClient restClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(restClient);
             Iterator<ServiceRecord> serviceRecords = getServiceRecords(marketoService, task);
@@ -95,10 +76,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
     @VisibleForTesting
     public MarketoRestClient createMarketoRestClient(PluginTask task)
     {
-        if (Exec.isPreview()) {
-            task.setBatchSize(PREVIEW_RECORD_LIMIT);
-        }
-        return new MarketoRestClient(task, new Jetty92RetryHelper(task.getMaximumRetries(), task.getInitialRetryIntervalMilis(), task.getMaximumRetriesIntervalMilis(), new DefaultJetty92ClientCreator(CONNECT_TIMEOUT_IN_MILLIS, IDLE_TIMEOUT_IN_MILLIS)));
+        return new MarketoRestClient(task);
     }
 
     @Override

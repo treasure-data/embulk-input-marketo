@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.ByteStreams;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.input.marketo.model.BulkExtractRangeHeader;
-import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.input.marketo.rest.RecordPagingIterable;
 import org.junit.Assert;
@@ -134,29 +133,5 @@ public class MarketoServiceImplTest
     {
         marketoService.describeLead();
         Mockito.verify(mockMarketoRestClient, Mockito.times(1)).describeLead();
-    }
-
-    @Test
-    public void describeLeadByProgram() throws Exception
-    {
-        List<MarketoField> marketoFields = new ArrayList<>();
-        Mockito.when(mockMarketoRestClient.describeLead()).thenReturn(marketoFields);
-        marketoService.describeLeadByProgram();
-        Mockito.verify(mockMarketoRestClient, Mockito.times(1)).describeLead();
-        Assert.assertEquals(1, marketoFields.size());
-        Assert.assertEquals("programId", marketoFields.get(0).getName());
-        Assert.assertEquals(MarketoField.MarketoDataType.STRING, marketoFields.get(0).getMarketoDataType());
-    }
-
-    @Test
-    public void describeLeadByLists() throws Exception
-    {
-        List<MarketoField> marketoFields = new ArrayList<>();
-        Mockito.when(mockMarketoRestClient.describeLead()).thenReturn(marketoFields);
-        marketoService.describeLeadByLists();
-        Mockito.verify(mockMarketoRestClient, Mockito.times(1)).describeLead();
-        Assert.assertEquals(1, marketoFields.size());
-        Assert.assertEquals("listId", marketoFields.get(0).getName());
-        Assert.assertEquals(MarketoField.MarketoDataType.STRING, marketoFields.get(0).getMarketoDataType());
     }
 }

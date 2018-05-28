@@ -10,6 +10,7 @@ import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -18,7 +19,7 @@ import java.util.List;
  */
 public class LeadWithListInputPlugin extends MarketoBaseInputPluginDelegate<LeadWithListInputPlugin.PluginTask>
 {
-    public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask
+    public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, LeadServiceResponseMapperBuilder.PluginTask
     {
     }
 
@@ -29,7 +30,10 @@ public class LeadWithListInputPlugin extends MarketoBaseInputPluginDelegate<Lead
     @Override
     protected Iterator<ServiceRecord> getServiceRecords(MarketoService marketoService, PluginTask task)
     {
-        return FluentIterable.from(marketoService.getAllListLead(task.getExtractedFields())).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION).iterator();
+        List<String> extractedFields = task.getExtractedFields();
+        // Remove LIST_ID_COLUMN_NAME when sent fields to Marketo since LIST_ID_COLUMN_NAME are added by plugin code
+        extractedFields.remove(MarketoUtils.LIST_ID_COLUMN_NAME);
+        return FluentIterable.from(marketoService.getAllListLead(extractedFields)).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION).iterator();
     }
 
     @Override
@@ -37,9 +41,25 @@ public class LeadWithListInputPlugin extends MarketoBaseInputPluginDelegate<Lead
     {
         try (MarketoRestClient marketoRestClient = createMarketoRestClient(task)) {
             MarketoService marketoService = new MarketoServiceImpl(marketoRestClient);
-            List<MarketoField> columns = marketoService.describeLeadByLists();
-            task.setExtractedFields(MarketoUtils.getFieldNameFromMarketoFields(columns, MarketoUtils.LIST_ID_COLUMN_NAME));
-            return MarketoUtils.buildDynamicResponseMapper(task.getSchemaColumnPrefix(), columns);
+            LeadWithListServiceResponseMapper serviceResponseMapper = new LeadWithListServiceResponseMapper(task, marketoService);
+            return serviceResponseMapper.buildServiceResponseMapper(task);
+        }
+    }
+
+    private static class LeadWithListServiceResponseMapper extends LeadServiceResponseMapperBuilder<PluginTask>
+    {
+
+        public LeadWithListServiceResponseMapper(LeadWithListInputPlugin.PluginTask task, MarketoService marketoService)
+        {
+            super(task, marketoService);
+        }
+
+        @Override
+        protected List<MarketoField> getLeadColumns()
+        {
+            List<MarketoField> leadColumns = super.getLeadColumns();
+            leadColumns.add(new MarketoField(MarketoUtils.LIST_ID_COLUMN_NAME, MarketoField.MarketoDataType.STRING));
+            return leadColumns;
         }
     }
 }

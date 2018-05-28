@@ -72,7 +72,7 @@ public class MarketoRestClientTest
         configSource.set("max_return", 2);
         MarketoRestClient.PluginTask task = configSource.loadConfig(MarketoRestClient.PluginTask.class);
         mockRetryHelper = Mockito.mock(Jetty92RetryHelper.class);
-        MarketoRestClient realRestClient = new MarketoRestClient(task, mockRetryHelper);
+        MarketoRestClient realRestClient = new MarketoRestClient(task);
         marketoRestClient = Mockito.spy(realRestClient);
     }
 
