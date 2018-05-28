@@ -1,3 +1,6 @@
+## 0.6.10 - 2018-05-28
+* [fixed] Add included column option [#87](https://github.com/treasure-data/embulk-input-marketo/pull/87)
+
 ## 0.6.9 - 2018-04-16
 * [fixed] Fix wrapped TimeoutException not retry [#85](https://github.com/treasure-data/embulk-input-marketo/pull/85)
 * [enhance] Make read_timeout configurable [#85](https://github.com/treasure-data/embulk-input-marketo/pull/85)
@@ -10,12 +13,7 @@
 
 ## 0.6.6 - 2018-01-30
 * [fixed] Fix JettyRetryHelper not closed [#82](https://github.com/treasure-data/embulk-input-marketo/pull/82)
-
-## 0.6.5 - 2017-12-19
-* [fixed] Fix infinite loop when import non bulk extract targets [#80](https://github.com/treasure-data/embulk-input-marketo/pull/80)
-
-## 0.6.4 - 2017-12-13
-* [fixed] Fix incorrect job timeout calculation  [#78](https://github.com/treasure-data/embulk-input-marketo/pull/78)
+## 0.6.5 - 2017-12-19 [fixed] Fix infinite loop when import non bulk extract targets [#80](https://github.com/treasure-data/embulk-input-marketo/pull/80) ## 0.6.4 - 2017-12-13 [fixed] Fix incorrect job timeout calculation  [#78](https://github.com/treasure-data/embulk-input-marketo/pull/78)
 * [enhance] Disable incremental import by updatedAt  [#77](https://github.com/treasure-data/embulk-input-marketo/pull/77)
 * [enhance] Add log for exported file size  [#76](https://github.com/treasure-data/embulk-input-marketo/pull/76)
 

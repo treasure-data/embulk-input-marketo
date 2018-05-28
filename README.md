@@ -71,9 +71,10 @@ Lead target extract all Marketo leads, it use Marketo bulk extract feature. Conf
 
 Configuration:
 
-| name               | required | default value | description                                                                                                                                                      |
-|--------------------|----------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **use_updated_at** | false    | false       | Support filter with `updateAt` column, but not all Marketo Account have the feature to filter by updatedAt, updatedAt don't support incremental ingestion        |
+| name                | required | default value | description                                                                                                                                               |
+|---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **use_updated_at**  | false    | false         | Support filter with `updateAt` column, but not all Marketo Account have the feature to filter by updatedAt, updatedAt don't support incremental ingestion |
+| **included_fields** | false    | null         | List of lead fields to included in export request sent to Marketo, can be used to reduce the size of BulkExtract file                                     |
 
 Schema type: Dynamic via describe lead endpoint.
 
@@ -111,6 +112,12 @@ Extract all Lead data including lead's list id
 
 `target: all_lead_with_list_id`
 
+Configuration:
+
+| name                | required | default value | description                                                                                                     |
+|---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------|
+| **included_fields** | false    | null         | List of lead fields to included in export request sent to Marketo, can be used to reduce request, response size |
+
 Schema type: Dynamic via describe leads. Schema will have 1 addition column name listId that contain the id of the list the lead belong to
 
 Incremental support: no
@@ -122,6 +129,12 @@ Range ingestion: no
 Extract all Lead data including lead's program id
 
 `target: all_lead_with_program_id`
+
+Configuration:
+
+| name                | required | default value | description                                                                                                     |
+|---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------|
+| **included_fields** | false    | null         | List of lead fields to included in export request sent to Marketo, can be used to reduce request, response size |
 
 Schema type: Dynamic via describe leads. Schema will have 1 addition column name listId that contain the id of the list the lead belong to
 
