@@ -25,7 +25,7 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
 {
     private static final Logger LOGGER = Exec.getLogger(LeadBulkExtractInputPlugin.class);
 
-    private static final String UPDATED_AT = "updatedAt";
+    public static final String UPDATED_AT = "updatedAt";
 
     public interface PluginTask extends MarketoBaseBulkExtractInputPlugin.PluginTask, LeadServiceResponseMapperBuilder.PluginTask
     {

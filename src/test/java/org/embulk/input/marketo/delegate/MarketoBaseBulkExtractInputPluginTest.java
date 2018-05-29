@@ -60,39 +60,6 @@ public class MarketoBaseBulkExtractInputPluginTest
         baseBulkExtractInputPlugin.validateInputTask(pluginTask);
     }
 
-    @Test(expected = ConfigException.class)
-    public void invalidInputTaskWhenIncrementalByUpdatedAt()
-    {
-        MarketoBaseBulkExtractInputPlugin.PluginTask task = mock(
-                MarketoBaseBulkExtractInputPlugin.PluginTask.class,
-                delegatesTo(validBaseTask));
-        when(task.getIncrementalColumn()).thenReturn(Optional.of("updatedAt"));
-        when(task.getIncremental()).thenReturn(true);
-        baseBulkExtractInputPlugin.validateInputTask(task);
-    }
-
-    @Test
-    public void validInputTaskWhenIncrementalOtherThanUpdatedAt()
-    {
-        MarketoBaseBulkExtractInputPlugin.PluginTask task = mock(
-                MarketoBaseBulkExtractInputPlugin.PluginTask.class,
-                delegatesTo(validBaseTask));
-        when(task.getIncremental()).thenReturn(true);
-        when(task.getIncrementalColumn()).thenReturn(Optional.of("anythingButUpdatedAt"));
-        baseBulkExtractInputPlugin.validateInputTask(task);  // should not throw
-    }
-
-    @Test
-    public void validInputTaskWhenNonIncrementalWhileSetUpdatedAt()
-    {
-        MarketoBaseBulkExtractInputPlugin.PluginTask task = mock(
-                MarketoBaseBulkExtractInputPlugin.PluginTask.class,
-                delegatesTo(validBaseTask));
-        when(task.getIncremental()).thenReturn(false);
-        when(task.getIncrementalColumn()).thenReturn(Optional.of("updatedAt"));
-        baseBulkExtractInputPlugin.validateInputTask(task);  // should not throw
-    }
-
     @Test()
     public void validateInputTaskToDateLessThanJobStartTime()
     {
