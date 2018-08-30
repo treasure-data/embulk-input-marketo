@@ -184,6 +184,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                         }
                     }
                 }
+                LOGGER.info("CALLING {} -> {} - params: {}", method, target, params);
                 if (contentProvider != null) {
                     request.content(contentProvider);
                 }
