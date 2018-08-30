@@ -23,7 +23,8 @@ public enum MarketoRESTEndpoint
     GET_LEADS_BY_LIST("/rest/v1/lists/${list_id}/leads.json"),
     GET_PROGRAMS("/rest/asset/v1/programs.json"),
     GET_LEADS_BY_PROGRAM("/rest/v1/leads/programs/${program_id}.json"),
-    GET_CAMPAIGN("/rest/v1/campaigns.json");
+    GET_CAMPAIGN("/rest/v1/campaigns.json"),
+    GET_PROGRAMS_BY_TAG("/rest/asset/v1/program/byTag.json");
 
     private String endpoint;
 

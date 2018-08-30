@@ -3,6 +3,7 @@ package org.embulk.input.marketo;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Optional;
+
 import org.embulk.base.restclient.DispatchingRestClientInputPluginDelegate;
 import org.embulk.base.restclient.RestClientInputPluginDelegate;
 import org.embulk.config.Config;
@@ -13,6 +14,7 @@ import org.embulk.input.marketo.delegate.CampaignInputPlugin;
 import org.embulk.input.marketo.delegate.LeadBulkExtractInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithListInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithProgramInputPlugin;
+import org.embulk.input.marketo.delegate.ProgramInputPlugin;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 
 import java.util.Date;
@@ -25,7 +27,9 @@ public class MarketoInputPluginDelegate
             LeadBulkExtractInputPlugin.PluginTask,
             LeadWithProgramInputPlugin.PluginTask,
             ActivityBulkExtractInputPlugin.PluginTask,
-            CampaignInputPlugin.PluginTask, MarketoRestClient.PluginTask
+            CampaignInputPlugin.PluginTask,
+            ProgramInputPlugin.PluginTask,
+            MarketoRestClient.PluginTask
     {
         @Config("target")
         Target getTarget();
@@ -68,7 +72,8 @@ public class MarketoInputPluginDelegate
         ACTIVITY(new ActivityBulkExtractInputPlugin()),
         CAMPAIGN(new CampaignInputPlugin()),
         ALL_LEAD_WITH_LIST_ID(new LeadWithListInputPlugin()),
-        ALL_LEAD_WITH_PROGRAM_ID(new LeadWithProgramInputPlugin());
+        ALL_LEAD_WITH_PROGRAM_ID(new LeadWithProgramInputPlugin()),
+        PROGRAM(new ProgramInputPlugin());
 
         private RestClientInputPluginDelegate restClientInputPluginDelegate;
 
