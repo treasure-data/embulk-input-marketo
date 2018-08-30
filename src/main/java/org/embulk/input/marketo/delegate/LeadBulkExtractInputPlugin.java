@@ -1,6 +1,7 @@
 package org.embulk.input.marketo.delegate;
 
 import com.google.common.base.Optional;
+
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.Config;
