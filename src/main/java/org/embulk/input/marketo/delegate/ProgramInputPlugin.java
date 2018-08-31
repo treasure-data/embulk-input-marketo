@@ -61,9 +61,9 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
         @ConfigDefault("null")
         Optional<List<String>> getFilterValues();
 
-        @Config("incremental")
-        @ConfigDefault("true")
-        Boolean getIncremental();
+        @Config("incremental_import")
+        @ConfigDefault("false")
+        boolean getIncrementalImport();
 
         @Config("report_duration")
         @ConfigDefault("null")
@@ -94,15 +94,26 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
             }
             DateTime earliest = new DateTime(task.getEarliestUpdatedAt().get());
 
-            // If incremental report next run the report duration will exist.
-            if (task.getIncremental() && task.getReportDuration().isPresent()) {
-                // Update the latestUpdatedAt for the config
-                DateTime latest = earliest.plus(task.getReportDuration().get());
-                // Only import until now
-                if (latest.isAfter(DateTime.now())) {
-                    latest = DateTime.now();
+            // If incremental report
+            if (task.getIncrementalImport()) {
+                // The very first run
+                if (!task.getReportDuration().isPresent()) {
+                    DateTime latest = new DateTime(task.getLatestUpdatedAt().get());
+                    if (latest.isAfter(DateTime.now())) {
+                        throw new ConfigException(String.format("`latest_updated_at` (%s) cannot precede the current date (%s) when incremental import",
+                                        latest.toString(DATE_FORMATER),
+                                        (DateTime.now().toString(DATE_FORMATER))));
+                    }
                 }
-                task.setLatestUpdatedAt(Optional.of(latest.toDate()));
+                else {
+                    // Update the latestUpdatedAt for the config
+                    DateTime latest = earliest.plus(task.getReportDuration().get());
+                    // Only import until now
+                    if (latest.isAfter(DateTime.now())) {
+                        latest = DateTime.now();
+                    }
+                    task.setLatestUpdatedAt(Optional.of(latest.toDate()));
+                }
             }
 
             // make sure latest_updated_at is not empty
@@ -155,7 +166,7 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
     {
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
         // set next next earliestUpdatedAt, latestUpdatedAt
-        if (task.getQueryBy().isPresent() && task.getQueryBy().get() == QueryBy.DATE_RANGE && task.getIncremental()) {
+        if (task.getQueryBy().isPresent() && task.getQueryBy().get() == QueryBy.DATE_RANGE && task.getIncrementalImport()) {
 
             DateTime earliest = new DateTime(task.getEarliestUpdatedAt().get());
             DateTime latest = new DateTime(task.getLatestUpdatedAt().get());
