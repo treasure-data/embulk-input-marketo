@@ -36,6 +36,10 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
         @ConfigDefault("\"mk\"")
         String getSchemaColumnPrefix();
 
+        @Config("incremental")
+        @ConfigDefault("true")
+        Boolean getIncremental();
+
         DateTime getJobStartTime();
 
         void setJobStartTime(DateTime dateTime);

@@ -61,10 +61,6 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
         @ConfigDefault("null")
         Optional<List<String>> getFilterValues();
 
-        @Config("incremental_import")
-        @ConfigDefault("false")
-        boolean getIncrementalImport();
-
         @Config("report_duration")
         @ConfigDefault("null")
         Optional<Long> getReportDuration();
@@ -94,8 +90,13 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
             }
             DateTime earliest = new DateTime(task.getEarliestUpdatedAt().get());
 
+            // make sure latest_updated_at is not empty
+            if (!task.getLatestUpdatedAt().isPresent()) {
+                throw new ConfigException("`latest_updated_at` is required when query by Date Range");
+            }
+
             // If incremental report
-            if (task.getIncrementalImport()) {
+            if (task.getIncremental()) {
                 // The very first run
                 if (!task.getReportDuration().isPresent()) {
                     DateTime latest = new DateTime(task.getLatestUpdatedAt().get());
@@ -114,11 +115,6 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
                     }
                     task.setLatestUpdatedAt(Optional.of(latest.toDate()));
                 }
-            }
-
-            // make sure latest_updated_at is not empty
-            if (!task.getLatestUpdatedAt().isPresent()) {
-                throw new ConfigException("`latest_updated_at` is required when query by Date Range");
             }
 
             DateTime latest = new DateTime(task.getLatestUpdatedAt().get());
@@ -166,7 +162,7 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
     {
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
         // set next next earliestUpdatedAt, latestUpdatedAt
-        if (task.getQueryBy().isPresent() && task.getQueryBy().get() == QueryBy.DATE_RANGE && task.getIncrementalImport()) {
+        if (task.getQueryBy().isPresent() && task.getQueryBy().get() == QueryBy.DATE_RANGE && task.getIncremental()) {
 
             DateTime earliest = new DateTime(task.getEarliestUpdatedAt().get());
             DateTime latest = new DateTime(task.getLatestUpdatedAt().get());

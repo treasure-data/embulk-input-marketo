@@ -68,7 +68,6 @@ public class ProgramInputPluginTest
 
     private MarketoRestClient mockRestClient;
 
-
     @Before
     public void setUp() throws Exception
     {
@@ -126,7 +125,7 @@ public class ProgramInputPluginTest
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
                         .set("latest_updated_at", Optional.of(latestUpdatedAt))
-                        .set("incremental_import", true);
+                        .set("incremental", true);
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
@@ -153,7 +152,7 @@ public class ProgramInputPluginTest
         thrown.expectMessage(String.format("Invalid date range. `earliest_updated_at` (%s) cannot precede the `latest_updated_at` (%s).",
                         earliestUpdatedAt.toString(DATE_FORMATER),
                         latestUpdatedAt.toString(DATE_FORMATER)));
-     
+
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
@@ -187,10 +186,10 @@ public class ProgramInputPluginTest
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
                         .set("latest_updated_at", Optional.of(latestUpdatedAt))
-                        .set("incremental_import", true);
+                        .set("incremental", true);
 
         ConfigDiff diff = mockPlugin.buildConfigDiff(config.loadConfig(PluginTask.class), Mockito.mock(Schema.class), 1, Arrays.asList(taskReport1));
-        
+
         long reportDuration = diff.get(Long.class, "report_duration");
         String nextErliestUpdatedAt = diff.get(String.class, "earliest_updated_at");
 
@@ -198,7 +197,8 @@ public class ProgramInputPluginTest
         assertEquals(nextErliestUpdatedAt, latestUpdatedAt.plusSeconds(1).toString(DATE_FORMATER));
     }
 
-    private void testRun(ConfigSource config, Predicate<MarketoRestClient> expectedCall) throws JsonParseException, JsonMappingException, IOException {
+    private void testRun(ConfigSource config, Predicate<MarketoRestClient> expectedCall) throws JsonParseException, JsonMappingException, IOException
+    {
         // Mock response data
         RecordPagingIterable<ObjectNode> mockRecordPagingIterable = Mockito.mock(RecordPagingIterable.class);
         JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, ObjectNode.class);
@@ -220,7 +220,7 @@ public class ProgramInputPluginTest
         // The method getProgramByTag is called 1 time
 //        Mockito.verify(mockRestClient, Mockito.times(1)).getProgramsByTag(Mockito.anyString(), Mockito.anyString());
         expectedCall.apply(mockRestClient);
-        
+
         Schema embulkSchema = mapper.getEmbulkSchema();
         // 17 columns
         assertEquals(embulkSchema.size(), 17);
@@ -232,7 +232,8 @@ public class ProgramInputPluginTest
     }
 
     @Test
-    public void testRunQueryByTagType() throws JsonParseException, JsonMappingException, IOException {
+    public void testRunQueryByTagType() throws JsonParseException, JsonMappingException, IOException
+    {
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.TAG_TYPE))
                         .set("tag_type", Optional.of("dummy"))
@@ -250,8 +251,8 @@ public class ProgramInputPluginTest
     }
 
     @Test
-    public void testRunWithoutQueryBy() throws JsonParseException, JsonMappingException, IOException {
-        
+    public void testRunWithoutQueryBy() throws JsonParseException, JsonMappingException, IOException
+    {
         Predicate<MarketoRestClient> expectedCall = new Predicate<MarketoRestClient>()
         {
             @Override
@@ -264,8 +265,9 @@ public class ProgramInputPluginTest
         testRun(baseConfig, expectedCall);
     }
 
-    @Test 
-    public void testRunQueryByDateRange() throws JsonParseException, JsonMappingException, IOException {
+    @Test
+    public void testRunQueryByDateRange() throws JsonParseException, JsonMappingException, IOException
+    {
         DateTime earliestUpdatedAt = DateTime.now().minusDays(20);
         DateTime latestUpdatedAt = DateTime.now().minusDays(10);
         ConfigSource config = baseConfig
@@ -288,7 +290,8 @@ public class ProgramInputPluginTest
         testRun(config, expectedCall);
     }
 
-    public ConfigSource config() throws IOException {
+    public ConfigSource config() throws IOException
+    {
         ConfigLoader configLoader = runtime.getInjector().getInstance(ConfigLoader.class);
         return configLoader.fromYaml(this.getClass().getResourceAsStream("/config/rest_config.yaml"));
     }
