@@ -108,10 +108,12 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
                     logger.info("`report_duration` is present, Prefer `report_duration` over `latest_updated_at`");
                     // Update the latestUpdatedAt for the config
                     DateTime latest = earliest.plus(task.getReportDuration().get());
-                    // Only import until now for incremental import
+                    // Stop import if exceeded current date
                     if (task.getIncremental() && latest.isAfter(DateTime.now())) {
-                        latest = DateTime.now();
-                        logger.warn("Trying to run incremental import for the future time. Set `latest_updated_at` to current {}", latest.toString(DATE_FORMATTER));
+                        throw new ConfigException(String.format("Cannot run incremental import for future time. "
+                                        + "`earliest_updated_at` (%s) + `report_duration` is greater than current date: %s",
+                                        earliest.toString(DATE_FORMATTER),
+                                        DateTime.now().toString(DATE_FORMATTER)));
                     }
                     task.setLatestUpdatedAt(Optional.of(latest.toDate()));
                 }

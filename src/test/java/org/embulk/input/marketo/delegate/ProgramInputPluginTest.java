@@ -115,6 +115,21 @@ public class ProgramInputPluginTest
     }
 
     @Test
+    public void testLatestUpdatedAtExceedCurrentTimeIncrementalImport()
+    {
+        DateTime earliest = DateTime.now().minusDays(1);
+        long reportDuration = 2 * 24 * 60 * 60 * 1000; // 2 days
+        thrown.expect(ConfigException.class);
+        thrown.expectMessage(String.format("Cannot run incremental import for future time. `earliest_updated_at` (%s) + `report_duration` is greater than current date", earliest.toString(DATE_FORMATER)));
+        ConfigSource config = baseConfig
+                        .set("query_by", Optional.of(QueryBy.DATE_RANGE))
+                        .set("incremental", Boolean.TRUE)
+                        .set("report_duration", Optional.of(reportDuration))
+                        .set("earliest_updated_at", Optional.of(earliest.toDate()));
+        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+    }
+
+    @Test
     public void testQueryByDateRangeConfigMissingLatestUpdatedAtNonIncremental()
     {
         thrown.expect(ConfigException.class);
