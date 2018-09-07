@@ -16,12 +16,14 @@ import org.embulk.config.ConfigException;
 import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoUtils;
+import org.embulk.spi.Exec;
 import org.embulk.spi.Schema;
 import org.embulk.spi.type.Types;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
 
 import java.util.Date;
 import java.util.Iterator;
@@ -30,6 +32,7 @@ import java.util.List;
 public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramInputPlugin.PluginTask>
 {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormat.forPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
+    private final Logger logger = Exec.getLogger(getClass());
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask
     {
@@ -91,32 +94,31 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
                     throw new ConfigException("`earliest_updated_at` is required when query by Date Range");
                 }
 
-                DateTime earliest = new DateTime(task.getEarliestUpdatedAt().get());
-                // make sure latest_updated_at is not empty
-                if (!task.getLatestUpdatedAt().isPresent()) {
-                    throw new ConfigException("`latest_updated_at` is required when query by Date Range");
+                if (task.getIncremental() && task.getLatestUpdatedAt().isPresent()) {
+                    DateTime latest = new DateTime(task.getLatestUpdatedAt().get());
+                    if (latest.isAfter(DateTime.now())) {
+                        throw new ConfigException(String.format("`latest_updated_at` (%s) cannot precede the current date (%s) when incremental import",
+                                        latest.toString(DATE_FORMATTER),
+                                        (DateTime.now().toString(DATE_FORMATTER))));
+                    }
                 }
 
-                // If incremental report
-                if (task.getIncremental()) {
-                    // The very first run
-                    if (!task.getReportDuration().isPresent()) {
-                        DateTime latest = new DateTime(task.getLatestUpdatedAt().get());
-                        if (latest.isAfter(DateTime.now())) {
-                            throw new ConfigException(String.format("`latest_updated_at` (%s) cannot precede the current date (%s) when incremental import",
-                                            latest.toString(DATE_FORMATTER),
-                                            (DateTime.now().toString(DATE_FORMATTER))));
-                        }
+                DateTime earliest = new DateTime(task.getEarliestUpdatedAt().get());
+                if (task.getReportDuration().isPresent()) {
+                    logger.info("`report_duration` is present, Prefer `report_duration` over `latest_updated_at`");
+                    // Update the latestUpdatedAt for the config
+                    DateTime latest = earliest.plus(task.getReportDuration().get());
+                    // Only import until now for incremental import
+                    if (task.getIncremental() && latest.isAfter(DateTime.now())) {
+                        latest = DateTime.now();
+                        logger.warn("Trying to run incremental import for the future time. Set `latest_updated_at` to current {}", latest.toString(DATE_FORMATTER));
                     }
-                    else {
-                        // Update the latestUpdatedAt for the config
-                        DateTime latest = earliest.plus(task.getReportDuration().get());
-                        // Only import until now
-                        if (latest.isAfter(DateTime.now())) {
-                            latest = DateTime.now();
-                        }
-                        task.setLatestUpdatedAt(Optional.of(latest.toDate()));
-                    }
+                    task.setLatestUpdatedAt(Optional.of(latest.toDate()));
+                }
+
+                // latest_updated_at is required calculate time range
+                if (!task.getLatestUpdatedAt().isPresent()) {
+                    throw new ConfigException("`latest_updated_at` is required when query by Date Range");
                 }
 
                 DateTime latest = new DateTime(task.getLatestUpdatedAt().get());

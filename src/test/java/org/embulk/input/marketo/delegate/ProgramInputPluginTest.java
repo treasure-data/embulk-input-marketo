@@ -115,6 +115,39 @@ public class ProgramInputPluginTest
     }
 
     @Test
+    public void testQueryByDateRangeConfigMissingLatestUpdatedAtNonIncremental()
+    {
+        thrown.expect(ConfigException.class);
+        thrown.expectMessage("`latest_updated_at` is required when query by Date Range");
+        ConfigSource config = baseConfig
+                        .set("query_by", Optional.of(QueryBy.DATE_RANGE))
+                        .set("incremental", Boolean.FALSE)
+                        .set("earliest_updated_at", Optional.of(DateTime.now().minusDays(10).toDate()));
+        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+    }
+
+    @Test
+    public void testNoErrorQueryByDateRangeConfigHasReportDurationNonIncremental()
+    {
+        ConfigSource config = baseConfig
+                        .set("query_by", Optional.of(QueryBy.DATE_RANGE))
+                        .set("report_duration", Optional.of(60L * 1000))
+                        .set("incremental", Boolean.FALSE)
+                        .set("earliest_updated_at", Optional.of(DateTime.now().minusDays(10).toDate()));
+        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+    }
+
+    @Test
+    public void testNoErrorQueryByDateRangeConfigHasReportDuration()
+    {
+        ConfigSource config = baseConfig
+                        .set("report_duration", Optional.of(60L * 1000))
+                        .set("query_by", Optional.of(QueryBy.DATE_RANGE))
+                        .set("earliest_updated_at", Optional.of(DateTime.now().minusDays(10).toDate()));
+        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+    }
+
+    @Test
     public void testIncrementalConfigHasLatestUpdatedAtExceededNow()
     {
         DateTime earliestUpdatedAt = DateTime.now().minusDays(10);
@@ -197,6 +230,7 @@ public class ProgramInputPluginTest
         assertEquals(nextErliestUpdatedAt, latestUpdatedAt.plusSeconds(1).toString(DATE_FORMATER));
     }
 
+    @SuppressWarnings("unchecked")
     private void testRun(ConfigSource config, Predicate<MarketoRestClient> expectedCall) throws JsonParseException, JsonMappingException, IOException
     {
         // Mock response data
@@ -276,6 +310,7 @@ public class ProgramInputPluginTest
                         .set("latest_updated_at", Optional.of(latestUpdatedAt));
         Predicate<MarketoRestClient> expectedCall = new Predicate<MarketoRestClient>()
         {
+            @SuppressWarnings("unchecked")
             @Override
             public boolean apply(MarketoRestClient input)
             {
