@@ -211,12 +211,7 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
         @JsonCreator
         public static QueryBy of(String value)
         {
-            if (value != null) {
-                return QueryBy.valueOf(value.toUpperCase());
-            }
-            else {
-                return null;
-            }
+            return QueryBy.valueOf(value.toUpperCase());
         }
     }
 }
