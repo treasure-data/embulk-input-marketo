@@ -7,6 +7,7 @@ import com.google.common.collect.FluentIterable;
 
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
+import org.embulk.base.restclient.record.RecordImporter;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.Config;
@@ -17,6 +18,7 @@ import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.spi.Exec;
+import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
 import org.embulk.spi.type.Types;
 import org.joda.time.DateTime;
@@ -94,27 +96,11 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
                     throw new ConfigException("`earliest_updated_at` is required when query by Date Range");
                 }
 
-                if (task.getIncremental() && task.getLatestUpdatedAt().isPresent()) {
-                    DateTime latest = new DateTime(task.getLatestUpdatedAt().get());
-                    if (latest.isAfter(DateTime.now())) {
-                        throw new ConfigException(String.format("`latest_updated_at` (%s) cannot precede the current date (%s) when incremental import",
-                                        latest.toString(DATE_FORMATTER),
-                                        (DateTime.now().toString(DATE_FORMATTER))));
-                    }
-                }
-
                 DateTime earliest = new DateTime(task.getEarliestUpdatedAt().get());
                 if (task.getReportDuration().isPresent()) {
                     logger.info("`report_duration` is present, Prefer `report_duration` over `latest_updated_at`");
                     // Update the latestUpdatedAt for the config
                     DateTime latest = earliest.plus(task.getReportDuration().get());
-                    // Stop import if exceeded current date
-                    if (task.getIncremental() && latest.isAfter(DateTime.now())) {
-                        throw new ConfigException(String.format("Cannot run incremental import for future time. "
-                                        + "`earliest_updated_at` (%s) + `report_duration` is greater than current date: %s",
-                                        earliest.toString(DATE_FORMATTER),
-                                        DateTime.now().toString(DATE_FORMATTER)));
-                    }
                     task.setLatestUpdatedAt(Optional.of(latest.toDate()));
                 }
 
@@ -141,6 +127,28 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
                 }
             }
         }
+    }
+
+    @Override
+    public TaskReport ingestServiceData(PluginTask task, RecordImporter recordImporter, int taskIndex, PageBuilder pageBuilder)
+    {
+        // query by date range and incremental import and not preview
+        if (task.getQueryBy().isPresent() && task.getQueryBy().get() == QueryBy.DATE_RANGE && task.getIncremental() && !Exec.isPreview()) {
+            DateTime latestUpdateAt = new DateTime(task.getLatestUpdatedAt().get());
+            DateTime now = DateTime.now();
+            // Do not run incremental import if latest_updated_at precede current time
+            if (latestUpdateAt.isAfter(now)) {
+                logger.warn("`latest_updated_at` ({}) preceded current time ({}). Will try to import next run", latestUpdateAt.toString(DATE_FORMATTER), now.toString(DATE_FORMATTER));
+
+                TaskReport taskReport = Exec.newTaskReport();
+                taskReport.set("earliest_updated_at", new DateTime(task.getEarliestUpdatedAt().get()).toString(DATE_FORMATTER));
+                if (task.getReportDuration().isPresent()) {
+                    taskReport.set("report_duration", task.getReportDuration().get());
+                }
+                return taskReport;
+            }
+        }
+        return super.ingestServiceData(task, recordImporter, taskIndex, pageBuilder);
     }
 
     @Override

@@ -115,21 +115,6 @@ public class ProgramInputPluginTest
     }
 
     @Test
-    public void testLatestUpdatedAtExceedCurrentTimeIncrementalImport()
-    {
-        DateTime earliest = DateTime.now().minusDays(1);
-        long reportDuration = 2 * 24 * 60 * 60 * 1000; // 2 days
-        thrown.expect(ConfigException.class);
-        thrown.expectMessage(String.format("Cannot run incremental import for future time. `earliest_updated_at` (%s) + `report_duration` is greater than current date", earliest.toString(DATE_FORMATER)));
-        ConfigSource config = baseConfig
-                        .set("query_by", Optional.of(QueryBy.DATE_RANGE))
-                        .set("incremental", Boolean.TRUE)
-                        .set("report_duration", Optional.of(reportDuration))
-                        .set("earliest_updated_at", Optional.of(earliest.toDate()));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
-    }
-
-    @Test
     public void testQueryByDateRangeConfigMissingLatestUpdatedAtNonIncremental()
     {
         thrown.expect(ConfigException.class);
@@ -159,21 +144,6 @@ public class ProgramInputPluginTest
                         .set("report_duration", Optional.of(60L * 1000))
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("earliest_updated_at", Optional.of(DateTime.now().minusDays(10).toDate()));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
-    }
-
-    @Test
-    public void testIncrementalConfigHasLatestUpdatedAtExceededNow()
-    {
-        DateTime earliestUpdatedAt = DateTime.now().minusDays(10);
-        DateTime latestUpdatedAt = DateTime.now().plusDays(1);
-        thrown.expect(ConfigException.class);
-        thrown.expectMessage(String.format("`latest_updated_at` (%s) cannot precede the current date", latestUpdatedAt.toString(DATE_FORMATER)));
-        ConfigSource config = baseConfig
-                        .set("query_by", Optional.of(QueryBy.DATE_RANGE))
-                        .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
-                        .set("latest_updated_at", Optional.of(latestUpdatedAt))
-                        .set("incremental", true);
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
@@ -222,6 +192,33 @@ public class ProgramInputPluginTest
                         .set("latest_updated_at", Optional.of(latestUpdatedAt))
                         .set("filter_type", Optional.of("dummy"));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+    }
+
+    @Test
+    public void testSkipIncrementalRunIfLastUpdatedAtExceedsNow()
+    {
+        DateTime earliestUpdatedAt = DateTime.now().minusDays(20);
+        DateTime latestUpdatedAt = earliestUpdatedAt.plusDays(21);
+        //21 days
+        long reportDuration = 21 * 24 * 60 * 60 * 1000;
+
+        ConfigSource config = baseConfig
+                        .set("query_by", Optional.of(QueryBy.DATE_RANGE))
+                        .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
+                        .set("latest_updated_at", Optional.of(latestUpdatedAt))
+                        .set("report_duration", reportDuration)
+                        .set("incremental", true);
+        ServiceResponseMapper<? extends ValueLocator> mapper = mockPlugin.buildServiceResponseMapper(config.loadConfig(PluginTask.class));
+        RecordImporter recordImporter = mapper.createRecordImporter();
+        PageBuilder mockPageBuilder = Mockito.mock(PageBuilder.class);
+        TaskReport taskReport = mockPlugin.ingestServiceData(config.loadConfig(PluginTask.class), recordImporter, 1, mockPageBuilder);
+        // page builder object should never get called.
+        Mockito.verify(mockPageBuilder, Mockito.never()).addRecord();
+
+        String earliestUpdatedAtStr = taskReport.get(String.class, "earliest_updated_at");
+        long duration = taskReport.get(Long.class, "report_duration");
+        assertEquals(duration, reportDuration);
+        assertEquals(earliestUpdatedAtStr, earliestUpdatedAt.toString(DATE_FORMATER));
     }
 
     @Test
