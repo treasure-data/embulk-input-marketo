@@ -613,6 +613,15 @@ public class CsvTokenizer
         }
 
         @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + character;
+            return result;
+        }
+
+        @Override
         public boolean equals(Object obj)
         {
             if (!(obj instanceof QuoteCharacter)) {
@@ -672,6 +681,15 @@ public class CsvTokenizer
             }
             EscapeCharacter o = (EscapeCharacter) obj;
             return character == o.character;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + character;
+            return result;
         }
     }
 }

@@ -1,6 +1,7 @@
 package org.embulk.input.marketo.delegate;
 
 import com.google.common.collect.FluentIterable;
+
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
@@ -10,7 +11,6 @@ import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -48,7 +48,6 @@ public class LeadWithListInputPlugin extends MarketoBaseInputPluginDelegate<Lead
 
     private static class LeadWithListServiceResponseMapper extends LeadServiceResponseMapperBuilder<PluginTask>
     {
-
         public LeadWithListServiceResponseMapper(LeadWithListInputPlugin.PluginTask task, MarketoService marketoService)
         {
             super(task, marketoService);

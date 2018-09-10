@@ -23,4 +23,10 @@ public interface MarketoService
     Iterable<ObjectNode> getAllProgramLead(List<String> extractFields);
 
     Iterable<ObjectNode> getCampaign();
+
+    Iterable<ObjectNode> getPrograms();
+
+    Iterable<ObjectNode> getProgramsByTag(String tagType, String tagValue);
+
+    Iterable<ObjectNode> getProgramsByDateRange(Date earliestUpdatedAt, Date latestUpdatedAt, String filterType, List<String> filterValues);
 }

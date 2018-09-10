@@ -6,6 +6,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
+
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
 import org.embulk.config.Config;
@@ -341,6 +342,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
     {
         return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_CAMPAIGN.getEndpoint(), null, ObjectNode.class);
     }
+
     private <T> RecordPagingIterable<T> getRecordWithOffsetPagination(final String endPoint, final Multimap<String, String> parameters, final Class<T> recordClass)
     {
         return new RecordPagingIterable<>(new RecordPagingIterable.PagingFunction<RecordPagingIterable.OffsetPage<T>>()
@@ -410,5 +412,27 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 return new RecordPagingIterable.TokenPage<>(marketoResponse.getResult(), marketoResponse.getNextPageToken(), marketoResponse.getNextPageToken() != null);
             }
         });
+    }
+
+    public Iterable<ObjectNode> getProgramsByTag(String tagType, String tagValue)
+    {
+        Multimap<String, String> multimap = ArrayListMultimap.create();
+        multimap.put("tagType", tagType);
+        multimap.put("tagValue", tagValue);
+        return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_PROGRAMS_BY_TAG.getEndpoint(), multimap, ObjectNode.class);
+    }
+
+    public Iterable<ObjectNode> getProgramsByDateRange(Date earliestUpdatedAt, Date latestUpdatedAt, String filterType, List<String> filterValues)
+    {
+        SimpleDateFormat timeFormat = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
+        Multimap<String, String> multimap = ArrayListMultimap.create();
+        multimap.put("earliestUpdatedAt", timeFormat.format(earliestUpdatedAt));
+        multimap.put("latestUpdatedAt", timeFormat.format(latestUpdatedAt));
+        // put filter params if exist.
+        if (filterType != null) {
+            multimap.put("filterType", filterType);
+            multimap.put("filterValues", String.join(",", filterValues));
+        }
+        return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint(), multimap, ObjectNode.class);
     }
 }

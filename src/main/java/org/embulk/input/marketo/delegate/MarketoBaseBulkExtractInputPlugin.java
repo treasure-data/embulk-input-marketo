@@ -79,10 +79,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         @ConfigDefault("3600")
         Integer getBulkJobTimeoutSecond();
 
-        @Config("incremental")
-        @ConfigDefault("true")
-        Boolean getIncremental();
-
         @Config("to_date")
         @ConfigDefault("null")
         Optional<Date> getToDate();

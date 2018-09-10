@@ -206,4 +206,22 @@ public class MarketoServiceImpl implements MarketoService
             return byteWritten;
         }
     }
+
+    @Override
+    public Iterable<ObjectNode> getPrograms()
+    {
+        return marketoRestClient.getPrograms();
+    }
+
+    @Override
+    public Iterable<ObjectNode> getProgramsByTag(String tagType, String tagValue)
+    {
+        return marketoRestClient.getProgramsByTag(tagType, tagValue);
+    }
+
+    @Override
+    public Iterable<ObjectNode> getProgramsByDateRange(Date earliestUpdatedAt, Date latestUpdatedAt, String filterType, List<String> filterValues)
+    {
+        return marketoRestClient.getProgramsByDateRange(earliestUpdatedAt, latestUpdatedAt, filterType, filterValues);
+    }
 }

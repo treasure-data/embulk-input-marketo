@@ -12,6 +12,7 @@ embulk-input-marketo is the gem preparing Embulk input plugins for [Marketo](htt
 - Lead by list(all_lead_with_list_id)
 - Lead by program(all_lead_with_program_id)
 - Campaign(campaign)
+- Assets Programs (program)
 
 This plugin uses Marketo REST API.
 
@@ -57,7 +58,7 @@ All bulk extract target use this configuration parameter
 | name                        | required | default value | description                                                                                                                   |
 |-----------------------------|----------|---------------|-------------------------------------------------------------------------------------------------------------------------------|
 | **from_date**               | true     |               | Import data since this date. Example: 2017-10-11T06:43:24+00:00                                                               |
-| **fetch_days**              | false    | 1             | Ammount of days to fetch since from_date                                                                                      |
+| **fetch_days**              | false    | 1             | Amount of days to fetch since from_date                                                                                      |
 | **polling_interval_second** | false    | 60            | Amount of time to wait between pooling job status in second                                                                   |
 | **bulk_job_timeout_second** | false    | 3600          | Amount of time to wait for bulk job to complete in second                                                                     |
 | **incremental**             | false    | true          | If incremental is set to true, next run will have from_date set to the previous to_date(calculated by from_date + fetch_days) |
@@ -84,7 +85,7 @@ Range ingestion: yes
 
 ### Activity
 
-Activity target extract all Marketo  actvity log. Configuration include all bulk extract configuraiont
+Activity target extract all Marketo  activity log. Configuration include all bulk extract configuration
 
 `target: activity`
 
@@ -124,7 +125,7 @@ Incremental support: no
 
 Range ingestion: no
 
-### Laed by program
+### Lead by program
 
 Extract all Lead data including lead's program id
 
@@ -141,6 +142,32 @@ Schema type: Dynamic via describe leads. Schema will have 1 addition column name
 Incremental support: no
 
 Range ingestion: no
+
+### Assets programs
+
+Get Assets Programs by Query Tag type, Date range or all if no query by specified.
+
+`target: program`
+
+Configuration:
+
+| name                        | required | default value | description                                                                                                                                                  |
+|-----------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **query_by**                | false    |   null        | Get assets programs by query, supported values `date_range`, `tag_type` leave unset to fetch all programs                                                    |
+| **earliest_updated_at**     | false    |   null        | Required if query by `date_range` is selected. Exclude programs prior to this date. Must be valid ISO-8601 string                                            |
+| **latest_updated_at**       | false    |   null        | Required if query by `date_range` is selected. Exclude programs after this date. Must be valid ISO-8601 string                                               |
+| **filter_type**             | false    |   null        | Optional value send with query by `date_range` is selected to filter out the result from Marketo. Supported values `id`, `programId`, `folderId`, `workspace`|
+| **filter_values**           | false    |   null        | Set the values associated with `filter_type`                                                                                                                 |
+| **tag_type**                | false    |   null        | Required if query by `tag_type` is selected. Type of program tag                                                                                             |
+| **tag_value**               | false    |   null        | Required if query by `tag_type` is selected. Value of the tag                                                                                                |
+| **report_duration**         | false    |   null        | Amount of milliseconds to fetch from `earliest_updated_at`. If `incremental = true` this value will automatically calculated for the first run by `latest_updated_at` - `earliest_updated_at` |
+| **incremental**             | false    | true          | If incremental is set to true, next run will have `earliest_updated_at` set to the previous `latest_updated_at` + `report_duration`. Incremental import only support by query `date_range`     |
+
+Schema type: Static schema
+
+Incremental support: yes (Query by `date_range` only)
+
+Range ingestion: yes
 
 ## Example
 
@@ -162,4 +189,22 @@ out:
 You can run `embulk guess partial-config.yml -o lead-config.yml` and got `lead-config.yml`. `lead-config.yml` includes a schema for Lead.
 
 Next, you can run `embulk preview lead-config.yml` for preview and `embulk run lead-config.yml` for run.
+
+Example of Assets Programs config
+```yaml
+in:
+  account_id: ACCOUNT_ID
+  client_id: CLIENT_ID
+  client_secret: CLIENT_SECRET
+  target: program
+  type: marketo
+  query_by: date_range
+  filter_type: folderId
+  filter_values: 
+   - 2598
+   - 1001
+  earliest_updated_at: 2018-08-20T00:00:00.000Z
+  latest_updated_at: 2018-08-31T00:00:00.000Z
+  incremental: true
+  ```
 

@@ -20,11 +20,15 @@ import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.spi.DataException;
 import org.embulk.util.retryhelper.jetty92.Jetty92ResponseReader;
 import org.embulk.util.retryhelper.jetty92.Jetty92RetryHelper;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -442,5 +446,102 @@ public class MarketoRestClientTest
         Multimap params1 = params.get(0);
         Assert.assertEquals("GET", params1.get("_method").iterator().next());
         Assert.assertEquals("nextPageToken=z4MgsIiC5C%3D%3D%3D%3D%3D%3D&batchSize=300", content);
+    }
+
+    @Test
+    public void testGetProgramsByTagType() throws Exception
+    {
+        ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/program_response.json")))).get("responses");
+        MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
+        MarketoResponse<ObjectNode> page2 = OBJECT_MAPPER.readValue(listPages.get(1).toString(), RESPONSE_TYPE);
+
+        final String tagType = "dummy_tag";
+        final String tagValue = "dummy_value";
+
+        Mockito.doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(
+                        Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS_BY_TAG.getEndpoint()),
+                        (Map) ArgumentMatchers.isNull(),
+                        Mockito.any(Multimap.class),
+                        Mockito.any(MarketoResponseJetty92EntityReader.class));
+        Iterable<ObjectNode> lists = marketoRestClient.getProgramsByTag(tagType, tagValue);
+        Iterator<ObjectNode> iterator = lists.iterator();
+        ObjectNode program1 = iterator.next();
+        ObjectNode program2 = iterator.next();
+        ObjectNode program3 = iterator.next();
+        Assert.assertFalse(iterator.hasNext());
+        Assert.assertEquals("MB_Sep_25_test_program", program1.get("name").asText());
+        Assert.assertEquals("TD Output Test Program", program2.get("name").asText());
+        Assert.assertEquals("Bill_progream", program3.get("name").asText());
+
+        ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
+        Mockito.verify(marketoRestClient, Mockito.times(2)).doGet(
+                        Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS_BY_TAG.getEndpoint()),
+                        (Map) ArgumentMatchers.isNull(),
+                        immutableListMultimapArgumentCaptor.capture(),
+                        Mockito.any(MarketoResponseJetty92EntityReader.class));
+        List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
+
+        ImmutableListMultimap params1 = params.get(0);
+        Assert.assertEquals("0", params1.get("offset").get(0));
+        Assert.assertEquals("2", params1.get("maxReturn").get(0));
+        Assert.assertEquals("dummy_tag", params1.get("tagType").get(0));
+        Assert.assertEquals("dummy_value", params1.get("tagValue").get(0));
+
+        ImmutableListMultimap params2 = params.get(1);
+        Assert.assertEquals("2", params2.get("offset").get(0));
+        Assert.assertEquals("dummy_tag", params2.get("tagType").get(0));
+        Assert.assertEquals("dummy_value", params2.get("tagValue").get(0));
+    }
+
+    @Test
+    public void TestProgramsByDateRange() throws Exception
+    {
+        ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/program_response.json")))).get("responses");
+        MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
+        MarketoResponse<ObjectNode> page2 = OBJECT_MAPPER.readValue(listPages.get(1).toString(), RESPONSE_TYPE);
+
+        Mockito.doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(
+                        Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()),
+                        (Map) ArgumentMatchers.isNull(),
+                        Mockito.any(Multimap.class),
+                        Mockito.any(MarketoResponseJetty92EntityReader.class));
+        DateTime earliestUpdatedAt = DateTime.now().minusDays(10);
+        DateTime latestUpdatedAt = earliestUpdatedAt.plusDays(5);
+        String filterType = "filter1";
+        List<String> filterValues = Arrays.asList("value1", "value2");
+
+        Iterable<ObjectNode> lists = marketoRestClient.getProgramsByDateRange(earliestUpdatedAt.toDate(), latestUpdatedAt.toDate(), filterType, filterValues);
+        Iterator<ObjectNode> iterator = lists.iterator();
+        ObjectNode program1 = iterator.next();
+        ObjectNode program2 = iterator.next();
+        ObjectNode program3 = iterator.next();
+        Assert.assertFalse(iterator.hasNext());
+        Assert.assertEquals("MB_Sep_25_test_program", program1.get("name").asText());
+        Assert.assertEquals("TD Output Test Program", program2.get("name").asText());
+        Assert.assertEquals("Bill_progream", program3.get("name").asText());
+
+        ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
+        Mockito.verify(marketoRestClient, Mockito.times(2)).doGet(
+                        Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()),
+                        (Map) ArgumentMatchers.isNull(),
+                        immutableListMultimapArgumentCaptor.capture(),
+                        Mockito.any(MarketoResponseJetty92EntityReader.class));
+        List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
+        DateTimeFormatter fmt = DateTimeFormat.forPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
+
+        ImmutableListMultimap params1 = params.get(0);
+        Assert.assertEquals("0", params1.get("offset").get(0));
+        Assert.assertEquals("2", params1.get("maxReturn").get(0));
+        Assert.assertEquals(earliestUpdatedAt.toString(fmt), params1.get("earliestUpdatedAt").get(0));
+        Assert.assertEquals(latestUpdatedAt.toString(fmt), params1.get("latestUpdatedAt").get(0));
+        Assert.assertEquals("filter1", params1.get("filterType").get(0));
+        Assert.assertEquals(String.join(",", filterValues), params1.get("filterValues").get(0));
+
+        ImmutableListMultimap params2 = params.get(1);
+        Assert.assertEquals("2", params2.get("offset").get(0));
+        Assert.assertEquals(earliestUpdatedAt.toString(fmt), params2.get("earliestUpdatedAt").get(0));
+        Assert.assertEquals(latestUpdatedAt.toString(fmt), params2.get("latestUpdatedAt").get(0));
+        Assert.assertEquals("filter1", params2.get("filterType").get(0));
+        Assert.assertEquals(String.join(",", filterValues), params2.get("filterValues").get(0));
     }
 }
