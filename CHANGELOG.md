@@ -1,3 +1,6 @@
+## 0.6.11 - 2018-09-10
+* [enhance] Implement Assets Programs [#89](https://github.com/treasure-data/embulk-input-marketo/pull/89)
+
 ## 0.6.10 - 2018-05-28
 * [fixed] Add included column option [#87](https://github.com/treasure-data/embulk-input-marketo/pull/87)
 
