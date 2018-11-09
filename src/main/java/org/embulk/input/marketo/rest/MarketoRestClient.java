@@ -449,7 +449,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
     public List<MarketoField> describeCustomObject(String apiName)
     {
         MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT_DESCRIBE.getEndpoint(new ImmutableMap.Builder().put("api_name", apiName).build()), null, null, new MarketoResponseJetty92EntityReader<ObjectNode>(this.readTimeoutMillis));
-        if (jsonResponse.getResult().size() == 0){
+        if (jsonResponse.getResult().size() == 0) {
             throw new ConfigException(String.format("Custom Object %s is not exits.", apiName));
         }
         List<MarketoField> marketoFields = new ArrayList<>();
@@ -459,7 +459,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
             String name = node.get("name").asText();
             marketoFields.add(new MarketoField(name, dataType));
         }
-        if (marketoFields.size() == 0){
+        if (marketoFields.size() == 0) {
             throw new ConfigException(String.format("Custom Object %s don't have any field data.", apiName));
         }
         return marketoFields;
