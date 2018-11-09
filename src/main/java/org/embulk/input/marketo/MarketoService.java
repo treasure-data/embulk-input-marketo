@@ -29,4 +29,8 @@ public interface MarketoService
     Iterable<ObjectNode> getProgramsByTag(String tagType, String tagValue);
 
     Iterable<ObjectNode> getProgramsByDateRange(Date earliestUpdatedAt, Date latestUpdatedAt, String filterType, List<String> filterValues);
+
+    Iterable<ObjectNode> getCustomObject(String apiName, String filterType, String fields, Integer fromValue, Integer toValue);
+
+    List<MarketoField> describeCustomObject(String apiName);
 }
