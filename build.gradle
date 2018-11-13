@@ -12,11 +12,18 @@ repositories {
     maven {
         url "https://dl.bintray.com/embulk-base-restclient/maven"
     }
+    maven {
+        url "https://treasuredata.artifactoryonline.com/treasuredata/libs-release"
+        credentials {
+            username = "${System.env.TD_ARTIFACTORY_USERNAME}"
+            password = "${System.env.TD_ARTIFACTORY_PASSWORD}"
+        }
+    }
 }
 configurations {
     provided
 }
-version = "0.6.11"
+version = "0.6.12.alpha.0"
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
