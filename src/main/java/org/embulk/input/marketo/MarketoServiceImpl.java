@@ -226,14 +226,14 @@ public class MarketoServiceImpl implements MarketoService
     }
 
     @Override
-    public List<MarketoField> describeCustomObject(String apiName)
+    public List<MarketoField> describeCustomObject(String customObjectAPIName)
     {
-        return marketoRestClient.describeCustomObject(apiName);
+        return marketoRestClient.describeCustomObject(customObjectAPIName);
     }
 
     @Override
-    public Iterable<ObjectNode> getCustomObject(String apiName, String filterType, String fields, Integer fromValue, Integer toValue)
+    public Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue)
     {
-        return marketoRestClient.getCustomObject(apiName, filterType, fields, fromValue, toValue);
+        return marketoRestClient.getCustomObject(customObjectAPIName, customObjectFilterType, customObjectFields, fromValue, toValue);
     }
 }

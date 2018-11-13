@@ -23,15 +23,15 @@ public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<Cust
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, CustomObjectResponseMapperBuilder.PluginTask
     {
-        @Config("filter_field")
+        @Config("custom_object_filter_type")
         @ConfigDefault("\"\"")
-        String getFilterField();
+        String getCustomObjectFilterType();
 
-        @Config("from_value")
+        @Config("custom_object_filter_from_value")
         @ConfigDefault("1")
         Integer getFromValue();
 
-        @Config("to_value")
+        @Config("custom_object_filter_to_value")
         @ConfigDefault("null")
         Optional<Integer> getToValue();
     }
@@ -44,11 +44,11 @@ public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<Cust
     public void validateInputTask(PluginTask task)
     {
         super.validateInputTask(task);
-        if (StringUtils.isBlank(task.getFilterField())) {
-            throw new ConfigException("`filter_field` cannot empty");
+        if (StringUtils.isBlank(task.getCustomObjectFilterType())) {
+            throw new ConfigException("`custom_object_filter_type` cannot empty");
         }
-        if (StringUtils.isBlank(task.getAPIName())) {
-            throw new ConfigException("`api_name` cannot empty");
+        if (StringUtils.isBlank(task.getCustomObjectAPIName())) {
+            throw new ConfigException("`custom_object_api_name` cannot empty");
         }
         if (task.getToValue().isPresent() && task.getToValue().get() < task.getFromValue()) {
             throw new ConfigException(String.format("`to_value` (%s) cannot less than  the `from_value` (%s)", task.getToValue().get(), task.getFromValue()));
@@ -58,7 +58,7 @@ public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<Cust
     protected Iterator<ServiceRecord> getServiceRecords(MarketoService marketoService, PluginTask task)
     {
         return FluentIterable
-                .from(marketoService.getCustomObject(task.getAPIName(), task.getFilterField(), task.getSelectedField().orNull(), task.getFromValue(), task.getToValue().orNull()))
+                .from(marketoService.getCustomObject(task.getCustomObjectAPIName(), task.getCustomObjectFilterType(), task.getCustomObjectFields().orNull(), task.getFromValue(), task.getToValue().orNull()))
                 .transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION).iterator();
     }
 

@@ -464,7 +464,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
         }
         return marketoFields;
     }
-    private <T> RecordPagingIterable<T> getRecordWithPagination(final String endPoint, final String filterType, final String fields, final Integer fromValue, final Integer toValue, final Class<T> recordClass)
+    private <T> RecordPagingIterable<T> getRecordWithPagination(final String endPoint, final String customObjectFilterType, final String customObjectFields, final Integer fromValue, final Integer toValue, final Class<T> recordClass)
     {
         return new RecordPagingIterable<>(new RecordPagingIterable.PagingFunction<RecordPagingIterable.OffsetPage<T>>()
         {
@@ -498,10 +498,10 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 filterValues.append(String.valueOf(nextOffset - 1));
 
                 ImmutableListMultimap.Builder<String, String> params = new ImmutableListMultimap.Builder<>();
-                params.put(FILTER_TYPE, filterType);
+                params.put(FILTER_TYPE, customObjectFilterType);
                 params.put(FILTER_VALUES, filterValues.toString());
-                if (fields != null) {
-                    params.put(FIELDS, fields);
+                if (customObjectFields != null) {
+                    params.put(FIELDS, customObjectFields);
                 }
                 MarketoResponse<T> marketoResponse = doGet(endPoint, null, params.build(), new MarketoResponseJetty92EntityReader<>(readTimeoutMillis, recordClass));
                 if (toValue == null) {
@@ -513,8 +513,8 @@ public class MarketoRestClient extends MarketoBaseRestClient
             }
         });
     }
-    public Iterable<ObjectNode> getCustomObject(String apiName, String filterType, String fields, Integer fromValue, Integer toValue)
+    public Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue)
     {
-        return getRecordWithPagination(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(new ImmutableMap.Builder().put("api_name", apiName).build()), filterType, fields, fromValue, toValue, ObjectNode.class);
+        return getRecordWithPagination(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(new ImmutableMap.Builder().put("api_name", customObjectAPIName).build()), customObjectFilterType, customObjectFields, fromValue, toValue, ObjectNode.class);
     }
 }

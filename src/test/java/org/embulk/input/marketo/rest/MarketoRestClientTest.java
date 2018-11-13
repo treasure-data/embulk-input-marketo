@@ -544,4 +544,39 @@ public class MarketoRestClientTest
         Assert.assertEquals("filter1", params2.get("filterType").get(0));
         Assert.assertEquals(String.join(",", filterValues), params2.get("filterValues").get(0));
     }
+
+    @Test
+    public void describeCustomObject() throws Exception
+    {
+        String customObjectSchema = new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/custom_object_describe.json")));
+        MarketoResponse<ObjectNode> marketoResponse = OBJECT_MAPPER.readValue(customObjectSchema, RESPONSE_TYPE);
+        String apiName = "custom_object";
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("api_name", apiName);
+        Mockito.doReturn(marketoResponse).when(marketoRestClient).doGet(Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_CUSTOM_OBJECT_DESCRIBE.getEndpoint(pathParams)), Mockito.isNull(Map.class), Mockito.isNull(ImmutableListMultimap.class), Mockito.any(MarketoResponseJetty92EntityReader.class));
+        List<MarketoField> marketoFields = marketoRestClient.describeCustomObject(apiName);
+        Assert.assertEquals(16, marketoFields.size());
+        JavaType marketoFieldType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
+        List<MarketoField> expectedFields = OBJECT_MAPPER.readValue(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/custom_object_expected.json"))), marketoFieldType);
+        Assert.assertArrayEquals(expectedFields.toArray(), marketoFields.toArray());
+    }
+
+    @Test
+    public void getCustomObject() throws Exception
+    {
+        String apiName = "custom_object";
+        Map<String, String> pathParams = new HashMap<>();
+        pathParams.put("api_name", apiName);
+
+        ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/custom_object_response.json")))).get("responses");
+        MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
+        Mockito.doReturn(page1).when(marketoRestClient).doGet(Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(pathParams)), Mockito.isNull(Map.class), Mockito.any(ImmutableListMultimap.class), Mockito.any(MarketoResponseJetty92EntityReader.class));
+        RecordPagingIterable<ObjectNode> pages = (RecordPagingIterable<ObjectNode>) marketoRestClient.getCustomObject(apiName, "id", null, 1, 2);
+        Iterator<ObjectNode> iterator = pages.iterator();
+        ObjectNode customObject1 = iterator.next();
+        ObjectNode customObject2 = iterator.next();
+        Assert.assertFalse(iterator.hasNext());
+        Assert.assertEquals("1", customObject1.get("id").asText());
+        Assert.assertEquals("2", customObject2.get("id").asText());
+    }
 }

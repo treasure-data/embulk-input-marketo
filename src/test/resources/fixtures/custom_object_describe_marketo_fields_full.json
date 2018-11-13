@@ -1,0 +1,22 @@
+[
+  {
+    "name": "seq",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "marketoGUID",
+    "marketoDataType": "STRING"
+  },
+  {
+    "name": "id",
+    "marketoDataType": "INTEGER"
+  },
+  {
+    "name": "createdAt",
+    "marketoDataType": "DATETIME"
+  },
+  {
+    "name": "updatedAt",
+    "marketoDataType": "DATETIME"
+  }
+]

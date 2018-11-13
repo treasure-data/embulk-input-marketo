@@ -25,13 +25,13 @@ public class CustomObjectResponseMapperBuilder<T extends CustomObjectResponseMap
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask
     {
-        @Config("api_name")
+        @Config("custom_object_api_name")
         @ConfigDefault("\"\"")
-        String getAPIName();
+        String getCustomObjectAPIName();
 
-        @Config("selected_field")
+        @Config("custom_object_fields")
         @ConfigDefault("null")
-        Optional<String> getSelectedField();
+        Optional<String> getCustomObjectFields();
     }
 
     public CustomObjectResponseMapperBuilder(T task, MarketoService marketoService)
@@ -42,17 +42,17 @@ public class CustomObjectResponseMapperBuilder<T extends CustomObjectResponseMap
 
     protected List<MarketoField> getCustomObjectColumns()
     {
-        List<MarketoField> columns = marketoService.describeCustomObject(pluginTask.getAPIName());
-        if (pluginTask.getSelectedField().isPresent() && StringUtils.isNotBlank(pluginTask.getSelectedField().get())) {
+        List<MarketoField> columns = marketoService.describeCustomObject(pluginTask.getCustomObjectAPIName());
+        if (pluginTask.getCustomObjectFields().isPresent() && StringUtils.isNotBlank(pluginTask.getCustomObjectFields().get())) {
             List<MarketoField> filteredColumns = new ArrayList<>();
-            List<String> includedFields = Arrays.asList(pluginTask.getSelectedField().get().split(","));
+            List<String> includedFields = Arrays.asList(pluginTask.getCustomObjectFields().get().split(","));
             for (String fieldName : includedFields) {
                 Optional<MarketoField> includedField = lookupFieldIgnoreCase(columns, fieldName);
                 if (includedField.isPresent()) {
                     filteredColumns.add(includedField.get());
                 }
                 else {
-                    LOGGER.warn("Included field [{}] not found in Marketo Custom Object [{}] field", fieldName, pluginTask.getAPIName());
+                    LOGGER.warn("Included field [{}] not found in Marketo Custom Object [{}] field", fieldName, pluginTask.getCustomObjectAPIName());
                 }
             }
             columns = filteredColumns;

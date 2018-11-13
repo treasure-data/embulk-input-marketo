@@ -1,0 +1,24 @@
+{
+  "responses":[
+    {
+      "requestId": "83e9#166f835a592",
+      "result": [
+        {
+          "seq": 0,
+          "marketoGUID": "aa168cfa-626d-49b4-b735-526e0b8c069e",
+          "id": 1,
+          "createdAt": "2018-11-06T12:01:49Z",
+          "updatedAt": "2018-11-06T12:01:49Z"
+        },
+        {
+          "seq": 1,
+          "marketoGUID": "da7c347d-754b-44f3-9821-d1233f0852f6",
+          "id": 2,
+          "createdAt": "2018-11-06T12:01:49Z",
+          "updatedAt": "2018-11-06T12:01:49Z"
+        }
+      ],
+      "success": true
+    }
+  ]
+}

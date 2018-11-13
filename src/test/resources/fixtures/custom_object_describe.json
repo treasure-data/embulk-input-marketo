@@ -1,0 +1,124 @@
+{
+  "requestId":"185d6#14b51985ff0",
+  "success":true,
+  "result":[
+    {
+      "name":"custom_object",
+      "displayName":"Custom Object",
+      "description":"Custom Object",
+      "createdAt":"2015-02-03T22:36:23Z",
+      "updatedAt":"2015-02-03T22:36:24Z",
+      "idField":"marketoGUID",
+      "dedupeFields":["mKtestcurrency"],
+      "searchableFields":[
+        ["mKtestcurrency"],
+        ["marketoGUID"]
+      ],
+      "fields":[
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_boolean",
+          "dataType": "boolean",
+          "name": "mKtestboolean"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_currency",
+          "dataType": "currency",
+          "length": 255,
+          "name": "mKtestcurrency"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_date",
+          "dataType": "date",
+          "name": "mKtestdate"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_Datetime",
+          "dataType": "datetime",
+          "name": "mKtestDatetime"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_email",
+          "dataType": "email",
+          "length": 255,
+          "name": "mKtestemail"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_float",
+          "dataType": "float",
+          "name": "mKtestfloat"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_integer",
+          "dataType": "integer",
+          "name": "mKtestinteger"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_percent",
+          "dataType": "percent",
+          "name": "mKtestpercent"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_phone",
+          "dataType": "phone",
+          "length": 255,
+          "name": "mKtestphone"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_score",
+          "dataType": "score",
+          "name": "mKtestscore"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_string",
+          "dataType": "string",
+          "length": 255,
+          "name": "mKteststring"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_textarea",
+          "dataType": "textarea",
+          "name": "mKtesttextarea"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_url",
+          "dataType": "url",
+          "length": 255,
+          "name": "mKtesturl"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_reference",
+          "dataType": "reference",
+          "length": 255,
+          "name": "mKTestReference"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_formula",
+          "dataType": "formula",
+          "length": 255,
+          "name": "mKTestFormula"
+        },
+        {
+          "updateable":true,
+          "displayName": "Marketo_test_text",
+          "dataType": "text",
+          "name": "mKtesttext"
+        }
+      ]
+    }
+  ]
+}
