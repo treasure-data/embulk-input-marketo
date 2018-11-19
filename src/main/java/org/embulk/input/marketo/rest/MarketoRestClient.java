@@ -512,6 +512,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 String nextToken = "";
                 if (StringUtils.isNotBlank(marketoResponse.getNextPageToken())) {
                     nextToken = marketoResponse.getNextPageToken();
+                    //skip offset when nextPageToken is exits.
                     nextOffset = offset;
                 }
 

@@ -45,13 +45,13 @@ public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<Cust
     {
         super.validateInputTask(task);
         if (StringUtils.isBlank(task.getCustomObjectFilterType())) {
-            throw new ConfigException("`custom_object_filter_type` cannot empty");
+            throw new ConfigException("`custom_object_filter_type` cannot be empty");
         }
         if (StringUtils.isBlank(task.getCustomObjectAPIName())) {
-            throw new ConfigException("`custom_object_api_name` cannot empty");
+            throw new ConfigException("`custom_object_api_name` cannot be empty");
         }
         if (task.getToValue().isPresent() && task.getToValue().get() < task.getFromValue()) {
-            throw new ConfigException(String.format("`to_value` (%s) cannot less than  the `from_value` (%s)", task.getToValue().get(), task.getFromValue()));
+            throw new ConfigException(String.format("`to_value` (%s) cannot be less than  the `from_value` (%s)", task.getToValue().get(), task.getFromValue()));
         }
     }
     @Override
