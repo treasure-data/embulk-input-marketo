@@ -478,7 +478,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
             @Override
             public RecordPagingIterable.OffsetWithTokenPage<T> getFirstPage()
             {
-                return getOffsetPage(fromValue,"");
+                return getOffsetPage(fromValue, "");
             }
 
             private RecordPagingIterable.OffsetWithTokenPage<T> getOffsetPage(int offset, String nextPageToken)
