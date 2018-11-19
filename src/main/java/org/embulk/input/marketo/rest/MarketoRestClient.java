@@ -1,16 +1,19 @@
 package org.embulk.input.marketo.rest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
+import org.embulk.config.ConfigException;
 import org.embulk.config.Task;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.BulkExtractRangeHeader;
@@ -54,6 +57,14 @@ public class MarketoRestClient extends MarketoBaseRestClient
     private static final String DEFAULT_MAX_RETURN = "200";
 
     private static final String RANGE_HEADER = "Range";
+
+    private static final String FILTER_TYPE = "filterType";
+
+    private static final String FILTER_VALUES = "filterValues";
+
+    private static final String FIELDS = "fields";
+
+    private static final int MAX_REQUEST_SIZE = 300;
 
     private static final int CONNECT_TIMEOUT_IN_MILLIS = 30000;
     private static final int IDLE_TIMEOUT_IN_MILLIS = 60000;
@@ -434,5 +445,93 @@ public class MarketoRestClient extends MarketoBaseRestClient
             multimap.put("filterValues", String.join(",", filterValues));
         }
         return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint(), multimap, ObjectNode.class);
+    }
+
+    public List<MarketoField> describeCustomObject(String apiName)
+    {
+        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT_DESCRIBE.getEndpoint(new ImmutableMap.Builder().put("api_name", apiName).build()), null, null, new MarketoResponseJetty92EntityReader<ObjectNode>(this.readTimeoutMillis));
+        if (jsonResponse.getResult().size() == 0) {
+            throw new ConfigException(String.format("Custom Object %s is not exits.", apiName));
+        }
+        List<MarketoField> marketoFields = new ArrayList<>();
+        JsonNode fieldNodes = jsonResponse.getResult().get(0).path("fields");
+        for (JsonNode node : fieldNodes) {
+            String dataType = node.get("dataType").asText();
+            String name = node.get("name").asText();
+            marketoFields.add(new MarketoField(name, dataType));
+        }
+        if (marketoFields.size() == 0) {
+            throw new ConfigException(String.format("Custom Object %s don't have any field data.", apiName));
+        }
+        return marketoFields;
+    }
+    private <T> RecordPagingIterable<T> getCustomObjectRecordWithPagination(final String endPoint, final String customObjectFilterType, final String customObjectFields, final Integer fromValue, final Integer toValue, final Class<T> recordClass)
+    {
+        return new RecordPagingIterable<>(new RecordPagingIterable.PagingFunction<RecordPagingIterable.OffsetWithTokenPage<T>>()
+        {
+            @Override
+            public RecordPagingIterable.OffsetWithTokenPage<T> getNextPage(RecordPagingIterable.OffsetWithTokenPage<T> currentPage)
+            {
+                return getOffsetPage(currentPage.getNextOffSet(), currentPage.getNextPageToken());
+            }
+
+            @Override
+            public RecordPagingIterable.OffsetWithTokenPage<T> getFirstPage()
+            {
+                return getOffsetPage(fromValue, "");
+            }
+
+            private RecordPagingIterable.OffsetWithTokenPage<T> getOffsetPage(int offset, String nextPageToken)
+            {
+                boolean isMoreResult = true;
+                boolean isEndOffset = false;
+                int nextOffset = offset + MAX_REQUEST_SIZE;
+
+                if (toValue != null) {
+                    if (toValue <= nextOffset) {
+                        nextOffset = toValue + 1;
+                        isEndOffset = true;
+                    }
+                }
+                StringBuilder filterValues = new StringBuilder();
+                for (int i = offset; i < (nextOffset - 1); i++) {
+                    filterValues.append(String.valueOf(i)).append(",");
+                }
+                filterValues.append(String.valueOf(nextOffset - 1));
+
+                ImmutableListMultimap.Builder<String, String> params = new ImmutableListMultimap.Builder<>();
+                params.put(FILTER_TYPE, customObjectFilterType);
+                params.put(FILTER_VALUES, filterValues.toString());
+                if (StringUtils.isNotBlank(nextPageToken)) {
+                    params.put(NEXT_PAGE_TOKEN, nextPageToken);
+                }
+                if (customObjectFields != null) {
+                    params.put(FIELDS, customObjectFields);
+                }
+                MarketoResponse<T> marketoResponse = doGet(endPoint, null, params.build(), new MarketoResponseJetty92EntityReader<>(readTimeoutMillis, recordClass));
+                String nextToken = "";
+                if (StringUtils.isNotBlank(marketoResponse.getNextPageToken())) {
+                    nextToken = marketoResponse.getNextPageToken();
+                    //skip offset when nextPageToken is exits.
+                    nextOffset = offset;
+                }
+
+                if (toValue == null) {
+                    if (marketoResponse.getResult().isEmpty()) {
+                        isMoreResult = false;
+                    }
+                }
+                else {
+                    if (isEndOffset && StringUtils.isBlank(nextToken)) {
+                        isMoreResult = false;
+                    }
+                }
+                return new RecordPagingIterable.OffsetWithTokenPage<>(marketoResponse.getResult(), nextOffset, nextToken, isMoreResult);
+            }
+        });
+    }
+    public Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue)
+    {
+        return getCustomObjectRecordWithPagination(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(new ImmutableMap.Builder().put("api_name", customObjectAPIName).build()), customObjectFilterType, customObjectFields, fromValue, toValue, ObjectNode.class);
     }
 }

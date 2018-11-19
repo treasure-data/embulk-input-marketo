@@ -224,4 +224,16 @@ public class MarketoServiceImpl implements MarketoService
     {
         return marketoRestClient.getProgramsByDateRange(earliestUpdatedAt, latestUpdatedAt, filterType, filterValues);
     }
+
+    @Override
+    public List<MarketoField> describeCustomObject(String customObjectAPIName)
+    {
+        return marketoRestClient.describeCustomObject(customObjectAPIName);
+    }
+
+    @Override
+    public Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue)
+    {
+        return marketoRestClient.getCustomObject(customObjectAPIName, customObjectFilterType, customObjectFields, fromValue, toValue);
+    }
 }

@@ -1,3 +1,6 @@
+## 0.6.12 - 2018-11-09
+* [enhance] Implement Custom Object [#90](https://github.com/treasure-data/embulk-input-marketo/pull/90)
+
 ## 0.6.11 - 2018-09-10
 * [enhance] Implement Assets Programs [#89](https://github.com/treasure-data/embulk-input-marketo/pull/89)
 

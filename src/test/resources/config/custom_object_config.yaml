@@ -1,0 +1,8 @@
+account_id: 'account_id'
+client_id: client_id
+client_secret: client_secret
+custom_object_api_name: custom_object_api_name
+custom_object_filter_type: custom_object_filter_type
+custom_object_fields: ""
+custom_object_filter_from_value: 1
+custom_object_filter_to_value: 2

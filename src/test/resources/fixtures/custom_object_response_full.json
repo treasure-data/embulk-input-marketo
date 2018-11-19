@@ -1,0 +1,23 @@
+[
+  {
+    "seq": 0,
+    "marketoGUID": "aa168cfa-626d-49b4-b735-526e0b8c069e",
+    "id": 1,
+    "createdAt": "2018-11-06T12:01:49Z",
+    "updatedAt": "2018-11-06T12:01:49Z"
+  },
+  {
+    "seq": 1,
+    "marketoGUID": "da7c347d-754b-44f3-9821-d1233f0852f6",
+    "id": 2,
+    "createdAt": "2018-11-06T12:01:49Z",
+    "updatedAt": "2018-11-06T12:01:49Z"
+  },
+  {
+    "seq": 2,
+    "marketoGUID": "sdfdc347d-754b-5645-9821-d1233f065456",
+    "id": 3,
+    "createdAt": "2018-11-06T12:01:49Z",
+    "updatedAt": "2018-11-06T12:01:49Z"
+  }
+]
