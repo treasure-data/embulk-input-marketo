@@ -151,4 +151,30 @@ public class RecordPagingIterable<T> implements Iterable<T>
             return nextOffSet;
         }
     }
+    public static class OffsetWithTokenPage<T> extends Page<T>
+    {
+        private int nextOffSet;
+        private String nextPageToken;
+        public OffsetWithTokenPage(Iterable<T> records, int nextOffSet, String nextPageToken, boolean moreResult)
+        {
+            super(records, moreResult);
+            this.nextOffSet = nextOffSet;
+            this.nextPageToken = nextPageToken;
+        }
+
+        public int getNextOffSet()
+        {
+            return nextOffSet;
+        }
+
+        public String getNextPageToken()
+        {
+            return nextPageToken;
+        }
+
+        public void setNextPageToken(String nextPageToken)
+        {
+            this.nextPageToken = nextPageToken;
+        }
+    }
 }

@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
 import org.embulk.config.Config;
@@ -466,29 +467,30 @@ public class MarketoRestClient extends MarketoBaseRestClient
     }
     private <T> RecordPagingIterable<T> getCustomObjectRecordWithPagination(final String endPoint, final String customObjectFilterType, final String customObjectFields, final Integer fromValue, final Integer toValue, final Class<T> recordClass)
     {
-        return new RecordPagingIterable<>(new RecordPagingIterable.PagingFunction<RecordPagingIterable.OffsetPage<T>>()
+        return new RecordPagingIterable<>(new RecordPagingIterable.PagingFunction<RecordPagingIterable.OffsetWithTokenPage<T>>()
         {
             @Override
-            public RecordPagingIterable.OffsetPage<T> getNextPage(RecordPagingIterable.OffsetPage<T> currentPage)
+            public RecordPagingIterable.OffsetWithTokenPage<T> getNextPage(RecordPagingIterable.OffsetWithTokenPage<T> currentPage)
             {
-                return getOffsetPage(currentPage.getNextOffSet());
+                return getOffsetPage(currentPage.getNextOffSet(), currentPage.getNextPageToken());
             }
 
             @Override
-            public RecordPagingIterable.OffsetPage<T> getFirstPage()
+            public RecordPagingIterable.OffsetWithTokenPage<T> getFirstPage()
             {
-                return getOffsetPage(fromValue);
+                return getOffsetPage(fromValue,"");
             }
 
-            private RecordPagingIterable.OffsetPage<T> getOffsetPage(int offset)
+            private RecordPagingIterable.OffsetWithTokenPage<T> getOffsetPage(int offset, String nextPageToken)
             {
                 boolean isMoreResult = true;
+                boolean isEndOffset = false;
                 int nextOffset = offset + MAX_REQUEST_SIZE;
 
                 if (toValue != null) {
                     if (toValue <= nextOffset) {
                         nextOffset = toValue + 1;
-                        isMoreResult = false;
+                        isEndOffset = true;
                     }
                 }
                 StringBuilder filterValues = new StringBuilder();
@@ -500,16 +502,30 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 ImmutableListMultimap.Builder<String, String> params = new ImmutableListMultimap.Builder<>();
                 params.put(FILTER_TYPE, customObjectFilterType);
                 params.put(FILTER_VALUES, filterValues.toString());
+                if (StringUtils.isNotBlank(nextPageToken)) {
+                    params.put(NEXT_PAGE_TOKEN, nextPageToken);
+                }
                 if (customObjectFields != null) {
                     params.put(FIELDS, customObjectFields);
                 }
                 MarketoResponse<T> marketoResponse = doGet(endPoint, null, params.build(), new MarketoResponseJetty92EntityReader<>(readTimeoutMillis, recordClass));
+                String nextToken = "";
+                if (StringUtils.isNotBlank(marketoResponse.getNextPageToken())) {
+                    nextToken = marketoResponse.getNextPageToken();
+                    nextOffset = offset;
+                }
+
                 if (toValue == null) {
-                    if (marketoResponse.getResult().size() < MAX_REQUEST_SIZE) {
+                    if (marketoResponse.getResult().isEmpty()) {
                         isMoreResult = false;
                     }
                 }
-                return new RecordPagingIterable.OffsetPage<>(marketoResponse.getResult(), nextOffset, isMoreResult);
+                else {
+                    if (isEndOffset && StringUtils.isBlank(nextToken)) {
+                        isMoreResult = false;
+                    }
+                }
+                return new RecordPagingIterable.OffsetWithTokenPage<>(marketoResponse.getResult(), nextOffset, nextToken, isMoreResult);
             }
         });
     }
