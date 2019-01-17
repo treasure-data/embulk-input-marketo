@@ -202,6 +202,12 @@ public class MarketoBaseRestClientTest
         Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("602", "")));
         // Should retry 601 error too
         Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("601", "")));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("604", "")));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("608", "")));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("611", "")));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("615", "")));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("713", "")));
+        Assert.assertTrue(jetty92SingleRequester.toRetry(createMarketoAPIException("1029", "")));
         // Retry wrap SocketTimeoutException, TimeoutException and EOFException
         Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new TimeoutException())));
         Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new EOFException())));
