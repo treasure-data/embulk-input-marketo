@@ -228,7 +228,12 @@ public class MarketoBaseRestClient implements AutoCloseable
                                 throw new DataException("Exception when wait for interval limit");
                             }
                             return true;
+                        case "604":
+                        case "608":
+                        case "611":
                         case "615":
+                        case "713":
+                        case "1029":
                             return true;
                         default:
                             return false;
