@@ -1,3 +1,6 @@
+## 0.6.13 - 2019-01-21
+* [enhance] Add more error code to retry [#91](https://github.com/treasure-data/embulk-input-marketo/pull/91)
+
 ## 0.6.12 - 2018-11-09
 * [enhance] Implement Custom Object [#90](https://github.com/treasure-data/embulk-input-marketo/pull/90)
 
