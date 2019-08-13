@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
-
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.RecordImporter;
@@ -45,11 +45,9 @@ import java.util.List;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 public class ProgramInputPluginTest
 {
-    private static final DateTimeFormatter DATE_FORMATER = DateTimeFormat.forPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormat.forPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -153,7 +151,7 @@ public class ProgramInputPluginTest
         DateTime earliestUpdatedAt = DateTime.now().plusDays(1);
         DateTime latestUpdatedAt = DateTime.now().minusDays(2);
         thrown.expect(ConfigException.class);
-        thrown.expectMessage(String.format("`earliest_updated_at` (%s) cannot precede the current date ", earliestUpdatedAt.toString(DATE_FORMATER)));
+        thrown.expectMessage(String.format("`earliest_updated_at` (%s) cannot precede the current date ", earliestUpdatedAt.toString(DATE_FORMATTER)));
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
@@ -168,8 +166,8 @@ public class ProgramInputPluginTest
         DateTime latestUpdatedAt = DateTime.now().minusDays(20);
         thrown.expect(ConfigException.class);
         thrown.expectMessage(String.format("Invalid date range. `earliest_updated_at` (%s) cannot precede the `latest_updated_at` (%s).",
-                        earliestUpdatedAt.toString(DATE_FORMATER),
-                        latestUpdatedAt.toString(DATE_FORMATER)));
+                        earliestUpdatedAt.toString(DATE_FORMATTER),
+                        latestUpdatedAt.toString(DATE_FORMATTER)));
 
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
@@ -218,7 +216,7 @@ public class ProgramInputPluginTest
         String earliestUpdatedAtStr = taskReport.get(String.class, "earliest_updated_at");
         long duration = taskReport.get(Long.class, "report_duration");
         assertEquals(duration, reportDuration);
-        assertEquals(earliestUpdatedAtStr, earliestUpdatedAt.toString(DATE_FORMATER));
+        assertEquals(earliestUpdatedAtStr, earliestUpdatedAt.toString(DATE_FORMATTER));
     }
 
     @Test
@@ -239,7 +237,7 @@ public class ProgramInputPluginTest
         String nextErliestUpdatedAt = diff.get(String.class, "earliest_updated_at");
 
         assertEquals(reportDuration, new Duration(earliestUpdatedAt, latestUpdatedAt).getMillis());
-        assertEquals(nextErliestUpdatedAt, latestUpdatedAt.plusSeconds(1).toString(DATE_FORMATER));
+        assertEquals(nextErliestUpdatedAt, latestUpdatedAt.plusSeconds(1).toString(DATE_FORMATTER));
     }
 
     @SuppressWarnings("unchecked")

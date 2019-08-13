@@ -179,7 +179,6 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
         // set next next earliestUpdatedAt, latestUpdatedAt
         if (task.getQueryBy().isPresent() && task.getQueryBy().get() == QueryBy.DATE_RANGE && task.getIncremental()) {
-
             DateTime earliest = new DateTime(task.getEarliestUpdatedAt().get());
             DateTime latest = new DateTime(task.getLatestUpdatedAt().get());
 
