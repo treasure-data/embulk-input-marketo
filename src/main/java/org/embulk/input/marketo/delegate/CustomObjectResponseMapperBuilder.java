@@ -12,6 +12,7 @@ import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

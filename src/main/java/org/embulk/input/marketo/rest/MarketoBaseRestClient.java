@@ -5,11 +5,13 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.HttpResponseException;
 import org.eclipse.jetty.client.api.ContentProvider;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpMethod;
+import org.embulk.config.ConfigException;
 import org.embulk.input.marketo.exception.MarketoAPIException;
 import org.embulk.input.marketo.model.MarketoAccessTokenResponse;
 import org.embulk.input.marketo.model.MarketoError;
@@ -72,7 +74,7 @@ public class MarketoBaseRestClient implements AutoCloseable
 
     private void renewAccessToken()
     {
-        accessToken = requestAccessToken();
+        accessToken = getAccessTokenWithWrappedException();
     }
 
     @VisibleForTesting
@@ -81,7 +83,7 @@ public class MarketoBaseRestClient implements AutoCloseable
         if (accessToken == null) {
             synchronized (this) {
                 if (accessToken == null) {
-                    accessToken = requestAccessToken();
+                    accessToken = getAccessTokenWithWrappedException();
                 }
             }
         }
@@ -146,7 +148,7 @@ public class MarketoBaseRestClient implements AutoCloseable
 
     protected <T> T doGet(final String target, final Map<String, String> headers, final Multimap<String, String> params, Jetty92ResponseReader<T> responseReader)
     {
-        return doRequest(target, HttpMethod.GET, headers, params, null, responseReader);
+        return doRequestWithWrappedException(target, HttpMethod.GET, headers, params, null, responseReader);
     }
 
     protected <T> T doPost(final String target, final Map<String, String> headers, final Multimap<String, String> params, final String content, Jetty92ResponseReader<T> responseReader)
@@ -160,7 +162,39 @@ public class MarketoBaseRestClient implements AutoCloseable
 
     protected <T> T doPost(final String target, final Map<String, String> headers, final Multimap<String, String> params, Jetty92ResponseReader<T> responseReader, final ContentProvider content)
     {
-        return doRequest(target, HttpMethod.POST, headers, params, content, responseReader);
+        return doRequestWithWrappedException(target, HttpMethod.POST, headers, params, content, responseReader);
+    }
+
+    private String getAccessTokenWithWrappedException()
+    {
+        try {
+            return requestAccessToken();
+        }
+        catch (Exception e) {
+            if (e instanceof HttpResponseException) {
+                throw new ConfigException(e.getMessage());
+            }
+            if (e.getCause() instanceof HttpResponseException) {
+                throw new ConfigException(e.getCause().getMessage());
+            }
+            throw e;
+        }
+    }
+
+    private <T> T doRequestWithWrappedException(final String target, final HttpMethod method, final Map<String, String> headers, final Multimap<String, String> params, final ContentProvider contentProvider, Jetty92ResponseReader<T> responseReader)
+    {
+        try {
+            return doRequest(target, method, headers, params, contentProvider, responseReader);
+        }
+        catch (Exception e) {
+            if (e instanceof MarketoAPIException || e instanceof HttpResponseException) {
+                throw new DataException(e.getMessage());
+            }
+            if (e.getCause() instanceof MarketoAPIException || e.getCause() instanceof HttpResponseException) {
+                throw new DataException(e.getCause().getMessage());
+            }
+            throw e;
+        }
     }
 
     protected <T> T doRequest(final String target, final HttpMethod method, final Map<String, String> headers, final Multimap<String, String> params, final ContentProvider contentProvider, Jetty92ResponseReader<T> responseReader)

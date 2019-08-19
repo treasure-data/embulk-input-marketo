@@ -15,6 +15,7 @@ import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
+
 import java.util.Iterator;
 
 public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<CustomObjectInputPlugin.PluginTask>
@@ -71,5 +72,4 @@ public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<Cust
             return customObjectResponseMapperBuilder.buildServiceResponseMapper(task);
         }
     }
-
 }

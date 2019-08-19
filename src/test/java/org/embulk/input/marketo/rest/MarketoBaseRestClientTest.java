@@ -12,10 +12,12 @@ import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpMethod;
 import org.embulk.EmbulkTestRuntime;
+import org.embulk.config.ConfigException;
 import org.embulk.input.marketo.exception.MarketoAPIException;
 import org.embulk.input.marketo.model.MarketoError;
 import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.spi.DataException;
+import org.embulk.util.retryhelper.jetty92.Jetty92ClientCreator;
 import org.embulk.util.retryhelper.jetty92.Jetty92RetryHelper;
 import org.embulk.util.retryhelper.jetty92.Jetty92SingleRequester;
 import org.embulk.util.retryhelper.jetty92.StringJetty92ResponseEntityReader;
@@ -23,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -117,6 +120,86 @@ public class MarketoBaseRestClientTest
             return;
         }
         Assert.fail();
+    }
+
+    @Test
+    public void testGetAccessTokenThrowHttpResponseException() throws Exception
+    {
+        HttpClient client = Mockito.mock(HttpClient.class);
+
+        Jetty92ClientCreator clientCreator = Mockito.mock(Jetty92ClientCreator.class);
+        Mockito.doReturn(client).when(clientCreator).createAndStart();
+
+        Request request = Mockito.mock(Request.class);
+        Mockito.doReturn(request).when(client).newRequest(Mockito.anyString());
+        Mockito.doReturn(request).when(request).method(HttpMethod.GET);
+
+        HttpResponseException exception = new HttpResponseException("{\"error\":\"invalid_client\",\"error_description\":\"Bad client credentials\"}", Mockito.mock(Response.class));
+        Mockito.doThrow(exception).when(request).send(Mockito.any(Response.Listener.class));
+
+        Jetty92RetryHelper retryHelper = new Jetty92RetryHelper(1, 1, 1, clientCreator);
+        final MarketoBaseRestClient restClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper);
+
+        // calling method should wrap the HttpResponseException by ConfigException
+        Assert.assertThrows(ConfigException.class, new ThrowingRunnable()
+        {
+            @Override
+            public void run() throws Throwable
+            {
+                restClient.getAccessToken();
+            }
+        });
+    }
+
+    @Test
+    public void tetDoGetThrowHttpResponseException() throws Exception
+    {
+        final MarketoBaseRestClient client = doRequestWithWrapper(HttpMethod.GET);
+        // calling method should wrap the HttpResponseException by DataException
+        Assert.assertThrows(DataException.class, new ThrowingRunnable()
+        {
+            @Override
+            public void run() throws Throwable
+            {
+                client.doGet("test_target", null, null, new MarketoResponseJetty92EntityReader<String>(1000));
+            }
+        });
+    }
+
+    @Test
+    public void tetDoPostThrowHttpResponseException() throws Exception
+    {
+        final MarketoBaseRestClient client = doRequestWithWrapper(HttpMethod.POST);
+        // calling method should wrap the HttpResponseException by DataException
+        Assert.assertThrows(DataException.class, new ThrowingRunnable()
+        {
+            @Override
+            public void run() throws Throwable
+            {
+                client.doPost("test_target", null, null, "{\"any\": \"any\"}", new MarketoResponseJetty92EntityReader<String>(1000));
+            }
+        });
+    }
+
+    private MarketoBaseRestClient doRequestWithWrapper(HttpMethod method) throws Exception
+    {
+        HttpClient client = Mockito.mock(HttpClient.class);
+
+        Jetty92ClientCreator clientCreator = Mockito.mock(Jetty92ClientCreator.class);
+        Mockito.doReturn(client).when(clientCreator).createAndStart();
+
+        Request request = Mockito.mock(Request.class);
+        Mockito.doReturn(request).when(client).newRequest(Mockito.anyString());
+        Mockito.doReturn(request).when(request).method(method);
+
+        HttpResponseException exception = new HttpResponseException("{\"error\":\"1035\",\"error_description\":\"Unsupported filter type for target subscription: updatedAt\"}", Mockito.mock(Response.class));
+        Mockito.doThrow(exception).when(request).send(Mockito.any(Response.Listener.class));
+
+        Jetty92RetryHelper retryHelper = new Jetty92RetryHelper(1, 1, 1, clientCreator);
+        final MarketoBaseRestClient restClient = Mockito.spy(new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper));
+        Mockito.doReturn("test_access_token").when(restClient).getAccessToken();
+
+        return restClient;
     }
 
     @Test

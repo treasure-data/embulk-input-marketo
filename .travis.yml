@@ -3,3 +3,4 @@ jdk:
 - oraclejdk8
 script:
 - ./gradlew --info check jacocoTestReport
+dist: trusty
