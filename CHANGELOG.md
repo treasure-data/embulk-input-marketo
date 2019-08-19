@@ -1,3 +1,6 @@
+## 0.6.14 - 2019-08-19
+* [enhancement] Improve exception handling [#93](https://github.com/treasure-data/embulk-input-marketo/pull/93)
+
 ## 0.6.13 - 2019-01-21
 * [enhance] Add more error code to retry [#91](https://github.com/treasure-data/embulk-input-marketo/pull/91)
 
