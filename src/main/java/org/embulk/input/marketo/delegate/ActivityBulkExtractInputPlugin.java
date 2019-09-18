@@ -42,8 +42,7 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
             return new FileInputStream(service.extractAllActivity(fromDate.toDate(), toDate.toDate(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
         }
         catch (FileNotFoundException e) {
-            LOGGER.error("Exception when trying to extract activity", e);
-            throw new DataException("Error when trying to extract activity");
+            throw new RuntimeException("Exception when trying to extract activity", e);
         }
     }
 

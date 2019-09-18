@@ -52,8 +52,7 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
             return new FileInputStream(service.extractLead(fromDate.toDate(), toDate.toDate(), fieldNames, task.getIncrementalColumn().orNull(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
         }
         catch (FileNotFoundException e) {
-            LOGGER.error("File not found", e);
-            throw new DataException("Error when extract lead");
+            throw new RuntimeException("File not found", e);
         }
     }
 
