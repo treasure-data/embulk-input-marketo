@@ -1,3 +1,6 @@
+## 0.6.15 - 2019-09-20
+* [enhancement] Raise RuntimeException for temp file error [#94](https://github.com/treasure-data/embulk-input-marketo/pull/94)
+
 ## 0.6.14 - 2019-08-19
 * [enhancement] Improve exception handling [#93](https://github.com/treasure-data/embulk-input-marketo/pull/93)
 
