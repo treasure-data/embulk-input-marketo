@@ -60,9 +60,7 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
                 if (nodes != null) {
                     checkValidActivityTypeIds(nodes, activityIds);
                 }
-                else {
-                    // ignore since unable to get activity type ids. If thing gone wrong. the bulk extract will throw errors
-                }
+                // ignorable if unable to get activity type ids. If thing gone wrong, the bulk extract will throw errors
             }
 
             task.setActTypeIds(activityIds);
