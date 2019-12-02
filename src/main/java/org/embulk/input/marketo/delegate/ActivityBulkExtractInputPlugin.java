@@ -2,6 +2,7 @@ package org.embulk.input.marketo.delegate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
@@ -77,7 +78,8 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
         super.validateInputTask(task);
     }
 
-    private void checkValidActivityTypeIds(Iterable<ObjectNode> nodes, List<String> inputActivityTypeIds)
+    @VisibleForTesting
+    protected void checkValidActivityTypeIds(Iterable<ObjectNode> nodes, List<String> inputActivityTypeIds)
     {
         Iterator<ObjectNode> it = nodes.iterator();
 
