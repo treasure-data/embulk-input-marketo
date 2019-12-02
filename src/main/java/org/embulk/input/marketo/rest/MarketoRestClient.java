@@ -199,7 +199,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
     public String createActivityExtract(List<Integer> activityTypeIds, Date startTime, Date endTime)
     {
         MarketoBulkExtractRequest marketoBulkExtractRequest = getMarketoBulkExtractRequest(startTime, endTime, null, "createdAt");
-        if (!activityTypeIds.isEmpty()) {
+        if (activityTypeIds != null && !activityTypeIds.isEmpty()) {
             marketoBulkExtractRequest.getFilter().put("activityTypeIds", activityTypeIds);
         }
         return sendCreateBulkExtractRequest(marketoBulkExtractRequest, MarketoRESTEndpoint.CREATE_ACTIVITY_EXTRACT);
