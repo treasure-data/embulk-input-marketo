@@ -84,9 +84,9 @@ public class MarketoServiceImpl implements MarketoService
     }
 
     @Override
-    public File extractAllActivity(Date startTime, Date endTime, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond)
+    public File extractAllActivity(List<Integer> activityTypeIds, Date startTime, Date endTime, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond)
     {
-        final String exportID = marketoRestClient.createActivityExtract(startTime, endTime);
+        final String exportID = marketoRestClient.createActivityExtract(activityTypeIds, startTime, endTime);
         marketoRestClient.startActitvityBulkExtract(exportID);
         try {
             marketoRestClient.waitActitvityExportJobComplete(exportID, pollingTimeIntervalSecond, bulkJobTimeoutSecond);
@@ -235,5 +235,11 @@ public class MarketoServiceImpl implements MarketoService
     public Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue)
     {
         return marketoRestClient.getCustomObject(customObjectAPIName, customObjectFilterType, customObjectFields, fromValue, toValue);
+    }
+
+    @Override
+    public Iterable<ObjectNode> getActivityTypes()
+    {
+        return marketoRestClient.getActivityTypes();
     }
 }

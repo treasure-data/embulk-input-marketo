@@ -26,8 +26,8 @@ public enum MarketoRESTEndpoint
     GET_CAMPAIGN("/rest/v1/campaigns.json"),
     GET_PROGRAMS_BY_TAG("/rest/asset/v1/program/byTag.json"),
     GET_CUSTOM_OBJECT("/rest/v1/customobjects/${api_name}.json"),
-    GET_CUSTOM_OBJECT_DESCRIBE("/rest/v1/customobjects/${api_name}/describe.json");
-
+    GET_CUSTOM_OBJECT_DESCRIBE("/rest/v1/customobjects/${api_name}/describe.json"),
+    GET_ACTIVITY_TYPES("/rest/v1/activities/types.json");
     private String endpoint;
 
     MarketoRESTEndpoint(String endpoint)
