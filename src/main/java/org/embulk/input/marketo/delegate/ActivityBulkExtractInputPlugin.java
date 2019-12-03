@@ -39,6 +39,7 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
         @ConfigDefault("[]")
         List<String> getActivityTypeIds();
 
+        @Config("act_type_ids")
         @ConfigDefault("[]")
         List<Integer> getActTypeIds();
 
@@ -63,10 +64,8 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
                 // ignorable if unable to get activity type ids. If thing gone wrong, the bulk extract will throw errors
             }
 
+            // task will use getActTypeIds instead of getActivityTypeIds method
             task.setActTypeIds(activityIds);
-        }
-        else {
-            task.setActTypeIds(new ArrayList<Integer>());
         }
         super.validateInputTask(task);
     }
