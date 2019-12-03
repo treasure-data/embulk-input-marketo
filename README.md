@@ -95,6 +95,8 @@ Incremental support: yes
 
 Range ingestion: yes
 
+Filter by specific activity type ids: yes. See [#95](https://github.com/treasure-data/embulk-input-marketo/issues/95)
+
 ### Campaign
 
 Campaign extract all campaign data from Marketo

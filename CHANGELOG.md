@@ -1,3 +1,6 @@
+## 0.6.16 - 2019-12-03
+* [enhancement] Added support for ActivityTypeIds filter PR [#96](https://github.com/treasure-data/embulk-input-marketo/pull/96)
+
 ## 0.6.15 - 2019-09-20
 * [enhancement] Raise RuntimeException for temp file error [#94](https://github.com/treasure-data/embulk-input-marketo/pull/94)
 
