@@ -1,7 +1,5 @@
 package org.embulk.input.marketo.model;
 
-import org.embulk.input.marketo.model.filter.MarketoFilter;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +14,7 @@ public class MarketoBulkExtractRequest
 
     private Map<String, String> columnHeaderNames;
 
-    private Map<String, MarketoFilter> filter = new HashMap<>();
+    private Map<String, Object> filter = new HashMap<>();
 
     public List<String> getFields()
     {
@@ -48,12 +46,12 @@ public class MarketoBulkExtractRequest
         this.columnHeaderNames = columnHeaderNames;
     }
 
-    public Map<String, MarketoFilter> getFilter()
+    public Map<String, Object> getFilter()
     {
         return filter;
     }
 
-    public void setFilter(Map<String, MarketoFilter> filter)
+    public void setFilter(Map<String, Object> filter)
     {
         this.filter = filter;
     }

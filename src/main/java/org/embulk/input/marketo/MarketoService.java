@@ -2,6 +2,7 @@ package org.embulk.input.marketo;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.embulk.input.marketo.model.MarketoField;
+import org.embulk.input.marketo.model.MarketoResponse;
 
 import java.io.File;
 import java.util.Date;
@@ -16,7 +17,7 @@ public interface MarketoService
 
     File extractLead(Date startTime, Date endTime, List<String> extractedFields, String filterField, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond);
 
-    File extractAllActivity(Date startTime, Date endTime, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond);
+    File extractAllActivity(List<Integer> activityTypeIds, Date startTime, Date endTime, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond);
 
     Iterable<ObjectNode> getAllListLead(List<String> extractFields);
 
@@ -33,4 +34,6 @@ public interface MarketoService
     Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue);
 
     List<MarketoField> describeCustomObject(String customObjectAPIName);
+
+    Iterable<ObjectNode> getActivityTypes();
 }

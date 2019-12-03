@@ -22,6 +22,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+
 /**
  * Created by tai.khuu on 10/9/17.
  */
@@ -45,12 +47,12 @@ public class MarketoServiceImplTest
     {
         Date startDate = new Date(1507223374000L);
         Date endDate = new Date(1507655374000L);
-        List<String> extractedFields = Arrays.asList("field1", "field2");
+        List<String> extractedFields = Arrays.asList("field1", "fActivityBulkExtractInputPluginTest.java:78ield2");
         String filerField = "field1";
         String exportId = "exportId";
         Mockito.when(mockMarketoRestClient.createLeadBulkExtract(Mockito.eq(startDate), Mockito.eq(endDate), Mockito.eq(extractedFields), Mockito.eq(filerField))).thenReturn(exportId);
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream("Test File Content".getBytes());
-        Mockito.when(mockMarketoRestClient.getLeadBulkExtractResult(Mockito.eq(exportId), Mockito.any(BulkExtractRangeHeader.class))).thenReturn(byteArrayInputStream);
+        Mockito.when(mockMarketoRestClient.getLeadBulkExtractResult(Mockito.eq(exportId), any(BulkExtractRangeHeader.class))).thenReturn(byteArrayInputStream);
         File file = marketoService.extractLead(startDate, endDate, extractedFields, filerField, 1, 3);
         Assert.assertEquals("Test File Content", new String(ByteStreams.toByteArray(new FileInputStream(file))));
         Mockito.verify(mockMarketoRestClient, Mockito.times(1)).startLeadBulkExtract(Mockito.eq(exportId));
@@ -62,11 +64,12 @@ public class MarketoServiceImplTest
     {
         Date startDate = new Date(1507223374000L);
         Date endDate = new Date(1507655374000L);
+        List<Integer> activityTypeIds = new ArrayList<>();
         String exportId = "exportId";
-        Mockito.when(mockMarketoRestClient.createActivityExtract(Mockito.eq(startDate), Mockito.eq(endDate))).thenReturn(exportId);
+        Mockito.when(mockMarketoRestClient.createActivityExtract(any(List.class), Mockito.eq(startDate), Mockito.eq(endDate))).thenReturn(exportId);
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream("Test File Content".getBytes());
-        Mockito.when(mockMarketoRestClient.getActivitiesBulkExtractResult(Mockito.eq(exportId), Mockito.any(BulkExtractRangeHeader.class))).thenReturn(byteArrayInputStream);
-        File file = marketoService.extractAllActivity(startDate, endDate, 1, 3);
+        Mockito.when(mockMarketoRestClient.getActivitiesBulkExtractResult(Mockito.eq(exportId), any(BulkExtractRangeHeader.class))).thenReturn(byteArrayInputStream);
+        File file = marketoService.extractAllActivity(activityTypeIds, startDate, endDate, 1, 3);
         Assert.assertEquals("Test File Content", new String(ByteStreams.toByteArray(new FileInputStream(file))));
         Mockito.verify(mockMarketoRestClient, Mockito.times(1)).startActitvityBulkExtract(Mockito.eq(exportId));
         Mockito.verify(mockMarketoRestClient, Mockito.times(1)).waitActitvityExportJobComplete(Mockito.eq(exportId), Mockito.eq(1), Mockito.eq(3));

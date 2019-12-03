@@ -22,7 +22,6 @@ import org.embulk.input.marketo.model.MarketoError;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.input.marketo.model.filter.DateRangeFilter;
-import org.embulk.input.marketo.model.filter.MarketoFilter;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.embulk.spi.type.Type;
@@ -38,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by tai.khuu on 8/22/17.
@@ -187,7 +187,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
             marketoBulkExtractRequest.setFields(extractFields);
         }
         marketoBulkExtractRequest.setFormat("CSV");
-        Map<String, MarketoFilter> filterMap = new HashMap<>();
+        Map<String, Object> filterMap = new HashMap<>();
         DateRangeFilter dateRangeFilter = new DateRangeFilter();
         dateRangeFilter.setStartAt(timeFormat.format(startTime));
         dateRangeFilter.setEndAt(timeFormat.format(endTime));
@@ -196,9 +196,12 @@ public class MarketoRestClient extends MarketoBaseRestClient
         return marketoBulkExtractRequest;
     }
 
-    public String createActivityExtract(Date startTime, Date endTime)
+    public String createActivityExtract(List<Integer> activityTypeIds, Date startTime, Date endTime)
     {
         MarketoBulkExtractRequest marketoBulkExtractRequest = getMarketoBulkExtractRequest(startTime, endTime, null, "createdAt");
+        if (activityTypeIds != null && !activityTypeIds.isEmpty()) {
+            marketoBulkExtractRequest.getFilter().put("activityTypeIds", activityTypeIds);
+        }
         return sendCreateBulkExtractRequest(marketoBulkExtractRequest, MarketoRESTEndpoint.CREATE_ACTIVITY_EXTRACT);
     }
 
@@ -442,7 +445,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
         // put filter params if exist.
         if (filterType != null) {
             multimap.put("filterType", filterType);
-            multimap.put("filterValues", String.join(",", filterValues));
+            multimap.put("filterValues", StringUtils.join(filterValues, ","));
         }
         return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint(), multimap, ObjectNode.class);
     }
@@ -533,5 +536,10 @@ public class MarketoRestClient extends MarketoBaseRestClient
     public Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue)
     {
         return getCustomObjectRecordWithPagination(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(new ImmutableMap.Builder().put("api_name", customObjectAPIName).build()), customObjectFilterType, customObjectFields, fromValue, toValue, ObjectNode.class);
+    }
+
+    public Iterable<ObjectNode> getActivityTypes()
+    {
+        return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_ACTIVITY_TYPES.getEndpoint(), new ImmutableListMultimap.Builder<String, String>().put(MAX_RETURN, DEFAULT_MAX_RETURN).build(), ObjectNode.class);
     }
 }
