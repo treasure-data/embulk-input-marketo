@@ -1,3 +1,6 @@
+## 0.6.17 - 2019-12-03
+* [hotfix] Fixed issue issue actTypeIds is required [#97](https://github.com/treasure-data/embulk-input-marketo/pull/97)
+
 ## 0.6.16 - 2019-12-03
 * [enhancement] Added support for ActivityTypeIds filter PR [#96](https://github.com/treasure-data/embulk-input-marketo/pull/96)
 
