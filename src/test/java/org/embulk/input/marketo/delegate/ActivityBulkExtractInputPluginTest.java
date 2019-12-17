@@ -16,7 +16,6 @@ import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.input.marketo.rest.RecordPagingIterable;
 import org.embulk.spi.Column;
-import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
 import org.joda.time.DateTime;
