@@ -3,11 +3,11 @@ package org.embulk.input.marketo.rest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Optional;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
-
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
@@ -37,7 +37,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Created by tai.khuu on 8/22/17.
@@ -136,16 +135,41 @@ public class MarketoRestClient extends MarketoBaseRestClient
         @Config("maximum_retries_interval_milis")
         @ConfigDefault("120000")
         Integer getMaximumRetriesIntervalMilis();
+
+        @Config("partner_api_key")
+        @ConfigDefault("null")
+        Optional<String> getPartnerApiKey();
     }
 
     public MarketoRestClient(PluginTask task)
     {
-        this(MarketoUtils.getEndPoint(task.getAccountId()), MarketoUtils.getIdentityEndPoint(task.getAccountId()), task.getClientId(), task.getClientSecret(), task.getBatchSize(), task.getMaxReturn(), task.getReadTimeoutMillis(), task.getMarketoLimitIntervalMilis(), new Jetty92RetryHelper(task.getMaximumRetries(), task.getInitialRetryIntervalMilis(), task.getMaximumRetriesIntervalMilis(), new DefaultJetty92ClientCreator(CONNECT_TIMEOUT_IN_MILLIS, IDLE_TIMEOUT_IN_MILLIS)));
+        this(MarketoUtils.getEndPoint(task.getAccountId()),
+                MarketoUtils.getIdentityEndPoint(task.getAccountId()),
+                task.getClientId(),
+                task.getClientSecret(),
+                task.getPartnerApiKey(),
+                task.getBatchSize(),
+                task.getMaxReturn(),
+                task.getReadTimeoutMillis(),
+                task.getMarketoLimitIntervalMilis(),
+                new Jetty92RetryHelper(task.getMaximumRetries(),
+                        task.getInitialRetryIntervalMilis(),
+                        task.getMaximumRetriesIntervalMilis(),
+                        new DefaultJetty92ClientCreator(CONNECT_TIMEOUT_IN_MILLIS, IDLE_TIMEOUT_IN_MILLIS)));
     }
 
-    public MarketoRestClient(String endPoint, String identityEndPoint, String clientId, String clientSecret, Integer batchSize, Integer maxReturn, long readTimeoutMilis, int marketoLimitIntervalMilis, Jetty92RetryHelper retryHelper)
+    public MarketoRestClient(String endPoint,
+                             String identityEndPoint,
+                             String clientId,
+                             String clientSecret,
+                             Optional<String> partnerApiKey,
+                             Integer batchSize,
+                             Integer maxReturn,
+                             long readTimeoutMilis,
+                             int marketoLimitIntervalMilis,
+                             Jetty92RetryHelper retryHelper)
     {
-        super(identityEndPoint, clientId, clientSecret, marketoLimitIntervalMilis, readTimeoutMilis, retryHelper);
+        super(identityEndPoint, clientId, clientSecret, partnerApiKey, marketoLimitIntervalMilis, readTimeoutMilis, retryHelper);
         this.endPoint = endPoint;
         this.batchSize = batchSize;
         this.maxReturn = maxReturn;

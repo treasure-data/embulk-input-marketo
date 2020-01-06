@@ -50,6 +50,7 @@ All target have this configuration parameters
 | **marketo_limit_interval_milis** | false    | 20            | Marketo have limitation of 100 calls per 20 second. If REST API calls are failed they will wait this amount of time before retry |
 | **batch_size**                   | false    | 300           | Token paging batch size. Some REST API support batch                                                                             |
 | **max_return**                   | false    | 200           | Max return for Endpoint that use offset paging                                                                                   |
+| **partner_api_key**              | false    |               | Set Marketo Partner API Key see: http://developers.marketo.com/support/Marketo_LaunchPoint_Technology_Partner_API_Key.pdf        |
 
 ### Bulk extract target configuration parameter (Lead and Activity)
 
@@ -58,7 +59,7 @@ All bulk extract target use this configuration parameter
 | name                        | required | default value | description                                                                                                                   |
 |-----------------------------|----------|---------------|-------------------------------------------------------------------------------------------------------------------------------|
 | **from_date**               | true     |               | Import data since this date. Example: 2017-10-11T06:43:24+00:00                                                               |
-| **fetch_days**              | false    | 1             | Amount of days to fetch since from_date                                                                                      |
+| **fetch_days**              | false    | 1             | Amount of days to fetch since from_date                                                                                       |
 | **polling_interval_second** | false    | 60            | Amount of time to wait between pooling job status in second                                                                   |
 | **bulk_job_timeout_second** | false    | 3600          | Amount of time to wait for bulk job to complete in second                                                                     |
 | **incremental**             | false    | true          | If incremental is set to true, next run will have from_date set to the previous to_date(calculated by from_date + fetch_days) |

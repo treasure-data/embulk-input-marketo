@@ -1,7 +1,6 @@
 package org.embulk.input.marketo.delegate;
 
 import com.google.common.base.Optional;
-
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.Config;
@@ -9,7 +8,6 @@ import org.embulk.config.ConfigDefault;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.rest.MarketoRestClient;
-import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;

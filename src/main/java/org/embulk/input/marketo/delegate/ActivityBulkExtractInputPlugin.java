@@ -117,7 +117,6 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
                     StringUtils.join(inputIds, ", "),
                     buildActivityIdNameInfo(nodes)));
         }
-
     }
 
     private String buildActivityIdNameInfo(Iterable<ObjectNode> nodes)

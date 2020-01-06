@@ -1,5 +1,6 @@
 package org.embulk.input.marketo.rest;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -57,7 +58,7 @@ public class MarketoBaseRestClientTest
     public void prepare()
     {
         mockJetty92 = Mockito.mock(Jetty92RetryHelper.class);
-        marketoBaseRestClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", MARKETO_LIMIT_INTERVAL_MILIS, 60000, mockJetty92);
+        marketoBaseRestClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.<String>absent(), MARKETO_LIMIT_INTERVAL_MILIS, 60000, mockJetty92);
     }
 
     @Test
@@ -91,6 +92,10 @@ public class MarketoBaseRestClientTest
         Mockito.verify(request1, Mockito.times(1)).param(Mockito.eq("client_id"), Mockito.eq("clientId"));
         Mockito.verify(request1, Mockito.times(1)).param(Mockito.eq("client_secret"), Mockito.eq("clientSecret"));
         Mockito.verify(request1, Mockito.times(1)).param(Mockito.eq("grant_type"), Mockito.eq("client_credentials"));
+
+        // By default the partner id is not set
+        Mockito.verify(request1, Mockito.never()).param(Mockito.eq("partner_id"), Mockito.anyString());
+
         Assert.assertTrue(jetty92SingleRequester.toRetry(createHttpResponseException(502)));
         Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new TimeoutException())));
         Assert.assertTrue(jetty92SingleRequester.toRetry(new ExecutionException(new EOFException())));
@@ -104,6 +109,42 @@ public class MarketoBaseRestClientTest
         // Retry TimeoutException when it is wrapped in IOException
         Assert.assertTrue(jetty92SingleRequester.toRetry(new IOException(new TimeoutException())));
     }
+
+    @Test
+    public void testGetAccessTokenRequestShouldHavePartnerId()
+    {
+        final String partnerId = "sample_partner_id";
+        mockJetty92 = Mockito.mock(Jetty92RetryHelper.class);
+        ArgumentCaptor<Jetty92SingleRequester> jetty92SingleRequesterArgumentCaptor = ArgumentCaptor.forClass(Jetty92SingleRequester.class);
+        Mockito.when(mockJetty92.requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn("{\"access_token\": \"access_token\"}");
+
+        MarketoBaseRestClient restClient = Mockito.spy(new MarketoBaseRestClient("identityEndPoint",
+                "clientId",
+                "clientSecret",
+                Optional.of(partnerId),
+                MARKETO_LIMIT_INTERVAL_MILIS,
+                60000,
+                mockJetty92));
+
+        // call method for evaluation
+        restClient.getAccessToken();
+
+        Jetty92SingleRequester singleRequester = jetty92SingleRequesterArgumentCaptor.getValue();
+
+        HttpClient client = Mockito.mock(HttpClient.class);
+        Request request = Mockito.mock(Request.class);
+
+        Request mockRequest = Mockito.mock(Request.class);
+        Mockito.when(client.newRequest(Mockito.eq(IDENTITY_END_POINT + MarketoRESTEndpoint.ACCESS_TOKEN.getEndpoint()))).thenReturn(mockRequest);
+        Mockito.when(mockRequest.method(Mockito.eq(HttpMethod.GET))).thenReturn(request);
+        singleRequester.requestOnce(client, Mockito.mock(Response.Listener.class));
+
+        Mockito.verify(request, Mockito.times(1)).param(Mockito.eq("client_id"), Mockito.eq("clientId"));
+        Mockito.verify(request, Mockito.times(1)).param(Mockito.eq("client_secret"), Mockito.eq("clientSecret"));
+        Mockito.verify(request, Mockito.times(1)).param(Mockito.eq("grant_type"), Mockito.eq("client_credentials"));
+        Mockito.verify(request, Mockito.times(1)).param(Mockito.eq("partner_id"), Mockito.eq(partnerId));
+    }
+
     @Test
     public void testGetAccessTokenWithError()
     {
@@ -138,7 +179,7 @@ public class MarketoBaseRestClientTest
         Mockito.doThrow(exception).when(request).send(Mockito.any(Response.Listener.class));
 
         Jetty92RetryHelper retryHelper = new Jetty92RetryHelper(1, 1, 1, clientCreator);
-        final MarketoBaseRestClient restClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper);
+        final MarketoBaseRestClient restClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.<String>absent(), MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper);
 
         // calling method should wrap the HttpResponseException by ConfigException
         Assert.assertThrows(ConfigException.class, new ThrowingRunnable()
@@ -196,7 +237,7 @@ public class MarketoBaseRestClientTest
         Mockito.doThrow(exception).when(request).send(Mockito.any(Response.Listener.class));
 
         Jetty92RetryHelper retryHelper = new Jetty92RetryHelper(1, 1, 1, clientCreator);
-        final MarketoBaseRestClient restClient = Mockito.spy(new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper));
+        final MarketoBaseRestClient restClient = Mockito.spy(new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.<String>absent(), MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper));
         Mockito.doReturn("test_access_token").when(restClient).getAccessToken();
 
         return restClient;
