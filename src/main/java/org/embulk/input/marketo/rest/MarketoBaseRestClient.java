@@ -5,6 +5,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpResponseException;
 import org.eclipse.jetty.client.api.ContentProvider;
@@ -109,6 +110,7 @@ public class MarketoBaseRestClient implements AutoCloseable
 
         // add partner api key to the request
         if (partnerApiKey.isPresent()) {
+            LOGGER.info("> Request access_token with partner_id: {}", StringUtils.abbreviate(partnerApiKey.get(), 8));
             params.put("partner_id", partnerApiKey.get());
         }
 
