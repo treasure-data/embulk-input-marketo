@@ -83,7 +83,7 @@ public class MarketoUtils
 
     public static String buildColumnName(String prefix, String columnName)
     {
-        return prefix + "_" + columnName;
+        return prefix.isEmpty() ? columnName : prefix + "_" + columnName;
     }
 
     public static final List<DateRange> sliceRange(DateTime fromDate, DateTime toDate, int rangeSize)
