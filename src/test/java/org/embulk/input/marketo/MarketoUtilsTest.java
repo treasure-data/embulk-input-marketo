@@ -56,6 +56,8 @@ public class MarketoUtilsTest
     {
         String columnName = MarketoUtils.buildColumnName("prefix", "columnName");
         assertEquals("prefix_columnName", columnName);
+        String noPrefixColumn = MarketoUtils.buildColumnName("", "columnName");
+        assertEquals("columnName", noPrefixColumn);
     }
 
     @Test
