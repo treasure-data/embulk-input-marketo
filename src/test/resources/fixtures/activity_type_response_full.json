@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "name": "bb",
+    "description": "sample",
+    "primaryAttribute": {
+      "name": "exampleID",
+      "dataType": "integer"
+    },
+    "attributes": [
+      {
+        "name": "sample_1",
+        "dataType": "string"
+      },
+      {
+        "name": "sample_2",
+        "dataType": "boolean"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "TD Output Test aa",
+    "description": "sample_aa",
+    "primaryAttribute": {
+      "name": "exampleID",
+      "dataType": "integer"
+    },
+    "attributes": [
+      {
+        "name": "sample_aa_1",
+        "dataType": "string"
+      },
+      {
+        "name": "sample_aa_2",
+        "dataType": "boolean"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Bill_progream a",
+    "description": "sample",
+    "primaryAttribute": {
+      "name": "exampleID",
+      "dataType": "integer"
+    },
+    "attributes": [
+      {
+        "name": "sample_a_1",
+        "dataType": "string"
+      },
+      {
+        "name": "sample_a_1",
+        "dataType": "boolean"
+      }
+    ],
+    "apiName": "sample_name_c"
+  },
+  {
+    "id": 4,
+    "name": "Bill_progream b",
+    "description": "sample_b",
+    "primaryAttribute": {
+      "name": "exampleID",
+      "dataType": "integer"
+    },
+    "attributes": [
+      {
+        "name": "sample_b_1",
+        "dataType": "string"
+      },
+      {
+        "name": "sample_b_2",
+        "dataType": "boolean"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Bill_progream c",
+    "description": "sample_c",
+    "primaryAttribute": {
+      "name": "exampleID",
+      "dataType": "integer"
+    },
+    "attributes": [
+      {
+        "name": "sample_c_1",
+        "dataType": "string"
+      },
+      {
+        "name": "sample_c_2",
+        "dataType": "boolean"
+      }
+    ]
+  }
+]
