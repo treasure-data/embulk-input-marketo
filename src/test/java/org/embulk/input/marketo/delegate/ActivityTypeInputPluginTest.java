@@ -24,9 +24,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 
-/**
- * Created by tai.khuu on 10/10/17.
- */
 public class ActivityTypeInputPluginTest
 {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
