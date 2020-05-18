@@ -238,6 +238,12 @@ public class MarketoServiceImpl implements MarketoService
     }
 
     @Override
+    public Iterable<ObjectNode> getLists()
+    {
+        return marketoRestClient.getLists();
+    }
+
+    @Override
     public Iterable<ObjectNode> getActivityTypes()
     {
         return marketoRestClient.getActivityTypes();

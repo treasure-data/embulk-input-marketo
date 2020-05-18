@@ -35,4 +35,6 @@ public interface MarketoService
     List<MarketoField> describeCustomObject(String customObjectAPIName);
 
     Iterable<ObjectNode> getActivityTypes();
+
+    Iterable<ObjectNode> getLists();
 }
