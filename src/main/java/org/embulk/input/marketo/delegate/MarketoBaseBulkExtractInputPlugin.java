@@ -34,6 +34,7 @@ import org.embulk.spi.util.InputStreamFileInput;
 import org.embulk.spi.util.LineDecoder;
 import org.joda.time.DateTime;
 import org.msgpack.value.Value;
+import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -52,6 +53,8 @@ import java.util.NoSuchElementException;
 public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBulkExtractInputPlugin.PluginTask> extends MarketoBaseInputPluginDelegate<T>
 {
     private static final String FROM_DATE = "from_date";
+
+    private static final Logger LOGGER = Exec.getLogger(MarketoBaseBulkExtractInputPlugin.class);
 
     private static final int MARKETO_MAX_RANGE_EXTRACT = 30;
 
@@ -427,7 +430,13 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
             try {
                 int i = 0;
                 while (tokenizer.hasNextColumn()) {
-                    kvMap.put(headers.get(i), tokenizer.nextColumnOrNull());
+                    String column = tokenizer.nextColumnOrNull();
+                    if(column != null && !":\"\",".equals(column)){
+                        column = column.replace("\"\"", "\\\"\\\"");
+                        column = column.replace(":\\\"\\\",", ":\"\",");
+                        column = column.replace("\\\"\\\"\\,\\\"\\\"", "\\\"\\\",\\\"\\\"");
+                    }
+                    kvMap.put(headers.get(i), column);
                     i++;
                 }
             }

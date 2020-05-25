@@ -10,6 +10,7 @@ import org.embulk.config.ConfigException;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.embulk.spi.util.LineDecoder;
+import org.slf4j.Logger;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -21,6 +22,8 @@ import java.util.List;
  */
 public class CsvTokenizer
 {
+    private static final Logger LOGGER = Exec.getLogger(CsvTokenizer.class);
+
     static enum RecordState
     {
         NOT_END, END,
@@ -206,6 +209,10 @@ public class CsvTokenizer
                     line.isEmpty() ||
                             (commentLineMarker != null && line.startsWith(commentLineMarker)));
             if (!skip) {
+                line = line.replace("\\\"\"", "\\\"\\\"");
+                // column = column.replace(":\\\"\\\",", ":\"\",");
+                line = line.replace("\\\"\\\",\\\"\\\"", "\\\"\\\"\\,\\\"\\\"");
+
                 return true;
             }
         }
@@ -423,7 +430,8 @@ public class CsvTokenizer
                     else if (isSpace(c)) {
                         // column has trailing spaces and quoted. TODO should this be rejected?
                     } else {
-                        throw new InvalidValueException(String.format("Unexpected extra character '%c' after a value quoted by '%c'", c, quote));
+                        columnState = ColumnState.QUOTED_VALUE;
+                        // throw new InvalidValueException(String.format("Unexpected extra character '%c' after a value quoted by '%c'", c, quote));
                     }
                     break;
 
