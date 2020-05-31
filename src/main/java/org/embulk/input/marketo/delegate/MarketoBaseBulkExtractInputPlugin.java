@@ -27,6 +27,7 @@ import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
+import org.embulk.spi.json.JsonParseException;
 import org.embulk.spi.json.JsonParser;
 import org.embulk.spi.time.Timestamp;
 import org.embulk.spi.time.TimestampParser;
@@ -297,7 +298,13 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         @Override
         public Value jsonValue(JsonParser jsonParser)
         {
-            return jsonParser.parse(textValue);
+            try {
+                textValue = textValue.replace("\\", "\\\\");
+                return jsonParser.parse(textValue);
+            } catch (Exception e) {
+                LOGGER.info("skipped to parse JSON: " + textValue);
+                return jsonParser.parse("{}");
+            }
         }
 
         @Override
