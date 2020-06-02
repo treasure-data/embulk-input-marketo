@@ -16,10 +16,10 @@ import org.mockito.Mockito;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -79,35 +79,40 @@ public class MarketoServiceImplTest
     public void getAllListLead() throws Exception
     {
         List<String> extractFields = Arrays.asList("field1", "field2");
-        RecordPagingIterable<ObjectNode> listObjectNodes = Mockito.mock(RecordPagingIterable.class);
-        Iterator listIterator = Mockito.mock(Iterator.class);
-        Mockito.when(listIterator.hasNext()).thenReturn(true).thenReturn(true).thenReturn(false);
-        Mockito.when(listIterator.next()).thenReturn(OBJECT_MAPPER.readTree("{\"id\":1}")).thenReturn(OBJECT_MAPPER.readTree("{\"id\":2}"));
-        Mockito.when(listObjectNodes.iterator()).thenReturn(listIterator);
-        List<ObjectNode> leadList1 = new ArrayList<>();
-        leadList1.add((ObjectNode) OBJECT_MAPPER.readTree("{\"id\":\"lead1\"}"));
-        List<ObjectNode> leadList2 = new ArrayList<>();
-        leadList2.add((ObjectNode) OBJECT_MAPPER.readTree("{\"id\":\"lead2\"}"));
-        Mockito.when(mockMarketoRestClient.getLists()).thenReturn(listObjectNodes);
+        List<ObjectNode> allLists = mockParent();
+
+        List<ObjectNode> lead1 = new ArrayList<>();
+        lead1.add((ObjectNode) OBJECT_MAPPER.readTree("{\"id\":\"lead1\"}"));
+        List<ObjectNode> lead2 = new ArrayList<>();
+        lead2.add((ObjectNode) OBJECT_MAPPER.readTree("{\"id\":\"lead2\"}"));
+
         RecordPagingIterable leadIterable1 = Mockito.mock(RecordPagingIterable.class);
         RecordPagingIterable leadsIterable2 = Mockito.mock(RecordPagingIterable.class);
-        Mockito.when(leadIterable1.iterator()).thenReturn(leadList1.iterator());
-        Mockito.when(leadsIterable2.iterator()).thenReturn(leadList2.iterator());
+        Mockito.when(leadIterable1.iterator()).thenReturn(lead1.iterator());
+        Mockito.when(leadsIterable2.iterator()).thenReturn(lead2.iterator());
+
         Mockito.when(mockMarketoRestClient.getLeadsByList(Mockito.eq("1"), Mockito.eq("field1,field2"))).thenReturn(leadIterable1);
         Mockito.when(mockMarketoRestClient.getLeadsByList(Mockito.eq("2"), Mockito.eq("field1,field2"))).thenReturn(leadsIterable2);
-        Iterable<ObjectNode> allListLead = marketoService.getAllListLead(extractFields);
-        Assert.assertEquals(leadList1.get(0), allListLead.iterator().next());
-        Assert.assertEquals(leadList2.get(0), allListLead.iterator().next());
+
+        Iterable<ObjectNode> allListLead = marketoService.getAllListLead(extractFields, allLists);
+        Assert.assertEquals(lead1.get(0), allListLead.iterator().next());
+        Assert.assertEquals(lead2.get(0), allListLead.iterator().next());
+    }
+
+    private List<ObjectNode> mockParent() throws IOException
+    {
+        List<ObjectNode> allLists = new ArrayList<>();
+        allLists.add((ObjectNode) OBJECT_MAPPER.readTree("{\"id\": 1}"));
+        allLists.add((ObjectNode) OBJECT_MAPPER.readTree("{\"id\": 2}"));
+        return allLists;
     }
 
     @Test
     public void getAllProgramLead() throws Exception
     {
         RecordPagingIterable<ObjectNode> listObjectNodes = Mockito.mock(RecordPagingIterable.class);
-        Iterator listIterator = Mockito.mock(Iterator.class);
-        Mockito.when(listIterator.hasNext()).thenReturn(true).thenReturn(true).thenReturn(false);
-        Mockito.when(listIterator.next()).thenReturn(OBJECT_MAPPER.readTree("{\"id\":1}")).thenReturn(OBJECT_MAPPER.readTree("{\"id\":2}"));
-        Mockito.when(listObjectNodes.iterator()).thenReturn(listIterator);
+        Iterable listIterator = mockParent();
+
         List<ObjectNode> leadList1 = new ArrayList<>();
         leadList1.add((ObjectNode) OBJECT_MAPPER.readTree("{\"id\":\"lead1\"}"));
         List<ObjectNode> leadList2 = new ArrayList<>();
@@ -117,9 +122,11 @@ public class MarketoServiceImplTest
         RecordPagingIterable leadsIterable2 = Mockito.mock(RecordPagingIterable.class);
         Mockito.when(leadIterable1.iterator()).thenReturn(leadList1.iterator());
         Mockito.when(leadsIterable2.iterator()).thenReturn(leadList2.iterator());
+
         Mockito.when(mockMarketoRestClient.getLeadsByProgram(Mockito.eq("1"), Mockito.eq("field1,field2"))).thenReturn(leadIterable1);
         Mockito.when(mockMarketoRestClient.getLeadsByProgram(Mockito.eq("2"), Mockito.eq("field1,field2"))).thenReturn(leadsIterable2);
-        Iterable<ObjectNode> allListLead = marketoService.getAllProgramLead(Arrays.asList("field1", "field2"));
+
+        Iterable<ObjectNode> allListLead = marketoService.getAllProgramLead(Arrays.asList("field1", "field2"), listIterator);
         Assert.assertEquals(leadList1.get(0), allListLead.iterator().next());
         Assert.assertEquals(leadList2.get(0), allListLead.iterator().next());
     }

@@ -6,6 +6,7 @@ import org.embulk.input.marketo.model.MarketoField;
 import java.io.File;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by tai.khuu on 9/6/17.
@@ -18,13 +19,15 @@ public interface MarketoService
 
     File extractAllActivity(List<Integer> activityTypeIds, Date startTime, Date endTime, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond);
 
-    Iterable<ObjectNode> getAllListLead(List<String> extractFields);
+    Iterable<ObjectNode> getAllListLead(List<String> extractFields, Iterable<ObjectNode> inputListIds);
 
-    Iterable<ObjectNode> getAllProgramLead(List<String> extractFields);
+    Iterable<ObjectNode> getAllProgramLead(List<String> extractFields, Iterable<ObjectNode> requestProgs);
 
     Iterable<ObjectNode> getCampaign();
 
     Iterable<ObjectNode> getPrograms();
+
+    Iterable<ObjectNode> getProgramsByIds(Set<String> ids);
 
     Iterable<ObjectNode> getProgramsByTag(String tagType, String tagValue);
 
@@ -35,4 +38,8 @@ public interface MarketoService
     List<MarketoField> describeCustomObject(String customObjectAPIName);
 
     Iterable<ObjectNode> getActivityTypes();
+
+    Iterable<ObjectNode> getListsByIds(Set<String> ids);
+
+    Iterable<ObjectNode> getLists();
 }

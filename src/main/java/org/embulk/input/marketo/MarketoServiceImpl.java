@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by tai.khuu on 9/6/17.
@@ -104,6 +105,7 @@ public class MarketoServiceImpl implements MarketoService
             }
         });
     }
+
     private File downloadBulkExtract(Function<BulkExtractRangeHeader, InputStream> getBulkExtractfunction)
     {
         final File tempFile = Exec.getTempFileSpace().createTempFile(DEFAULT_FILE_FORMAT);
@@ -125,51 +127,24 @@ public class MarketoServiceImpl implements MarketoService
         //Too many resume we still can't get the file
         throw new DataException("Can't down load bulk extract");
     }
+
     @Override
-    public Iterable<ObjectNode> getAllListLead(List<String> fieldNames)
+    public Iterable<ObjectNode> getAllListLead(List<String> fieldNames, Iterable<ObjectNode> inputListIds)
     {
-        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getLists();
         final String fieldNameString = StringUtils.join(fieldNames, ",");
-        return MarketoUtils.flatMap(lists, new Function<ObjectNode, Iterable<ObjectNode>>()
-        {
-            @Override
-            public Iterable<ObjectNode> apply(ObjectNode input)
-            {
-                final String id = input.get("id").asText();
-                return Iterables.transform(marketoRestClient.getLeadsByList(id, fieldNameString), new Function<ObjectNode, ObjectNode>()
-                {
-                    @Override
-                    public ObjectNode apply(ObjectNode input)
-                    {
-                        input.put(MarketoUtils.LIST_ID_COLUMN_NAME, id);
-                        return input;
-                    }
-                });
-            }
+        return MarketoUtils.flatMap(inputListIds, input -> {
+            final String id = input.get("id").asText();
+            return Iterables.transform(marketoRestClient.getLeadsByList(id, fieldNameString), input1 -> input1.put(MarketoUtils.LIST_ID_COLUMN_NAME, id));
         });
     }
 
     @Override
-    public Iterable<ObjectNode> getAllProgramLead(List<String> fieldNames)
+    public Iterable<ObjectNode> getAllProgramLead(List<String> fieldNames, Iterable<ObjectNode> requestProgs)
     {
-        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getPrograms();
         final String fieldNameString = StringUtils.join(fieldNames, ",");
-        return MarketoUtils.flatMap(lists, new Function<ObjectNode, Iterable<ObjectNode>>()
-        {
-            @Override
-            public Iterable<ObjectNode> apply(ObjectNode input)
-            {
-                final String id = input.get("id").asText();
-                return Iterables.transform(marketoRestClient.getLeadsByProgram(id, fieldNameString), new Function<ObjectNode, ObjectNode>()
-                {
-                    @Override
-                    public ObjectNode apply(ObjectNode input)
-                    {
-                        input.put(MarketoUtils.PROGRAM_ID_COLUMN_NAME, id);
-                        return input;
-                    }
-                });
-            }
+        return MarketoUtils.flatMap(requestProgs, input -> {
+            final String id = input.get("id").asText();
+            return Iterables.transform(marketoRestClient.getLeadsByProgram(id, fieldNameString), input1 -> input1.put(MarketoUtils.PROGRAM_ID_COLUMN_NAME, id));
         });
     }
 
@@ -214,6 +189,12 @@ public class MarketoServiceImpl implements MarketoService
     }
 
     @Override
+    public Iterable<ObjectNode> getProgramsByIds(Set<String> ids)
+    {
+        return marketoRestClient.getProgramsByIds(ids);
+    }
+
+    @Override
     public Iterable<ObjectNode> getProgramsByTag(String tagType, String tagValue)
     {
         return marketoRestClient.getProgramsByTag(tagType, tagValue);
@@ -241,5 +222,17 @@ public class MarketoServiceImpl implements MarketoService
     public Iterable<ObjectNode> getActivityTypes()
     {
         return marketoRestClient.getActivityTypes();
+    }
+
+    @Override
+    public Iterable<ObjectNode> getListsByIds(Set<String> ids)
+    {
+        return marketoRestClient.getListsByIds(ids);
+    }
+
+    @Override
+    public Iterable<ObjectNode> getLists()
+    {
+        return marketoRestClient.getLists();
     }
 }
