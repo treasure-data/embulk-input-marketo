@@ -39,9 +39,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by khuutantaitai on 10/3/17.
@@ -580,5 +582,68 @@ public class MarketoRestClientTest
         Assert.assertFalse(iterator.hasNext());
         Assert.assertEquals("1", customObject1.get("id").asText());
         Assert.assertEquals("2", customObject2.get("id").asText());
+    }
+
+    @Test
+    public void testGetProgramsByIds() throws IOException
+    {
+        Set<String> ids = new HashSet<>();
+        ids.add("123");
+        ids.add("456");
+
+        ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/program_response.json")))).get("responses");
+        MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
+        MarketoResponse<ObjectNode> page2 = OBJECT_MAPPER.readValue(listPages.get(1).toString(), RESPONSE_TYPE);
+        Mockito.doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), Mockito.isNull(), Mockito.any(Multimap.class), Mockito.any(MarketoResponseJetty92EntityReader.class));
+        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getProgramsByIds(ids);
+        Iterator<ObjectNode> iterator = lists.iterator();
+        ObjectNode program1 = iterator.next();
+        ObjectNode program2 = iterator.next();
+        ObjectNode program3 = iterator.next();
+        Assert.assertFalse(iterator.hasNext());
+        Assert.assertEquals("MB_Sep_25_test_program", program1.get("name").asText());
+        Assert.assertEquals("TD Output Test Program", program2.get("name").asText());
+        Assert.assertEquals("Bill_progream", program3.get("name").asText());
+
+        ArgumentCaptor<ImmutableListMultimap> paramCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
+        Mockito.verify(marketoRestClient, Mockito.times(2)).doGet(Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), Mockito.isNull(), paramCaptor.capture(), Mockito.any(MarketoResponseJetty92EntityReader.class));
+
+        List<ImmutableListMultimap> params = paramCaptor.getAllValues();
+
+        ImmutableListMultimap params1 = params.get(0);
+        Assert.assertEquals("id", params1.get("filterType").get(0));
+        Assert.assertEquals("123,456", params1.get("filterValues").get(0));
+
+        ImmutableListMultimap params2 = params.get(1);
+        Assert.assertEquals(params1.get("filterType").get(0), params2.get("filterType").get(0));
+        Assert.assertEquals(params1.get("filterValues").get(0), params2.get("filterValues").get(0));
+    }
+
+    @Test
+    public void testGetListsByIds() throws IOException
+    {
+        Set<String> ids = new HashSet<>();
+        ids.add("123");
+        ids.add("456");
+
+        mockMarketoPageResponse("/fixtures/lists_response.json", END_POINT + MarketoRESTEndpoint.GET_LISTS.getEndpoint());
+        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getListsByIds(ids);
+        Iterator<ObjectNode> iterator = lists.iterator();
+        ObjectNode list1 = iterator.next();
+        ObjectNode list2 = iterator.next();
+
+        Assert.assertFalse(iterator.hasNext());
+        Assert.assertEquals("Test list 1", list1.get("name").asText());
+        Assert.assertEquals("Test list 2", list2.get("name").asText());
+
+        ArgumentCaptor<ImmutableListMultimap> paramsCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
+        ArgumentCaptor<FormContentProvider> formCaptor = ArgumentCaptor.forClass(FormContentProvider.class);
+        Mockito.verify(marketoRestClient, Mockito.times(2)).doPost(Mockito.eq(END_POINT + MarketoRESTEndpoint.GET_LISTS.getEndpoint()), Mockito.isNull(), paramsCaptor.capture(), Mockito.any(MarketoResponseJetty92EntityReader.class), formCaptor.capture());
+
+        ImmutableListMultimap params = paramsCaptor.getValue();
+        Assert.assertEquals("GET", params.get("_method").iterator().next());
+
+        FormContentProvider form = formCaptor.getValue();
+        Assert.assertEquals("nextPageToken=GWP55GLCVCZLPE6SS7OCG5IEXQ%3D%3D%3D%3D%3D%3D&id=123%2C456&batchSize=300", fromContentProviderToString(form));
     }
 }

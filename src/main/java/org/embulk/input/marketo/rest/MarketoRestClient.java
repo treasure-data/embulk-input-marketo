@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by tai.khuu on 8/22/17.
@@ -357,9 +358,28 @@ public class MarketoRestClient extends MarketoBaseRestClient
         return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_LISTS.getEndpoint(), new ImmutableListMultimap.Builder<String, String>().put(BATCH_SIZE, MAX_BATCH_SIZE).build(), ObjectNode.class);
     }
 
+    public RecordPagingIterable<ObjectNode> getListsByIds(Set<String> ids)
+    {
+        Multimap<String, String> params = new ImmutableListMultimap
+                .Builder<String, String>()
+                .put("id", StringUtils.join(ids, ","))
+                .put(BATCH_SIZE, MAX_BATCH_SIZE).build();
+        return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_LISTS.getEndpoint(), params, ObjectNode.class);
+    }
+
     public RecordPagingIterable<ObjectNode> getPrograms()
     {
         return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint(), new ImmutableListMultimap.Builder<String, String>().put(MAX_RETURN, DEFAULT_MAX_RETURN).build(), ObjectNode.class);
+    }
+
+    public RecordPagingIterable<ObjectNode> getProgramsByIds(Set<String> ids)
+    {
+        Multimap<String, String> params = new ImmutableListMultimap
+                .Builder<String, String>()
+                .put(FILTER_TYPE, "id")
+                .put(FILTER_VALUES, StringUtils.join(ids, ","))
+                .put(BATCH_SIZE, MAX_BATCH_SIZE).build();
+        return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint(), params, ObjectNode.class);
     }
 
     public RecordPagingIterable<ObjectNode> getLeadsByProgram(String programId, String fieldNames)
