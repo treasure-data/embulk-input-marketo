@@ -10,6 +10,7 @@ import org.embulk.base.restclient.record.RecordImporter;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.ConfigLoader;
 import org.embulk.config.ConfigSource;
+import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
@@ -24,10 +25,13 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -99,5 +103,32 @@ public class LeadWithProgramInputPluginTest
         List<Long> allValues = longArgumentCaptor.getAllValues();
         long actualValue = allValues.get(0);
         assertEquals(102519L, actualValue);
+    }
+
+    @Test
+    public void testGetProgramsByIds()
+    {
+        ConfigSource cfgWithInputIds = configSource.set("program_ids", "123,12333").set("skip_invalid_program_id", true);
+        LeadWithProgramInputPlugin.PluginTask task = cfgWithInputIds.loadConfig(LeadWithProgramInputPlugin.PluginTask.class);
+        MarketoService service = Mockito.mock(MarketoService.class);
+        Mockito.doReturn(Arrays.asList(new ObjectMapper().createObjectNode().put("id", "123"))).when(service).getProgramsByIds(anySet());
+
+        leadWithProgramInputPlugin.getServiceRecords(service, task);
+
+        Mockito.verify(service, Mockito.times(1)).getProgramsByIds(anySet());
+        Mockito.verify(service, Mockito.never()).getPrograms();
+        Mockito.verify(service, Mockito.times(1)).getAllProgramLead(anyList(), anyList());
+    }
+
+    @Test
+    public void testGetAllLists()
+    {
+        LeadWithProgramInputPlugin.PluginTask task = configSource.loadConfig(LeadWithProgramInputPlugin.PluginTask.class);
+        MarketoService service = Mockito.mock(MarketoService.class);
+        leadWithProgramInputPlugin.getServiceRecords(service, task);
+
+        Mockito.verify(service, Mockito.never()).getProgramsByIds(anySet());
+        Mockito.verify(service, Mockito.times(1)).getPrograms();
+        Mockito.verify(service, Mockito.times(1)).getAllProgramLead(anyList(), anyList());
     }
 }
