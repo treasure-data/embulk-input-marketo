@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterators;
+
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.text.StringEscapeUtils;
 import org.embulk.base.restclient.jackson.JacksonServiceRecord;
 import org.embulk.base.restclient.jackson.JacksonServiceValue;
 import org.embulk.base.restclient.record.RecordImporter;
@@ -173,7 +177,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 int imported = 0;
                 while (csvRecords.hasNext()) {
                     Map<String, String> csvRecord = csvRecords.next();
-                    ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
+                    ObjectNode objectNode = MarketoUtils.getObjectMapper().valueToTree(csvRecord);
                     recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
                     imported = imported + 1;
                 }
@@ -299,7 +303,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         public Value jsonValue(JsonParser jsonParser)
         {
             try {
-                textValue = textValue.replace("\\", "\\\\");
                 return jsonParser.parse(textValue);
             } catch (Exception e) {
                 LOGGER.info("skipped to parse JSON: " + textValue);
@@ -435,16 +438,9 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
             }
             Map<String, String> kvMap = new HashMap<>();
             try {
-                int i = 0;
-                while (tokenizer.hasNextColumn()) {
-                    String column = tokenizer.nextColumnOrNull();
-                    if(column != null && !":\"\",".equals(column)){
-                        column = column.replace("\"\"", "\\\"\\\"");
-                        column = column.replace(":\\\"\\\",", ":\"\",");
-                        column = column.replace("\\\"\\\"\\,\\\"\\\"", "\\\"\\\",\\\"\\\"");
-                    }
-                    kvMap.put(headers.get(i), column);
-                    i++;
+                CSVRecord record = tokenizer.csvParse();
+                for (int i = 0; i < headers.size(); i++) {
+                    kvMap.put(headers.get(i), record.get(i));
                 }
             }
             catch (CsvTokenizer.InvalidValueException ex) {

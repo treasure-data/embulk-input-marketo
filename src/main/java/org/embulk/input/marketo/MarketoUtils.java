@@ -1,5 +1,7 @@
 package org.embulk.input.marketo;
 
+import com.fasterxml.jackson.core.SerializableString;
+import com.fasterxml.jackson.core.io.CharacterEscapes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
@@ -31,7 +33,6 @@ public class MarketoUtils
 {
     public static final String MARKETO_DATE_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S%z";
     public static final String MARKETO_DATE_FORMAT = "%Y-%m-%d";
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     public static final Function<ObjectNode, ServiceRecord> TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION = new Function<ObjectNode, ServiceRecord>()
     {
         @Nullable
@@ -50,6 +51,33 @@ public class MarketoUtils
 
     private MarketoUtils()
     {
+    }
+
+    public static ObjectMapper getObjectMapper()
+    {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.getFactory().setCharacterEscapes(new CharacterEscapes() {
+
+            private final int[] escapeCodes;
+
+            {
+                escapeCodes = standardAsciiEscapesForJSON();
+                escapeCodes['\''] = CharacterEscapes.ESCAPE_STANDARD;
+                escapeCodes['/']  = CharacterEscapes.ESCAPE_STANDARD;
+                escapeCodes['\n'] = CharacterEscapes.ESCAPE_STANDARD;
+            }
+
+            @Override
+            public int[] getEscapeCodesForAscii() {
+              return escapeCodes;
+            }
+
+            @Override
+            public SerializableString getEscapeSequence(int ch) {
+              return null;
+            }
+          });
+        return new ObjectMapper();
     }
 
     public static ServiceResponseMapper<? extends ValueLocator> buildDynamicResponseMapper(String prefix, List<MarketoField> columns)
