@@ -205,10 +205,8 @@ public class CsvTokenizer {
 
     public CSVRecord csvParse() {
         try {
-            LOGGER.info(line);
             CSVParser csvParser = CSVParser.parse(line, CSVFormat.DEFAULT);
             CSVRecord record = csvParser.getRecords().get(0);
-            LOGGER.info(record.toString());
             recordState = RecordState.END;
             return record;
         } catch (IOException e) {
