@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigException;
@@ -12,6 +15,9 @@ import org.embulk.spi.Exec;
 import org.embulk.spi.util.LineDecoder;
 import org.slf4j.Logger;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -20,17 +26,14 @@ import java.util.List;
 /**
  * Created by tai.khuu on 9/15/17.
  */
-public class CsvTokenizer
-{
+public class CsvTokenizer {
     private static final Logger LOGGER = Exec.getLogger(CsvTokenizer.class);
 
-    static enum RecordState
-    {
+    static enum RecordState {
         NOT_END, END,
     }
 
-    static enum ColumnState
-    {
+    static enum ColumnState {
         BEGIN, VALUE, QUOTED_VALUE, AFTER_QUOTED_VALUE, FIRST_TRIM, LAST_TRIM_OR_VALUE,
     }
 
@@ -38,8 +41,7 @@ public class CsvTokenizer
     static final char NO_QUOTE = '\0';
     static final char NO_ESCAPE = '\0';
 
-    public interface PluginTask extends LineDecoder.DecoderTask
-    {
+    public interface PluginTask extends LineDecoder.DecoderTask {
         @Config("delimiter")
         @ConfigDefault("\",\"")
         String getDelimiter();
@@ -63,7 +65,7 @@ public class CsvTokenizer
         boolean getTrimIfNotQuoted();
 
         @Config("max_quoted_size_limit")
-        @ConfigDefault("131072") //128kB
+        @ConfigDefault("131072") // 128kB
         long getMaxQuotedSizeLimit();
 
         @Config("comment_line_marker")
@@ -71,18 +73,19 @@ public class CsvTokenizer
         Optional<String> getCommentLineMarker();
     }
 
-    private final char delimiterChar;
-    private final String delimiterFollowingString;
-    private final char quote;
-    private final char escape;
-    private final String newline;
-    private final boolean trimIfNotQuoted;
-    private final long maxQuotedSizeLimit;
-    private final String commentLineMarker;
-    private final LineDecoder input;
-    private final String nullStringOrNull;
+    private char delimiterChar;
+    private String delimiterFollowingString;
+    private char quote;
+    private char escape;
+    private String newline;
+    private boolean trimIfNotQuoted;
+    private long maxQuotedSizeLimit;
+    private String commentLineMarker;
+    private LineDecoder input;
+    private String nullStringOrNull;
 
-    private RecordState recordState = RecordState.END;  // initial state is end of a record. nextRecord() must be called first
+    private RecordState recordState = RecordState.END; // initial state is end of a record. nextRecord() must be called
+                                                       // first
     private long lineNumber = 0;
 
     private String line = null;
@@ -91,24 +94,22 @@ public class CsvTokenizer
     private List<String> quotedValueLines = new ArrayList<>();
     private Deque<String> unreadLines = new ArrayDeque<>();
 
-    public CsvTokenizer(LineDecoder input, PluginTask task)
-    {
+    public CsvTokenizer(LineDecoder input, PluginTask task) {
         this(task.getDelimiter(), task.getQuoteChar().or(QuoteCharacter.noQuote()).getCharacter(),
                 task.getEscapeChar().or(EscapeCharacter.noEscape()).getCharacter(), task.getNewline().getString(),
-                task.getTrimIfNotQuoted(), task.getMaxQuotedSizeLimit(), task.getCommentLineMarker().orNull(), input, task.getNullString().orNull());
+                task.getTrimIfNotQuoted(), task.getMaxQuotedSizeLimit(), task.getCommentLineMarker().orNull(), input,
+                task.getNullString().orNull());
     }
 
-    public CsvTokenizer(String delimiter, char quote, char escape, String newline, boolean trimIfNotQuoted, long maxQuotedSizeLimit, String commentLineMarker, LineDecoder input, String nullStringOrNull)
-    {
+    public CsvTokenizer(String delimiter, char quote, char escape, String newline, boolean trimIfNotQuoted,
+            long maxQuotedSizeLimit, String commentLineMarker, LineDecoder input, String nullStringOrNull) {
         if (delimiter.length() == 0) {
             throw new ConfigException("Empty delimiter is not allowed");
-        }
-        else {
+        } else {
             this.delimiterChar = delimiter.charAt(0);
             if (delimiter.length() > 1) {
                 delimiterFollowingString = delimiter.substring(1);
-            }
-            else {
+            } else {
                 delimiterFollowingString = null;
             }
         }
@@ -122,13 +123,39 @@ public class CsvTokenizer
         this.nullStringOrNull = nullStringOrNull;
     }
 
-    public long getCurrentLineNumber()
+    private Reader inputStream;
+
+    public CsvTokenizer(Reader inputStream)
     {
+        this.inputStream = inputStream;
+    }
+
+    public CSVParser csvParse() {
+        try {
+            BufferedReader b = new BufferedReader(inputStream);
+            StringBuilder sb = new StringBuilder();
+            String line = b.readLine();
+            sb.append(line);
+            while(line != null){
+                sb.append("\r\n");
+                sb.append(line);
+                line = b.readLine();
+            }
+            String csv = sb.toString();
+
+            CSVParser csvParser = CSVParser.parse(csv, CSVFormat.DEFAULT.withFirstRecordAsHeader());
+            inputStream.close();
+            return csvParser;
+        } catch (IOException e) {
+            throw new InvalidValueException(e.getMessage());
+        }
+    }
+
+    public long getCurrentLineNumber() {
         return lineNumber;
     }
 
-    public boolean skipHeaderLine()
-    {
+    public boolean skipHeaderLine() {
         boolean skipped = input.poll() != null;
         if (skipped) {
             lineNumber++;
@@ -137,15 +164,13 @@ public class CsvTokenizer
     }
 
     // returns skipped line
-    public String skipCurrentLine()
-    {
+    public String skipCurrentLine() {
         String skippedLine;
         if (quotedValueLines.isEmpty()) {
             skippedLine = line;
-        }
-        else {
+        } else {
             // recover lines of quoted value
-            skippedLine = quotedValueLines.remove(0);  // TODO optimize performance
+            skippedLine = quotedValueLines.remove(0); // TODO optimize performance
             unreadLines.addAll(quotedValueLines);
             lineNumber -= quotedValueLines.size();
             if (line != null) {
@@ -158,8 +183,7 @@ public class CsvTokenizer
         return skippedLine;
     }
 
-    public boolean nextFile()
-    {
+    public boolean nextFile() {
         boolean next = input.nextFile();
         if (next) {
             lineNumber = 0;
@@ -168,13 +192,11 @@ public class CsvTokenizer
     }
 
     // used by guess-csv
-    public boolean nextRecord()
-    {
+    public boolean nextRecord() {
         return nextRecord(true);
     }
 
-    public boolean nextRecord(boolean skipEmptyLine)
-    {
+    public boolean nextRecord(boolean skipEmptyLine) {
         // If at the end of record, read the next line and initialize the state
         if (recordState != RecordState.END) {
             throw new TooManyColumnsException("Too many columns");
@@ -184,19 +206,16 @@ public class CsvTokenizer
         if (hasNext) {
             recordState = RecordState.NOT_END;
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
 
-    private boolean nextLine(boolean skipEmptyLine)
-    {
+    private boolean nextLine(boolean skipEmptyLine) {
         while (true) {
             if (!unreadLines.isEmpty()) {
                 line = unreadLines.removeFirst();
-            }
-            else {
+            } else {
                 line = input.poll();
                 if (line == null) {
                     return false;
@@ -205,14 +224,9 @@ public class CsvTokenizer
             linePos = 0;
             lineNumber++;
 
-            boolean skip = skipEmptyLine && (
-                    line.isEmpty() ||
-                            (commentLineMarker != null && line.startsWith(commentLineMarker)));
+            boolean skip = skipEmptyLine
+                    && (line.isEmpty() || (commentLineMarker != null && line.startsWith(commentLineMarker)));
             if (!skip) {
-                line = line.replace("\\\"\"", "\\\"\\\"");
-                // column = column.replace(":\\\"\\\",", ":\"\",");
-                line = line.replace("\\\"\\\",\\\"\\\"", "\\\"\\\"\\,\\\"\\\"");
-
                 return true;
             }
         }

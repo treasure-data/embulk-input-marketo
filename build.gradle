@@ -16,7 +16,7 @@ repositories {
 configurations {
     provided
 }
-version = "0.6.22"
+version = "0.6.25"
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
@@ -25,6 +25,9 @@ dependencies {
     provided "org.embulk:embulk-core:0.8.+"
     compile  "org.embulk.base.restclient:embulk-base-restclient:0.5.3"
     compile  "org.embulk.base.restclient:embulk-util-retryhelper-jetty92:0.5.3"
+    compile 'org.apache.commons:commons-text:1.2'
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-csv
+    compile group: 'org.apache.commons', name: 'commons-csv', version: '1.8'
     testCompile "junit:junit:4.+"
     testCompile "org.embulk:embulk-core:0.8.+:tests"
     testCompile "org.embulk:embulk-test:0.8.+"
