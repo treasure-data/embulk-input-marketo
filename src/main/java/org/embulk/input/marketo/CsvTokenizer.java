@@ -7,7 +7,6 @@ import com.google.common.base.Preconditions;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigException;
@@ -16,7 +15,9 @@ import org.embulk.spi.Exec;
 import org.embulk.spi.util.LineDecoder;
 import org.slf4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -72,16 +73,16 @@ public class CsvTokenizer {
         Optional<String> getCommentLineMarker();
     }
 
-    private final char delimiterChar;
-    private final String delimiterFollowingString;
-    private final char quote;
-    private final char escape;
-    private final String newline;
-    private final boolean trimIfNotQuoted;
-    private final long maxQuotedSizeLimit;
-    private final String commentLineMarker;
-    private final LineDecoder input;
-    private final String nullStringOrNull;
+    private char delimiterChar;
+    private String delimiterFollowingString;
+    private char quote;
+    private char escape;
+    private String newline;
+    private boolean trimIfNotQuoted;
+    private long maxQuotedSizeLimit;
+    private String commentLineMarker;
+    private LineDecoder input;
+    private String nullStringOrNull;
 
     private RecordState recordState = RecordState.END; // initial state is end of a record. nextRecord() must be called
                                                        // first
@@ -120,6 +121,34 @@ public class CsvTokenizer {
         this.commentLineMarker = commentLineMarker;
         this.input = input;
         this.nullStringOrNull = nullStringOrNull;
+    }
+
+    private Reader inputStream;
+
+    public CsvTokenizer(Reader inputStream)
+    {
+        this.inputStream = inputStream;
+    }
+
+    public CSVParser csvParse() {
+        try {
+            BufferedReader b = new BufferedReader(inputStream);
+            StringBuilder sb = new StringBuilder();
+            String line = b.readLine();
+            sb.append(line);
+            while(line != null){
+                sb.append("\r\n");
+                sb.append(line);
+                line = b.readLine();
+            }
+            String csv = sb.toString();
+
+            CSVParser csvParser = CSVParser.parse(csv, CSVFormat.DEFAULT.withFirstRecordAsHeader());
+            inputStream.close();
+            return csvParser;
+        } catch (IOException e) {
+            throw new InvalidValueException(e.getMessage());
+        }
     }
 
     public long getCurrentLineNumber() {
@@ -200,18 +229,6 @@ public class CsvTokenizer {
             if (!skip) {
                 return true;
             }
-        }
-    }
-
-    public CSVRecord csvParse() {
-        try {
-            CSVParser csvParser = CSVParser.parse(line, CSVFormat.DEFAULT);
-            CSVRecord record = csvParser.getRecords().get(0);
-            recordState = RecordState.END;
-            return record;
-        } catch (IOException e) {
-            LOGGER.info(e.getMessage());
-            throw new InvalidValueException("死にました");
         }
     }
 
