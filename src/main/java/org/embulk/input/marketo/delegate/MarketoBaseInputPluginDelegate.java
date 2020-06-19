@@ -103,7 +103,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
         return new DefaultServiceDataSplitter();
     }
 
-    protected Iterable<ObjectNode> getObjectsByIds(String[] inputIds, boolean ignoreInvalid, Function<Set<String>, Iterable<ObjectNode>> getByIdFunction)
+    protected Iterable<ObjectNode> getObjectsByIds(String[] inputIds, Function<Set<String>, Iterable<ObjectNode>> getByIdFunction)
     {
         final Set<String> ids = new HashSet<>();
         final List<String> invalidIds = new ArrayList<>();
@@ -129,10 +129,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
         }
 
         if (!invalidIds.isEmpty()) {
-            if (!ignoreInvalid) {
-                throw new ConfigException("Invalid Id(s): " + invalidIds);
-            }
-            logger.warn("Skip invalid Id(s): {}", invalidIds);
+            logger.warn("Ignore invalid Id(s): {}", invalidIds);
         }
 
         List<ObjectNode> actualList = Lists.newArrayList(getByIdFunction.apply(ids));
@@ -141,14 +138,13 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
         }
 
         if (actualList.size() != ids.size()) {
-            // find the ignored ids
-            checkOrThrow(ids, actualList, ignoreInvalid);
+            logNoneExistedIds(ids, actualList);
         }
 
         return actualList;
     }
 
-    private void checkOrThrow(Set<String> ids, List<ObjectNode> actualList, boolean ignoreInvalid)
+    private void logNoneExistedIds(Set<String> ids, List<ObjectNode> actualList)
     {
         List<String> actualIds = actualList.parallelStream().map(n -> String.valueOf(n.get("id").asInt())).collect(Collectors.toList());
         List<String> missingIds = new ArrayList<>();
@@ -157,10 +153,6 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
                 missingIds.add(id);
             }
         }
-
-        if (!ignoreInvalid) {
-            throw new ConfigException("Invalid non-existent Id(s): " + missingIds);
-        }
-        logger.warn("Skip non-existent Id(s): {}", missingIds);
+        logger.warn("Ignore not exists Id(s): {}", missingIds);
     }
 }

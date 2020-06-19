@@ -33,42 +33,21 @@ public class MarketoBaseInputPluginDelegateTest
     MarketoBaseInputPluginDelegate delegate = spy(MarketoBaseInputPluginDelegate.class);
 
     @Test
-    public void testFalseSkipInvalidInput()
+    public void testInputIds()
     {
-        final boolean skipInvalid = false;
-        doReturn(getSampleResp(), getSampleResp(), Collections.emptyList()).when(service).getListsByIds(anySet());
-        Function<Set<String>, Iterable<ObjectNode>> getListIds = (ids) -> service.getListsByIds(ids);
-
-        final String[] ids = StringUtils.split("123,abc,,123.45,1002 ", ID_LIST_SEPARATOR_CHAR);
-        ConfigException exception = assertThrows(ConfigException.class, () -> delegate.getObjectsByIds(ids, skipInvalid, getListIds));
-        assertEquals("Invalid Id(s): [abc, 123.45]", exception.getMessage());
-
-        final String[] nullIds = StringUtils.split("  , ,  ,, ", ID_LIST_SEPARATOR_CHAR);
-        exception = assertThrows(ConfigException.class, () -> delegate.getObjectsByIds(nullIds, skipInvalid, getListIds));
-        assertEquals("No valid Id specified", exception.getMessage());
-
-        final String[] notExist = StringUtils.split(" 123 ,3453 ,  234234,, ", ID_LIST_SEPARATOR_CHAR);
-        exception = assertThrows(ConfigException.class, () -> delegate.getObjectsByIds(notExist, skipInvalid, getListIds));
-        assertEquals("Invalid non-existent Id(s): [123, 3453, 234234]", exception.getMessage());
-    }
-
-    @Test
-    public void testSkipInvalidInput()
-    {
-        final boolean skipInvalid = true;
         doReturn(getSampleResp(), Collections.emptyList(), Collections.emptyList()).when(service).getListsByIds(anySet());
         Function<Set<String>, Iterable<ObjectNode>> getListIds = (ids) -> service.getListsByIds(ids);
 
         final String[] ids = StringUtils.split("123,abc,,123.45,1002 ", ID_LIST_SEPARATOR_CHAR);
-        Iterable<ObjectNode> rs1 = delegate.getObjectsByIds(ids, skipInvalid, getListIds);
+        Iterable<ObjectNode> rs1 = delegate.getObjectsByIds(ids, getListIds);
         assertEquals(Lists.newArrayList(rs1).size(), 1);
 
         final String[] nullIds = StringUtils.split("  , ,  ,, ", ID_LIST_SEPARATOR_CHAR);
-        ConfigException exception = assertThrows(ConfigException.class, () -> delegate.getObjectsByIds(nullIds, skipInvalid, getListIds));
+        ConfigException exception = assertThrows(ConfigException.class, () -> delegate.getObjectsByIds(nullIds, getListIds));
         assertEquals("No valid Id specified", exception.getMessage());
 
         final String[] notExist = StringUtils.split(" 123 ,3453 ,  234234,,", ID_LIST_SEPARATOR_CHAR);
-        exception = assertThrows(ConfigException.class, () -> delegate.getObjectsByIds(notExist, skipInvalid, getListIds));
+        exception = assertThrows(ConfigException.class, () -> delegate.getObjectsByIds(notExist, getListIds));
         assertEquals("No valid Id found", exception.getMessage());
     }
 

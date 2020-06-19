@@ -30,10 +30,6 @@ public class LeadWithProgramInputPlugin extends MarketoBaseInputPluginDelegate<L
         @Config("program_ids")
         @ConfigDefault("null")
         Optional<String> getProgramIds();
-
-        @Config("skip_invalid_program_id")
-        @ConfigDefault("false")
-        boolean getSkipInvalidProgram();
     }
 
     @Override
@@ -41,19 +37,19 @@ public class LeadWithProgramInputPlugin extends MarketoBaseInputPluginDelegate<L
     {
         List<String> fieldNames = task.getExtractedFields();
 
-        Iterable<ObjectNode> requestProgs;
+        Iterable<ObjectNode> programsToRequest;
         if (isUserInputProgs(task)) {
             final String[] idsStr = StringUtils.split(task.getProgramIds().get(), ID_LIST_SEPARATOR_CHAR);
             Function<Set<String>, Iterable<ObjectNode>> getListIds = (ids) -> marketoService.getProgramsByIds(ids);
-            requestProgs = super.getObjectsByIds(idsStr, task.getSkipInvalidProgram(), getListIds);
+            programsToRequest = super.getObjectsByIds(idsStr, getListIds);
         }
         else {
-            requestProgs = marketoService.getPrograms();
+            programsToRequest = marketoService.getPrograms();
         }
 
         // Remove PROGRAM_ID_COLUMN_NAME when sent fields to Marketo since PROGRAM_ID_COLUMN_NAME are added by plugin code
         fieldNames.remove(MarketoUtils.PROGRAM_ID_COLUMN_NAME);
-        return FluentIterable.from(marketoService.getAllProgramLead(fieldNames, requestProgs)).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION).iterator();
+        return FluentIterable.from(marketoService.getAllProgramLead(fieldNames, programsToRequest)).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION).iterator();
     }
 
     private boolean isUserInputProgs(LeadWithProgramInputPlugin.PluginTask task)
