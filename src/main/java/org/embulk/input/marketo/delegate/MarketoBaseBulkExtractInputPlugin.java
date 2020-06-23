@@ -211,7 +211,11 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
                 @Override
                 public void stringColumn(Column column) {
-                    pageBuilder.setString(column, column.getName() + "_" + rowNum);
+                    if(column.getName().endsWith("Id") || column.getName().equals("id")){
+                        pageBuilder.setString(column, Integer.toString(rowNum));
+                    }else{
+                        pageBuilder.setString(column, column.getName() + "_" + rowNum);
+                    }
                 }
 
                 @Override
