@@ -16,10 +16,16 @@ import org.embulk.spi.util.LineDecoder;
 import org.slf4j.Logger;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Deque;
 import java.util.List;
 
@@ -132,19 +138,22 @@ public class CsvTokenizer {
 
     public CSVParser csvParse() {
         try {
+            String path = String.format("tmp_%d.csv", Calendar.getInstance().getTimeInMillis());
+            File file = new File(path);
+            FileWriter filewriter = new FileWriter(file);
+
             BufferedReader b = new BufferedReader(inputStream);
-            StringBuilder sb = new StringBuilder();
             String line = b.readLine();
-            sb.append(line);
+            filewriter.write(line);
             while(line != null){
-                sb.append("\r\n");
-                sb.append(line);
+                filewriter.write("\r\n");
+                filewriter.write(line);
                 line = b.readLine();
             }
-            String csv = sb.toString();
-
-            CSVParser csvParser = CSVParser.parse(csv, CSVFormat.DEFAULT.withFirstRecordAsHeader());
+            filewriter.close();
             inputStream.close();
+
+            CSVParser csvParser = CSVParser.parse(file, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withFirstRecordAsHeader());
             return csvParser;
         } catch (IOException e) {
             throw new InvalidValueException(e.getMessage());
