@@ -577,6 +577,18 @@ public class MarketoRestClient extends MarketoBaseRestClient
             }
         });
     }
+
+    public Iterable<ObjectNode> getCustomObject(String customObjectApiName, String filterType, String filterValue, String returnFields)
+    {
+        Multimap<String, String> params = new ImmutableListMultimap
+                .Builder<String, String>()
+                .put("filterType", StringUtils.trimToEmpty(filterType))
+                .put("filterValues", StringUtils.trimToEmpty(filterValue))
+                .put("fields", StringUtils.trimToEmpty(returnFields))
+                .put(BATCH_SIZE, MAX_BATCH_SIZE).build();
+        return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(new ImmutableMap.Builder().put("api_name", customObjectApiName).build()), params, ObjectNode.class);
+    }
+
     public Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue)
     {
         return getCustomObjectRecordWithPagination(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(new ImmutableMap.Builder().put("api_name", customObjectAPIName).build()), customObjectFilterType, customObjectFields, fromValue, toValue, ObjectNode.class);

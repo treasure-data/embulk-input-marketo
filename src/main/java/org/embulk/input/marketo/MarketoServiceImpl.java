@@ -3,6 +3,7 @@ package org.embulk.input.marketo;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.model.MarketoField;
@@ -20,6 +21,8 @@ import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by tai.khuu on 9/6/17.
@@ -215,7 +218,24 @@ public class MarketoServiceImpl implements MarketoService
     @Override
     public Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue)
     {
-        return marketoRestClient.getCustomObject(customObjectAPIName, customObjectFilterType, customObjectFields, fromValue, toValue);
+        if (toValue == null) {
+            return marketoRestClient.getCustomObject(customObjectAPIName, customObjectFilterType, customObjectFields, fromValue, toValue);
+        }
+
+        // make sure to import values in the whole range
+        Set<String> filterValues = IntStream.rangeClosed(fromValue, toValue.intValue()).mapToObj(String::valueOf).collect(Collectors.toSet());
+        return getCustomObject(customObjectAPIName, customObjectFilterType, filterValues, customObjectFields);
+    }
+
+    @Override
+    public Iterable<ObjectNode> getCustomObject(String customObjectApiName, String filterType, Set<String> filterValues, String returnFields)
+    {
+        // Marketo allows maximum 300 (comma separated) filterValues per request. Split the input and process by chunk.
+        List<List<String>> partitionedFilterValues = Lists.partition(Lists.newArrayList(filterValues), 300);
+        return MarketoUtils.flatMap(partitionedFilterValues, (part) -> {
+            String strFilterValues = StringUtils.join(part, ",");
+            return marketoRestClient.getCustomObject(customObjectApiName, filterType, strFilterValues, returnFields);
+        });
     }
 
     @Override
