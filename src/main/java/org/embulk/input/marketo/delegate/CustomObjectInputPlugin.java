@@ -42,8 +42,8 @@ public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<Cust
         Optional<Integer> getToValue();
 
         @Config("custom_object_filter_values")
-        @ConfigDefault("\"\"")
-        String getCustomObjectFilterValues();
+        @ConfigDefault("null")
+        Optional<String> getCustomObjectFilterValues();
     }
 
     public CustomObjectInputPlugin()
@@ -60,19 +60,19 @@ public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<Cust
         if (StringUtils.isBlank(task.getCustomObjectAPIName())) {
             throw new ConfigException("`custom_object_api_name` cannot be empty");
         }
-        if (StringUtils.isBlank(task.getCustomObjectFilterValues())) {
+        if (!task.getCustomObjectFilterValues().isPresent()) {
             if (task.getToValue().isPresent() && !isValidFilterRange(task)) {
                 throw new ConfigException(String.format("`to_value` (%s) cannot be less than the `from_value` (%s)", task.getToValue().get(), task.getFromValue()));
             }
         }
-        else if (refineFilterValues(task.getCustomObjectFilterValues()).isEmpty()) {
+        else if (refineFilterValues(task.getCustomObjectFilterValues().get()).isEmpty()) {
             throw new ConfigException("`custom_object_filter_values` cannot contain empty values only");
         }
     }
 
     private Set<String> refineFilterValues(String filterValues)
     {
-        return Stream.of(StringUtils.split(filterValues, ",")).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+        return Stream.of(StringUtils.split(filterValues, ",")).map(StringUtils::trimToEmpty).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
     }
 
     private boolean isValidFilterRange(PluginTask task)
@@ -84,8 +84,8 @@ public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<Cust
     protected Iterator<ServiceRecord> getServiceRecords(MarketoService marketoService, PluginTask task)
     {
         Iterable<ObjectNode> responseObj;
-        if (StringUtils.isNotBlank(task.getCustomObjectFilterValues())) {
-            Set<String> refinedValues = refineFilterValues(task.getCustomObjectFilterValues());
+        if (task.getCustomObjectFilterValues().isPresent()) {
+            Set<String> refinedValues = refineFilterValues(task.getCustomObjectFilterValues().get());
             responseObj = marketoService.getCustomObject(task.getCustomObjectAPIName(), task.getCustomObjectFilterType(), refinedValues, task.getCustomObjectFields().orNull());
         }
         else {
