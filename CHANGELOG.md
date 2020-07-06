@@ -1,3 +1,7 @@
+## 0.6.19 - 2020-07-06
+* [enhancement] Support import Lead/Member by input static List,Program IDs [100](https://github.com/treasure-data/embulk-input-marketo/pull/100)
+* [enhancement] Support string comma-separated filterValues for Custom Objects [100](https://github.com/treasure-data/embulk-input-marketo/pull/100)
+
 ## 0.6.18 - 2020-01-06
 * [enhancement] Support Marketo Partner API Key [#98](https://github.com/treasure-data/embulk-input-marketo/pull/98)
 

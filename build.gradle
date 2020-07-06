@@ -16,9 +16,9 @@ repositories {
 configurations {
     provided
 }
-version = "0.6.18"
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+version = "0.6.19"
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 dependencies {
     compile  "org.embulk:embulk-core:0.8.+"
