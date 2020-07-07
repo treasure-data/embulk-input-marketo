@@ -61,7 +61,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
     private static final Logger LOGGER = Exec.getLogger(MarketoBaseBulkExtractInputPlugin.class);
 
-    private static final int MARKETO_MAX_RANGE_EXTRACT = 30;
+    private static final int MARKETO_MAX_RANGE_EXTRACT = 10;
 
     private List<CSVRecord> records;
 
