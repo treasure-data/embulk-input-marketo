@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
-
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
 import org.embulk.base.restclient.record.RecordImporter;
@@ -21,19 +20,20 @@ import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
 import org.embulk.spi.type.Types;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramInputPlugin.PluginTask>
 {
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormat.forPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
     private final Logger logger = Exec.getLogger(getClass());
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask
@@ -96,12 +96,14 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
                     throw new ConfigException("`earliest_updated_at` is required when query by Date Range");
                 }
 
-                DateTime earliest = new DateTime(task.getEarliestUpdatedAt().get());
+                OffsetDateTime earliest = task.getEarliestUpdatedAt().isPresent() ?
+                        task.getEarliestUpdatedAt().get().toInstant().atOffset(ZoneOffset.UTC) :
+                        OffsetDateTime.now(ZoneOffset.UTC);
                 if (task.getReportDuration().isPresent()) {
                     logger.info("`report_duration` is present, Prefer `report_duration` over `latest_updated_at`");
                     // Update the latestUpdatedAt for the config
-                    DateTime latest = earliest.plus(task.getReportDuration().get());
-                    task.setLatestUpdatedAt(Optional.of(latest.toDate()));
+                    OffsetDateTime latest = earliest.plus(task.getReportDuration().get(), ChronoUnit.MILLIS);
+                    task.setLatestUpdatedAt(Optional.of(Date.from(latest.toInstant())));
                 }
 
                 // latest_updated_at is required calculate time range
@@ -109,17 +111,19 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
                     throw new ConfigException("`latest_updated_at` is required when query by Date Range");
                 }
 
-                DateTime latest = new DateTime(task.getLatestUpdatedAt().get());
-                if (earliest.isAfter(DateTime.now())) {
+                OffsetDateTime latest = task.getLatestUpdatedAt().isPresent() ?
+                        task.getLatestUpdatedAt().get().toInstant().atOffset(ZoneOffset.UTC) :
+                        OffsetDateTime.now(ZoneOffset.UTC);
+                if (earliest.isAfter(OffsetDateTime.now(ZoneOffset.UTC))) {
                     throw new ConfigException(String.format("`earliest_updated_at` (%s) cannot precede the current date (%s)",
-                                    earliest.toString(DATE_FORMATTER),
-                                    (DateTime.now().toString(DATE_FORMATTER))));
+                                    earliest.format(DATE_FORMATTER),
+                                    (OffsetDateTime.now(ZoneOffset.UTC).format(DATE_FORMATTER))));
                 }
 
                 if (earliest.isAfter(latest)) {
                     throw new ConfigException(String.format("Invalid date range. `earliest_updated_at` (%s) cannot precede the `latest_updated_at` (%s).",
-                                    earliest.toString(DATE_FORMATTER),
-                                    latest.toString(DATE_FORMATTER)));
+                                    earliest.format(DATE_FORMATTER),
+                                    latest.format(DATE_FORMATTER)));
                 }
                 // if filter type is selected, filter value must be presented
                 if (task.getFilterType().isPresent() && (!task.getFilterValues().isPresent() || task.getFilterValues().get().isEmpty())) {
@@ -134,14 +138,20 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
     {
         // query by date range and incremental import and not preview
         if (task.getQueryBy().isPresent() && task.getQueryBy().get() == QueryBy.DATE_RANGE && task.getIncremental() && !Exec.isPreview()) {
-            DateTime latestUpdateAt = new DateTime(task.getLatestUpdatedAt().get());
-            DateTime now = DateTime.now();
+            OffsetDateTime latestUpdateAt = task.getLatestUpdatedAt().isPresent() ?
+                    task.getLatestUpdatedAt().get().toInstant().atOffset(ZoneOffset.UTC) :
+                    OffsetDateTime.now(ZoneOffset.UTC);
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
             // Do not run incremental import if latest_updated_at precede current time
             if (latestUpdateAt.isAfter(now)) {
-                logger.warn("`latest_updated_at` ({}) preceded current time ({}). Will try to import next run", latestUpdateAt.toString(DATE_FORMATTER), now.toString(DATE_FORMATTER));
+                logger.warn("`latest_updated_at` ({}) preceded current time ({}). Will try to import next run",
+                        latestUpdateAt.format(DATE_FORMATTER), now.format(DATE_FORMATTER));
 
+                OffsetDateTime earliest = task.getEarliestUpdatedAt().isPresent() ?
+                        task.getEarliestUpdatedAt().get().toInstant().atOffset(ZoneOffset.UTC) :
+                        OffsetDateTime.now(ZoneOffset.UTC);
                 TaskReport taskReport = Exec.newTaskReport();
-                taskReport.set("earliest_updated_at", new DateTime(task.getEarliestUpdatedAt().get()).toString(DATE_FORMATTER));
+                taskReport.set("earliest_updated_at", earliest.format(DATE_FORMATTER));
                 if (task.getReportDuration().isPresent()) {
                     taskReport.set("report_duration", task.getReportDuration().get());
                 }
@@ -179,14 +189,18 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
         // set next next earliestUpdatedAt, latestUpdatedAt
         if (task.getQueryBy().isPresent() && task.getQueryBy().get() == QueryBy.DATE_RANGE && task.getIncremental()) {
-            DateTime earliest = new DateTime(task.getEarliestUpdatedAt().get());
-            DateTime latest = new DateTime(task.getLatestUpdatedAt().get());
+            OffsetDateTime earliest = task.getEarliestUpdatedAt().isPresent() ?
+                    task.getEarliestUpdatedAt().get().toInstant().atOffset(ZoneOffset.UTC) :
+                    OffsetDateTime.now(ZoneOffset.UTC);
+            OffsetDateTime latest = task.getLatestUpdatedAt().isPresent() ?
+                    task.getLatestUpdatedAt().get().toInstant().atOffset(ZoneOffset.UTC) :
+                    OffsetDateTime.now(ZoneOffset.UTC);
 
-            Duration d = new Duration(earliest, latest);
-            DateTime nextEarliestUpdatedAt = latest.plusSeconds(1);
+            Duration d = Duration.between(earliest, latest);
+            OffsetDateTime nextEarliestUpdatedAt = latest.plusSeconds(1);
 
-            configDiff.set("earliest_updated_at", nextEarliestUpdatedAt.toString(DATE_FORMATTER));
-            configDiff.set("report_duration", task.getReportDuration().or(d.getMillis()));
+            configDiff.set("earliest_updated_at", nextEarliestUpdatedAt.format(DATE_FORMATTER));
+            configDiff.set("report_duration", task.getReportDuration().or(d.toMillis()));
         }
         return configDiff;
     }

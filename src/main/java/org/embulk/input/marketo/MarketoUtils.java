@@ -13,11 +13,11 @@ import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.spi.Exec;
 import org.embulk.spi.util.RetryExecutor;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -86,11 +86,11 @@ public class MarketoUtils
         return prefix + "_" + columnName;
     }
 
-    public static final List<DateRange> sliceRange(DateTime fromDate, DateTime toDate, int rangeSize)
+    public static final List<DateRange> sliceRange(OffsetDateTime fromDate, OffsetDateTime toDate, int rangeSize)
     {
         List<DateRange> ranges = new ArrayList<>();
         while (fromDate.isBefore(toDate)) {
-            DateTime nextToDate = fromDate.plusDays(rangeSize);
+            OffsetDateTime nextToDate = fromDate.plusDays(rangeSize);
             if (nextToDate.isAfter(toDate)) {
                 ranges.add(new DateRange(fromDate, toDate));
                 break;
@@ -113,10 +113,10 @@ public class MarketoUtils
 
     public static  final class DateRange
     {
-        public final DateTime fromDate;
-        public final DateTime toDate;
+        public final OffsetDateTime fromDate;
+        public final OffsetDateTime toDate;
 
-        public DateRange(DateTime fromDate, DateTime toDate)
+        public DateRange(OffsetDateTime fromDate, OffsetDateTime toDate)
         {
             this.fromDate = fromDate;
             this.toDate = toDate;

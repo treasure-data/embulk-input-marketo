@@ -21,10 +21,11 @@ import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -53,9 +54,9 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
         @ConfigDefault("true")
         Boolean getIncremental();
 
-        DateTime getJobStartTime();
+        OffsetDateTime getJobStartTime();
 
-        void setJobStartTime(DateTime dateTime);
+        void setJobStartTime(OffsetDateTime dateTime);
     }
 
     @Override
@@ -67,7 +68,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
     @Override
     public void validateInputTask(T task)
     {
-        task.setJobStartTime(DateTime.now());
+        task.setJobStartTime(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     @Override

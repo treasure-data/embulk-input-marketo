@@ -9,12 +9,13 @@ import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Exec;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.sql.Date;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -43,11 +44,12 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
     }
 
     @Override
-    protected InputStream getExtractedStream(MarketoService service, PluginTask task, DateTime fromDate, DateTime toDate)
+    protected InputStream getExtractedStream(MarketoService service, PluginTask task, OffsetDateTime fromDate, OffsetDateTime toDate)
     {
         try {
             List<String> fieldNames = task.getExtractedFields();
-            return new FileInputStream(service.extractLead(fromDate.toDate(), toDate.toDate(), fieldNames, task.getIncrementalColumn().orNull(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
+            return new FileInputStream(service.extractLead(Date.from(fromDate.toInstant()), Date.from(toDate.toInstant()),
+                    fieldNames, task.getIncrementalColumn().orNull(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
         }
         catch (FileNotFoundException e) {
             throw new RuntimeException("File not found", e);
