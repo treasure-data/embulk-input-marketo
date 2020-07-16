@@ -6,6 +6,7 @@ import com.google.common.base.Optional;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.codehaus.plexus.util.CollectionUtils;
 import org.embulk.base.restclient.jackson.JacksonServiceRecord;
 import org.embulk.base.restclient.jackson.JacksonServiceValue;
 import org.embulk.base.restclient.record.RecordImporter;
@@ -62,8 +63,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     private static final Logger LOGGER = Exec.getLogger(MarketoBaseBulkExtractInputPlugin.class);
 
     private static final int MARKETO_MAX_RANGE_EXTRACT = 30;
-
-    private List<CSVRecord> records;
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, CsvTokenizer.PluginTask {
         @Config("from_date")
@@ -163,15 +162,18 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 int imported = 0;
                 while (decoderIterator.hasNext()) {
                     try {
-                        Reader inputStream = decoderIterator.next();
-                        CsvTokenizer csvTokenizer = new CsvTokenizer(inputStream);
-                        CSVParser csvParser = csvTokenizer.csvParse();
-                        records = csvParser.getRecords();
-                        records.remove(0);
-                        for (CSVRecord csvRecord : records) {
+                        CSVParser csvParser = CsvTokenizer(decoderIterator);
+                        System.gc();
+                        while (csvParser.iterator().hasNext()) {
+                            CSVRecord csvRecord = csvParser.iterator().next();
                             ObjectNode objectNode = MarketoUtils.getObjectMapper().valueToTree(csvRecord.toMap());
                             recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
+                            if(csvParser.getRecordNumber() % 10000 == 0) {
+                                LOGGER.info("transfer record count: " + csvParser.getRecordNumber());
+                            }
                         }
+                        LOGGER.info("transfer record count: " + csvParser.getRecordNumber());
+                        csvParser.close();
                     } catch (CsvTokenizer.InvalidValueException | IllegalArgumentException | IOException ex) {
                         LOGGER.warn("skipped csv line: " + ExceptionUtils.getStackTrace(ex));
                     }
@@ -180,6 +182,12 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 return taskReport;
             }
         }
+    }
+
+    private CSVParser CsvTokenizer(LineDecoderIterator decoderIterator) throws IOException {
+        Reader inputStream = decoderIterator.next();
+        CsvTokenizer csvTokenizer = new CsvTokenizer(inputStream);
+        return csvTokenizer.csvParse();
     }
 
     /**

@@ -144,11 +144,13 @@ public class CsvTokenizer {
 
             BufferedReader b = new BufferedReader(inputStream);
             String line = b.readLine();
-            filewriter.write(line);
-            while(line != null){
-                filewriter.write("\r\n");
+            while(true){
                 filewriter.write(line);
                 line = b.readLine();
+                if(line == null){
+                    break;
+                }
+                filewriter.write("\r\n");
             }
             filewriter.close();
             inputStream.close();
