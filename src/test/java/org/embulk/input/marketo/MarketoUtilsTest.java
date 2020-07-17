@@ -77,7 +77,7 @@ public class MarketoUtilsTest
     @Test
     public void sliceRange()
     {
-        OffsetDateTime startDate = OffsetDateTime.ofInstant(Instant.ofEpochSecond(1507369760000L), ZoneId.systemDefault());
+        OffsetDateTime startDate = OffsetDateTime.ofInstant(Instant.ofEpochMilli(1507369760000L), ZoneId.systemDefault());
         List<MarketoUtils.DateRange> dateRanges1 = MarketoUtils.sliceRange(startDate, startDate.plusDays(7), 2);
         assertEquals(4, dateRanges1.size());
         assertEquals(startDate.plusDays(7), dateRanges1.get(3).toDate);

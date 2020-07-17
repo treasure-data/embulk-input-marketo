@@ -98,7 +98,7 @@ public class MarketoBaseBulkExtractInputPluginTest
     public void validateInputTaskToDateLessThanJobStartTime()
     {
         Date fromDate = new Date(1504224000000L);
-        OffsetDateTime jobStartTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(1506842144000L), ZoneId.systemDefault());
+        OffsetDateTime jobStartTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(1506842144000L), ZoneId.systemDefault());
         MarketoBaseBulkExtractInputPlugin.PluginTask pluginTask = Mockito.mock(MarketoBaseBulkExtractInputPlugin.PluginTask.class);
         Mockito.when(pluginTask.getFromDate()).thenReturn(fromDate);
         Mockito.when(pluginTask.getJobStartTime()).thenReturn(jobStartTime);
@@ -113,7 +113,7 @@ public class MarketoBaseBulkExtractInputPluginTest
     public void validateInputTaskFromDateMoreThanJobStartTime()
     {
         Date fromDate = new Date(1507619744000L);
-        OffsetDateTime jobStartTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(1506842144000L), ZoneId.systemDefault());
+        OffsetDateTime jobStartTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(1506842144000L), ZoneId.systemDefault());
         MarketoBaseBulkExtractInputPlugin.PluginTask pluginTask = Mockito.mock(MarketoBaseBulkExtractInputPlugin.PluginTask.class);
         Mockito.when(pluginTask.getFromDate()).thenReturn(fromDate);
         Mockito.when(pluginTask.getJobStartTime()).thenReturn(jobStartTime);
@@ -131,7 +131,7 @@ public class MarketoBaseBulkExtractInputPluginTest
     public void validateInputTaskToDateMoreThanJobStartTime()
     {
         Date fromDate = new Date(1504224000000L);
-        OffsetDateTime jobStartTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(1504396800000L), ZoneId.systemDefault());
+        OffsetDateTime jobStartTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(1504396800000L), ZoneId.systemDefault());
         MarketoBaseBulkExtractInputPlugin.PluginTask pluginTask = Mockito.mock(MarketoBaseBulkExtractInputPlugin.PluginTask.class);
         Mockito.when(pluginTask.getFromDate()).thenReturn(fromDate);
         Mockito.when(pluginTask.getFetchDays()).thenReturn(7);
@@ -139,14 +139,14 @@ public class MarketoBaseBulkExtractInputPluginTest
         baseBulkExtractInputPlugin.validateInputTask(pluginTask);
         ArgumentCaptor<Optional<Date>> toDateArgumentCaptor = ArgumentCaptor.forClass(Optional.class);
         Mockito.verify(pluginTask, Mockito.times(1)).setToDate(toDateArgumentCaptor.capture());
-        assertEquals(jobStartTime.toInstant().getEpochSecond(), toDateArgumentCaptor.getValue().get().getTime());
+        assertEquals(jobStartTime.toInstant().toEpochMilli(), toDateArgumentCaptor.getValue().get().getTime());
     }
 
     @Test
     public void getToDate()
     {
         DateTime date = new DateTime(1505033728000L);
-        OffsetDateTime jobStartTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(1507625728000L), ZoneId.systemDefault());
+        OffsetDateTime jobStartTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(1507625728000L), ZoneId.systemDefault());
         MarketoBaseBulkExtractInputPlugin.PluginTask pluginTask = Mockito.mock(MarketoInputPluginDelegate.PluginTask.class);
         Mockito.when(pluginTask.getFromDate()).thenReturn(date.toDate());
         Mockito.when(pluginTask.getFetchDays()).thenReturn(30);
