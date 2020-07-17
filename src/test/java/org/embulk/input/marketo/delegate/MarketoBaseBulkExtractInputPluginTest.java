@@ -10,7 +10,6 @@ import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.MarketoInputPluginDelegate;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.spi.Schema;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -145,10 +144,10 @@ public class MarketoBaseBulkExtractInputPluginTest
     @Test
     public void getToDate()
     {
-        DateTime date = new DateTime(1505033728000L);
+        OffsetDateTime date = OffsetDateTime.ofInstant(Instant.ofEpochMilli(1505033728000L), ZoneId.systemDefault());
         OffsetDateTime jobStartTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(1507625728000L), ZoneId.systemDefault());
         MarketoBaseBulkExtractInputPlugin.PluginTask pluginTask = Mockito.mock(MarketoInputPluginDelegate.PluginTask.class);
-        Mockito.when(pluginTask.getFromDate()).thenReturn(date.toDate());
+        Mockito.when(pluginTask.getFromDate()).thenReturn(Date.from(date.toInstant()));
         Mockito.when(pluginTask.getFetchDays()).thenReturn(30);
         Mockito.when(pluginTask.getJobStartTime()).thenReturn(jobStartTime);
         OffsetDateTime toDate = baseBulkExtractInputPlugin.getToDate(pluginTask);

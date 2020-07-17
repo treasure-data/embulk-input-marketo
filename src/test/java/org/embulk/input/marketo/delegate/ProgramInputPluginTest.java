@@ -1,8 +1,6 @@
 package org.embulk.input.marketo.delegate;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
@@ -24,10 +22,6 @@ import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.input.marketo.rest.RecordPagingIterable;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,6 +32,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -47,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 
 public class ProgramInputPluginTest
 {
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormat.forPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -99,7 +96,7 @@ public class ProgramInputPluginTest
     {
         thrown.expect(ConfigException.class);
         thrown.expectMessage("`earliest_updated_at` is required when query by Date Range");
-        ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.DATE_RANGE)).set("latest_updated_at", Optional.of(DateTime.now().minusDays(10).toDate()));
+        ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.DATE_RANGE)).set("latest_updated_at", Optional.of(Date.from(OffsetDateTime.now().minusDays(10).toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
@@ -108,7 +105,7 @@ public class ProgramInputPluginTest
     {
         thrown.expect(ConfigException.class);
         thrown.expectMessage("`latest_updated_at` is required when query by Date Range");
-        ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.DATE_RANGE)).set("earliest_updated_at", Optional.of(DateTime.now().minusDays(10).toDate()));
+        ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.DATE_RANGE)).set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now().minusDays(10).toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
@@ -120,7 +117,7 @@ public class ProgramInputPluginTest
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("incremental", Boolean.FALSE)
-                        .set("earliest_updated_at", Optional.of(DateTime.now().minusDays(10).toDate()));
+                        .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now().minusDays(10).toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
@@ -131,7 +128,7 @@ public class ProgramInputPluginTest
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("report_duration", Optional.of(60L * 1000))
                         .set("incremental", Boolean.FALSE)
-                        .set("earliest_updated_at", Optional.of(DateTime.now().minusDays(10).toDate()));
+                        .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now().minusDays(10).toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
@@ -141,53 +138,53 @@ public class ProgramInputPluginTest
         ConfigSource config = baseConfig
                         .set("report_duration", Optional.of(60L * 1000))
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
-                        .set("earliest_updated_at", Optional.of(DateTime.now().minusDays(10).toDate()));
+                        .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now().minusDays(10).toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
     @Test
     public void testQueryByDateRangeConfigHasEarliestUpdatedAtExceededNow()
     {
-        DateTime earliestUpdatedAt = DateTime.now().plusDays(1);
-        DateTime latestUpdatedAt = DateTime.now().minusDays(2);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().plusDays(1);
+        OffsetDateTime latestUpdatedAt = OffsetDateTime.now().minusDays(2);
         thrown.expect(ConfigException.class);
-        thrown.expectMessage(String.format("`earliest_updated_at` (%s) cannot precede the current date ", earliestUpdatedAt.toString(DATE_FORMATTER)));
+        thrown.expectMessage(String.format("`earliest_updated_at` (%s) cannot precede the current date ", earliestUpdatedAt.format(DATE_FORMATTER)));
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
-                        .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
-                        .set("latest_updated_at", Optional.of(latestUpdatedAt));
+                        .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))
+                        .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
     @Test
     public void testQueryByDateRangeConfigHasEarliestUpdatedAtExceededLatestUpdatedAt()
     {
-        DateTime earliestUpdatedAt = DateTime.now().minusDays(10);
-        DateTime latestUpdatedAt = DateTime.now().minusDays(20);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(10);
+        OffsetDateTime latestUpdatedAt = OffsetDateTime.now().minusDays(20);
         thrown.expect(ConfigException.class);
         thrown.expectMessage(String.format("Invalid date range. `earliest_updated_at` (%s) cannot precede the `latest_updated_at` (%s).",
-                        earliestUpdatedAt.toString(DATE_FORMATTER),
-                        latestUpdatedAt.toString(DATE_FORMATTER)));
+                        earliestUpdatedAt.format(DATE_FORMATTER),
+                        latestUpdatedAt.format(DATE_FORMATTER)));
 
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
-                        .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
-                        .set("latest_updated_at", Optional.of(latestUpdatedAt));
+                        .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))
+                        .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
     @Test
     public void testHasFilterTypeButMissingFilterValue()
     {
-        DateTime earliestUpdatedAt = DateTime.now().minusDays(20);
-        DateTime latestUpdatedAt = DateTime.now().minusDays(10);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(20);
+        OffsetDateTime latestUpdatedAt = OffsetDateTime.now().minusDays(10);
         thrown.expect(ConfigException.class);
         thrown.expectMessage("filter_value is required when selected filter_type");
 
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
-                        .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
-                        .set("latest_updated_at", Optional.of(latestUpdatedAt))
+                        .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))
+                        .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())))
                         .set("filter_type", Optional.of("dummy"));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
@@ -195,15 +192,15 @@ public class ProgramInputPluginTest
     @Test
     public void testSkipIncrementalRunIfLastUpdatedAtExceedsNow()
     {
-        DateTime earliestUpdatedAt = DateTime.now().minusDays(20);
-        DateTime latestUpdatedAt = earliestUpdatedAt.plusDays(21);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(20);
+        OffsetDateTime latestUpdatedAt = earliestUpdatedAt.plusDays(21);
         //21 days
         long reportDuration = 21 * 24 * 60 * 60 * 1000;
 
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
-                        .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
-                        .set("latest_updated_at", Optional.of(latestUpdatedAt))
+                        .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))
+                        .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())))
                         .set("report_duration", reportDuration)
                         .set("incremental", true);
         ServiceResponseMapper<? extends ValueLocator> mapper = mockPlugin.buildServiceResponseMapper(config.loadConfig(PluginTask.class));
@@ -216,19 +213,19 @@ public class ProgramInputPluginTest
         String earliestUpdatedAtStr = taskReport.get(String.class, "earliest_updated_at");
         long duration = taskReport.get(Long.class, "report_duration");
         assertEquals(duration, reportDuration);
-        assertEquals(earliestUpdatedAtStr, earliestUpdatedAt.toString(DATE_FORMATTER));
+        assertEquals(earliestUpdatedAtStr, earliestUpdatedAt.format(DATE_FORMATTER));
     }
 
     @Test
-    public void testBuildConfigDiff() throws Exception
+    public void testBuildConfigDiff()
     {
         TaskReport taskReport1 = Mockito.mock(TaskReport.class);
-        DateTime earliestUpdatedAt = DateTime.now().minusDays(20);
-        DateTime latestUpdatedAt = DateTime.now().minusDays(10);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(20);
+        OffsetDateTime latestUpdatedAt = OffsetDateTime.now().minusDays(10);
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
-                        .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
-                        .set("latest_updated_at", Optional.of(latestUpdatedAt))
+                        .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))
+                        .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())))
                         .set("incremental", true);
 
         ConfigDiff diff = mockPlugin.buildConfigDiff(config.loadConfig(PluginTask.class), Mockito.mock(Schema.class), 1, Arrays.asList(taskReport1));
@@ -236,12 +233,12 @@ public class ProgramInputPluginTest
         long reportDuration = diff.get(Long.class, "report_duration");
         String nextErliestUpdatedAt = diff.get(String.class, "earliest_updated_at");
 
-        assertEquals(reportDuration, new Duration(earliestUpdatedAt, latestUpdatedAt).getMillis());
-        assertEquals(nextErliestUpdatedAt, latestUpdatedAt.plusSeconds(1).toString(DATE_FORMATTER));
+        assertEquals(reportDuration, Duration.between(earliestUpdatedAt, latestUpdatedAt).toMillis());
+        assertEquals(nextErliestUpdatedAt, latestUpdatedAt.plusSeconds(1).format(DATE_FORMATTER));
     }
 
     @SuppressWarnings("unchecked")
-    private void testRun(ConfigSource config, Predicate<MarketoRestClient> expectedCall) throws JsonParseException, JsonMappingException, IOException
+    private void testRun(ConfigSource config, Predicate<MarketoRestClient> expectedCall) throws IOException
     {
         // Mock response data
         RecordPagingIterable<ObjectNode> mockRecordPagingIterable = Mockito.mock(RecordPagingIterable.class);
@@ -276,61 +273,45 @@ public class ProgramInputPluginTest
     }
 
     @Test
-    public void testRunQueryByTagType() throws JsonParseException, JsonMappingException, IOException
+    public void testRunQueryByTagType() throws IOException
     {
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.TAG_TYPE))
                         .set("tag_type", Optional.of("dummy"))
                         .set("tag_value", Optional.of("dummy"));
-        Predicate<MarketoRestClient> expectedCall = new Predicate<MarketoRestClient>()
-        {
-            @Override
-            public boolean apply(MarketoRestClient mockRest)
-            {
-                Mockito.verify(mockRest, Mockito.times(1)).getProgramsByTag(Mockito.anyString(), Mockito.anyString());
-                return true;
-            }
+        Predicate<MarketoRestClient> expectedCall = mockRest -> {
+            Mockito.verify(mockRest, Mockito.times(1)).getProgramsByTag(Mockito.anyString(), Mockito.anyString());
+            return true;
         };
         testRun(config, expectedCall);
     }
 
     @Test
-    public void testRunWithoutQueryBy() throws JsonParseException, JsonMappingException, IOException
+    public void testRunWithoutQueryBy() throws IOException
     {
-        Predicate<MarketoRestClient> expectedCall = new Predicate<MarketoRestClient>()
-        {
-            @Override
-            public boolean apply(MarketoRestClient input)
-            {
-                Mockito.verify(input, Mockito.times(1)).getPrograms();
-                return true;
-            }
+        Predicate<MarketoRestClient> expectedCall = input -> {
+            Mockito.verify(input, Mockito.times(1)).getPrograms();
+            return true;
         };
         testRun(baseConfig, expectedCall);
     }
 
     @Test
-    public void testRunQueryByDateRange() throws JsonParseException, JsonMappingException, IOException
+    public void testRunQueryByDateRange() throws IOException
     {
-        DateTime earliestUpdatedAt = DateTime.now().minusDays(20);
-        DateTime latestUpdatedAt = DateTime.now().minusDays(10);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(20);
+        OffsetDateTime latestUpdatedAt = OffsetDateTime.now().minusDays(10);
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
-                        .set("earliest_updated_at", Optional.of(earliestUpdatedAt))
-                        .set("latest_updated_at", Optional.of(latestUpdatedAt));
-        Predicate<MarketoRestClient> expectedCall = new Predicate<MarketoRestClient>()
-        {
-            @SuppressWarnings("unchecked")
-            @Override
-            public boolean apply(MarketoRestClient input)
-            {
-                Mockito.verify(input, Mockito.times(1)).getProgramsByDateRange(
-                                Mockito.any(Date.class),
-                                Mockito.any(Date.class),
-                                Mockito.nullable(String.class),
-                                Mockito.nullable(List.class));
-                return true;
-            }
+                        .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))
+                        .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())));
+        Predicate<MarketoRestClient> expectedCall = input -> {
+            Mockito.verify(input, Mockito.times(1)).getProgramsByDateRange(
+                            Mockito.any(Date.class),
+                            Mockito.any(Date.class),
+                            Mockito.nullable(String.class),
+                            Mockito.nullable(List.class));
+            return true;
         };
         testRun(config, expectedCall);
     }
