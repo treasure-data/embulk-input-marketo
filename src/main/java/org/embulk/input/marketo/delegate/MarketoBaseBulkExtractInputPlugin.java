@@ -38,7 +38,7 @@ import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -124,7 +124,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     public OffsetDateTime getToDate(T task)
     {
         Date fromDate = task.getFromDate();
-        OffsetDateTime dateTime = fromDate.toInstant().atOffset(ZoneOffset.UTC);
+        OffsetDateTime dateTime = OffsetDateTime.ofInstant(fromDate.toInstant(), ZoneId.systemDefault());
         OffsetDateTime toDate = dateTime.plusDays(task.getFetchDays());
         if (toDate.isAfter(task.getJobStartTime())) {
             //Lock down to date
@@ -236,10 +236,10 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
     private LineDecoderIterator getLineDecoderIterator(T task)
     {
-        final OffsetDateTime fromDate = task.getFromDate().toInstant().atOffset(ZoneOffset.UTC);
+        final OffsetDateTime fromDate = OffsetDateTime.ofInstant(task.getFromDate().toInstant(), ZoneId.systemDefault());
         final OffsetDateTime toDate = task.getToDate().isPresent() ?
-                task.getToDate().get().toInstant().atOffset(ZoneOffset.UTC) :
-                OffsetDateTime.now(ZoneOffset.UTC);
+                OffsetDateTime.ofInstant(task.getToDate().get().toInstant(), ZoneId.systemDefault()) :
+                OffsetDateTime.now();
         List<MarketoUtils.DateRange> dateRanges = MarketoUtils.sliceRange(fromDate, toDate, MARKETO_MAX_RANGE_EXTRACT);
         final Iterator<MarketoUtils.DateRange> iterator = dateRanges.iterator();
         return new LineDecoderIterator(iterator, task);

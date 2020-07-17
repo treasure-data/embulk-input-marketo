@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -68,7 +67,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
     @Override
     public void validateInputTask(T task)
     {
-        task.setJobStartTime(OffsetDateTime.now(ZoneOffset.UTC));
+        task.setJobStartTime(OffsetDateTime.now());
     }
 
     @Override
