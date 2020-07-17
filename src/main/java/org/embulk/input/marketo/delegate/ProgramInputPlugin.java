@@ -139,7 +139,7 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
         // query by date range and incremental import and not preview
         if (task.getQueryBy().isPresent() && task.getQueryBy().get() == QueryBy.DATE_RANGE && task.getIncremental() && !Exec.isPreview()) {
             OffsetDateTime latestUpdateAt = task.getLatestUpdatedAt().isPresent() ?
-                    OffsetDateTime.ofInstant(task.getLatestUpdatedAt().get().toInstant(), ZoneId.systemDefault()):
+                    OffsetDateTime.ofInstant(task.getLatestUpdatedAt().get().toInstant(), ZoneId.systemDefault()) :
                     OffsetDateTime.now(ZoneId.systemDefault());
             OffsetDateTime now = OffsetDateTime.now(ZoneId.systemDefault());
             // Do not run incremental import if latest_updated_at precede current time
