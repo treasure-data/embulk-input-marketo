@@ -1,3 +1,7 @@
+## 0.6.20 - 2020-07-17
+* [enhancement] Replace Joda-Time with java.time classes [101](https://github.com/treasure-data/embulk-input-marketo/pull/101)
+* [enhancement] Use GitHub Action instead of Travis CI [101](https://github.com/treasure-data/embulk-input-marketo/pull/101)
+
 ## 0.6.19 - 2020-07-06
 * [enhancement] Support import Lead/Member by input static List,Program IDs [100](https://github.com/treasure-data/embulk-input-marketo/pull/100)
 * [enhancement] Support string comma-separated filterValues for Custom Objects [100](https://github.com/treasure-data/embulk-input-marketo/pull/100)
