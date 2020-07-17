@@ -120,7 +120,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         task.setToDate(Optional.of(Date.from(toDate.toInstant())));
     }
 
-    //TODO RENAME
     public OffsetDateTime getToDate(T task)
     {
         Date fromDate = task.getFromDate();
