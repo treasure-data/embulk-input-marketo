@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.SerializableString;
 import com.fasterxml.jackson.core.io.CharacterEscapes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Optional;
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 import org.embulk.base.restclient.ServiceResponseMapper;
@@ -129,14 +130,22 @@ public class MarketoUtils
         return ranges;
     }
 
-    public static String getIdentityEndPoint(String accountId)
+    public static String getIdentityEndPoint(String accountId, Optional<String> endpoint)
     {
-        return "https://" + accountId + ".mktorest.com/identity";
+        if(endpoint.isPresent()){
+            return endpoint.get() + "/identity";
+        } else {
+            return "https://" + accountId + ".mktorest.com/identity";
+        }
     }
 
-    public static String getEndPoint(String accountID)
+    public static String getEndPoint(String accountID, Optional<String> endpoint)
     {
-        return "https://" + accountID + ".mktorest.com";
+        if(endpoint.isPresent()){
+            return endpoint.get();
+        } else {
+            return "https://" + accountID + ".mktorest.com";
+        }
     }
 
     public static  final class DateRange

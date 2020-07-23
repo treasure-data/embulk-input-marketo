@@ -7,6 +7,7 @@ import org.embulk.spi.Column;
 import org.embulk.spi.type.Types;
 import org.joda.time.DateTime;
 import org.junit.Test;
+import com.google.common.base.Optional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,15 +64,23 @@ public class MarketoUtilsTest
     @Test
     public void getIdentityEndPoint() throws Exception
     {
-        String identityEndPoint = MarketoUtils.getIdentityEndPoint("accountId");
+        Optional<String> endpoint = Optional.of("");
+        String identityEndPoint = MarketoUtils.getIdentityEndPoint("accountId",endpoint);
         assertEquals("https://accountId.mktorest.com/identity", identityEndPoint);
+        Optional<String> endpoint2 = Optional.of("endpoint");
+        String identityEndPointUsingEndpoint = MarketoUtils.getIdentityEndPoint("accountId",endpoint2);
+        assertEquals("endpoint/identity", identityEndPointUsingEndpoint);
     }
 
     @Test
     public void getEndPoint() throws Exception
     {
-        String endPoint = MarketoUtils.getEndPoint("accountId");
+        Optional<String> endpoint = Optional.of("");
+        String endPoint = MarketoUtils.getEndPoint("accountId",endpoint);
         assertEquals("https://accountId.mktorest.com", endPoint);
+        Optional<String> endpoint2 = Optional.of("endpoint");
+        String endPointUsingEndpoint = MarketoUtils.getEndPoint("accountId",endpoint2);
+        assertEquals("endpoint", endPointUsingEndpoint);
     }
 
     @Test
