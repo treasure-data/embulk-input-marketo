@@ -64,7 +64,7 @@ public class MarketoUtilsTest
     @Test
     public void getIdentityEndPoint() throws Exception
     {
-        Optional<String> endpoint = Optional.of("");
+        Optional<String> endpoint = Optional.absent();
         String identityEndPoint = MarketoUtils.getIdentityEndPoint("accountId",endpoint);
         assertEquals("https://accountId.mktorest.com/identity", identityEndPoint);
         Optional<String> endpoint2 = Optional.of("endpoint");
@@ -75,7 +75,7 @@ public class MarketoUtilsTest
     @Test
     public void getEndPoint() throws Exception
     {
-        Optional<String> endpoint = Optional.of("");
+        Optional<String> endpoint = Optional.absent();
         String endPoint = MarketoUtils.getEndPoint("accountId",endpoint);
         assertEquals("https://accountId.mktorest.com", endPoint);
         Optional<String> endpoint2 = Optional.of("endpoint");

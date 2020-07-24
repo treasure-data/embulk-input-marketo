@@ -55,9 +55,9 @@ public class MarketoRestClientTest
 
     private static final String TEST_CLIENT_ID = "test_client_id";
 
-    private static final Optional<String> TEST_ENDPOINT = null;
+    private static final Optional<String> TEST_ENDPOINT = Optional.absent();
 
-    private static final String END_POINT = MarketoUtils.getEndPoint(TEST_ACCOUNT_ID,Optional.empty);
+    private static final String END_POINT = MarketoUtils.getEndPoint(TEST_ACCOUNT_ID,TEST_ENDPOINT);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
