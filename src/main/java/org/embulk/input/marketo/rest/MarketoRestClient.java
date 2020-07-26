@@ -100,6 +100,10 @@ public class MarketoRestClient extends MarketoBaseRestClient
         @Config("account_id")
         String getAccountId();
 
+        @Config("endpoint")
+        @ConfigDefault("null")
+        Optional<String> getInputEndpoint();
+
         @Config("client_secret")
         String getClientSecret();
 
@@ -143,8 +147,8 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public MarketoRestClient(PluginTask task)
     {
-        this(MarketoUtils.getEndPoint(task.getAccountId()),
-                MarketoUtils.getIdentityEndPoint(task.getAccountId()),
+        this(MarketoUtils.getEndPoint(task.getAccountId(),task.getInputEndpoint()),
+                MarketoUtils.getIdentityEndPoint(task.getAccountId(),task.getInputEndpoint()),
                 task.getClientId(),
                 task.getClientSecret(),
                 task.getPartnerApiKey(),

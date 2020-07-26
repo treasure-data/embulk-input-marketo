@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
+import com.google.common.base.Optional;
 import org.eclipse.jetty.client.api.ContentProvider;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.embulk.EmbulkTestRuntime;
@@ -54,7 +55,9 @@ public class MarketoRestClientTest
 
     private static final String TEST_CLIENT_ID = "test_client_id";
 
-    private static final String END_POINT = MarketoUtils.getEndPoint(TEST_ACCOUNT_ID);
+    private static final Optional<String> TEST_ENDPOINT = Optional.absent();
+
+    private static final String END_POINT = MarketoUtils.getEndPoint(TEST_ACCOUNT_ID,TEST_ENDPOINT);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
