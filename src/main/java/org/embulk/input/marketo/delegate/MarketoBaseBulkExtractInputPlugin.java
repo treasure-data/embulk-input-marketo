@@ -162,7 +162,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 int imported = 0;
                 while (decoderIterator.hasNext()) {
                     try {
-                        CSVParser csvParser = CsvTokenizer(decoderIterator);
+                        CSVParser csvParser = getCsvParser(decoderIterator);
                         System.gc();
                         while (csvParser.iterator().hasNext()) {
                             CSVRecord csvRecord = csvParser.iterator().next();
@@ -184,7 +184,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         }
     }
 
-    private CSVParser CsvTokenizer(LineDecoderIterator decoderIterator) throws IOException {
+    private CSVParser getCsvParser(LineDecoderIterator decoderIterator) throws IOException {
         Reader inputStream = decoderIterator.next();
         CsvTokenizer csvTokenizer = new CsvTokenizer(inputStream);
         return csvTokenizer.csvParse();
