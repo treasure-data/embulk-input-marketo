@@ -142,8 +142,11 @@ public class CsvTokenizer {
             File file = new File(path);
             FileWriter filewriter = new FileWriter(file);
 
+            LOGGER.info("create tmp file: " + path);
+
             BufferedReader b = new BufferedReader(inputStream);
             String line = b.readLine();
+            int count = 0;
             while(true){
                 filewriter.write(line);
                 line = b.readLine();
@@ -151,6 +154,10 @@ public class CsvTokenizer {
                     break;
                 }
                 filewriter.write("\r\n");
+                count += 1;
+                if(count % 10000 == 0) {
+                    LOGGER.info("import record count: " + count);
+                }
             }
             filewriter.close();
             inputStream.close();
