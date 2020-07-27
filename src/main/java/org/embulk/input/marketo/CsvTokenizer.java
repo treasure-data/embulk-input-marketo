@@ -155,7 +155,7 @@ public class CsvTokenizer {
                 }
                 filewriter.write("\r\n");
                 count += 1;
-                if(count % 1 == 0) {
+                if(count % 10000 == 0) {
                     LOGGER.info("import record count: " + count);
                 }
             }
