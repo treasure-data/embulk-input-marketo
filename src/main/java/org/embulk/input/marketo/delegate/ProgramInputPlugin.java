@@ -96,9 +96,7 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
                     throw new ConfigException("`earliest_updated_at` is required when query by Date Range");
                 }
 
-                OffsetDateTime earliest = task.getEarliestUpdatedAt().isPresent() ?
-                        OffsetDateTime.ofInstant(task.getEarliestUpdatedAt().get().toInstant(), ZoneOffset.UTC) :
-                        OffsetDateTime.now(ZoneOffset.UTC);
+                OffsetDateTime earliest = OffsetDateTime.ofInstant(task.getEarliestUpdatedAt().get().toInstant(), ZoneOffset.UTC);
                 if (task.getReportDuration().isPresent()) {
                     logger.info("`report_duration` is present, Prefer `report_duration` over `latest_updated_at`");
                     // Update the latestUpdatedAt for the config
@@ -111,9 +109,7 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
                     throw new ConfigException("`latest_updated_at` is required when query by Date Range");
                 }
 
-                OffsetDateTime latest = task.getLatestUpdatedAt().isPresent() ?
-                        OffsetDateTime.ofInstant(task.getLatestUpdatedAt().get().toInstant(), ZoneOffset.UTC) :
-                        OffsetDateTime.now(ZoneOffset.UTC);
+                OffsetDateTime latest = OffsetDateTime.ofInstant(task.getLatestUpdatedAt().get().toInstant(), ZoneOffset.UTC);
                 if (earliest.isAfter(OffsetDateTime.now(ZoneOffset.UTC))) {
                     throw new ConfigException(String.format("`earliest_updated_at` (%s) cannot precede the current date (%s)",
                                     earliest.format(DATE_FORMATTER),
@@ -138,18 +134,14 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
     {
         // query by date range and incremental import and not preview
         if (task.getQueryBy().isPresent() && task.getQueryBy().get() == QueryBy.DATE_RANGE && task.getIncremental() && !Exec.isPreview()) {
-            OffsetDateTime latestUpdateAt = task.getLatestUpdatedAt().isPresent() ?
-                    OffsetDateTime.ofInstant(task.getLatestUpdatedAt().get().toInstant(), ZoneOffset.UTC) :
-                    OffsetDateTime.now(ZoneOffset.UTC);
+            OffsetDateTime latestUpdateAt = OffsetDateTime.ofInstant(task.getLatestUpdatedAt().get().toInstant(), ZoneOffset.UTC);
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
             // Do not run incremental import if latest_updated_at precede current time
             if (latestUpdateAt.isAfter(now)) {
                 logger.warn("`latest_updated_at` ({}) preceded current time ({}). Will try to import next run",
                         latestUpdateAt.format(DATE_FORMATTER), now.format(DATE_FORMATTER));
 
-                OffsetDateTime earliest = task.getEarliestUpdatedAt().isPresent() ?
-                        OffsetDateTime.ofInstant(task.getEarliestUpdatedAt().get().toInstant(), ZoneOffset.UTC) :
-                        OffsetDateTime.now(ZoneOffset.UTC);
+                OffsetDateTime earliest = OffsetDateTime.ofInstant(task.getEarliestUpdatedAt().get().toInstant(), ZoneOffset.UTC);
                 TaskReport taskReport = Exec.newTaskReport();
                 taskReport.set("earliest_updated_at", earliest.format(DATE_FORMATTER));
                 if (task.getReportDuration().isPresent()) {
