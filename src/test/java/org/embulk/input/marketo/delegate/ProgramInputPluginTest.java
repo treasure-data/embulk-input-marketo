@@ -34,6 +34,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
@@ -96,7 +97,7 @@ public class ProgramInputPluginTest
     {
         thrown.expect(ConfigException.class);
         thrown.expectMessage("`earliest_updated_at` is required when query by Date Range");
-        ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.DATE_RANGE)).set("latest_updated_at", Optional.of(Date.from(OffsetDateTime.now().minusDays(10).toInstant())));
+        ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.DATE_RANGE)).set("latest_updated_at", Optional.of(Date.from(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10).toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
@@ -105,7 +106,7 @@ public class ProgramInputPluginTest
     {
         thrown.expect(ConfigException.class);
         thrown.expectMessage("`latest_updated_at` is required when query by Date Range");
-        ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.DATE_RANGE)).set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now().minusDays(10).toInstant())));
+        ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.DATE_RANGE)).set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10).toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
@@ -117,7 +118,7 @@ public class ProgramInputPluginTest
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("incremental", Boolean.FALSE)
-                        .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now().minusDays(10).toInstant())));
+                        .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10).toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
@@ -128,7 +129,7 @@ public class ProgramInputPluginTest
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("report_duration", Optional.of(60L * 1000))
                         .set("incremental", Boolean.FALSE)
-                        .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now().minusDays(10).toInstant())));
+                        .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10).toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
@@ -138,15 +139,15 @@ public class ProgramInputPluginTest
         ConfigSource config = baseConfig
                         .set("report_duration", Optional.of(60L * 1000))
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
-                        .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now().minusDays(10).toInstant())));
+                        .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10).toInstant())));
         mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
     }
 
     @Test
     public void testQueryByDateRangeConfigHasEarliestUpdatedAtExceededNow()
     {
-        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().plusDays(1);
-        OffsetDateTime latestUpdatedAt = OffsetDateTime.now().minusDays(2);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).plusDays(1);
+        OffsetDateTime latestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(2);
         thrown.expect(ConfigException.class);
         thrown.expectMessage(String.format("`earliest_updated_at` (%s) cannot precede the current date ", earliestUpdatedAt.format(DATE_FORMATTER)));
         ConfigSource config = baseConfig
@@ -159,8 +160,8 @@ public class ProgramInputPluginTest
     @Test
     public void testQueryByDateRangeConfigHasEarliestUpdatedAtExceededLatestUpdatedAt()
     {
-        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(10);
-        OffsetDateTime latestUpdatedAt = OffsetDateTime.now().minusDays(20);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(10);
+        OffsetDateTime latestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(20);
         thrown.expect(ConfigException.class);
         thrown.expectMessage(String.format("Invalid date range. `earliest_updated_at` (%s) cannot precede the `latest_updated_at` (%s).",
                         earliestUpdatedAt.format(DATE_FORMATTER),
@@ -176,8 +177,8 @@ public class ProgramInputPluginTest
     @Test
     public void testHasFilterTypeButMissingFilterValue()
     {
-        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(20);
-        OffsetDateTime latestUpdatedAt = OffsetDateTime.now().minusDays(10);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(20);
+        OffsetDateTime latestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(10);
         thrown.expect(ConfigException.class);
         thrown.expectMessage("filter_value is required when selected filter_type");
 
@@ -192,7 +193,7 @@ public class ProgramInputPluginTest
     @Test
     public void testSkipIncrementalRunIfLastUpdatedAtExceedsNow()
     {
-        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(20);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(20);
         OffsetDateTime latestUpdatedAt = earliestUpdatedAt.plusDays(21);
         //21 days
         long reportDuration = 21 * 24 * 60 * 60 * 1000;
@@ -220,8 +221,8 @@ public class ProgramInputPluginTest
     public void testBuildConfigDiff()
     {
         TaskReport taskReport1 = Mockito.mock(TaskReport.class);
-        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(20);
-        OffsetDateTime latestUpdatedAt = OffsetDateTime.now().minusDays(10);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(20);
+        OffsetDateTime latestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(10);
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))
@@ -299,8 +300,8 @@ public class ProgramInputPluginTest
     @Test
     public void testRunQueryByDateRange() throws IOException
     {
-        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(20);
-        OffsetDateTime latestUpdatedAt = OffsetDateTime.now().minusDays(10);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(20);
+        OffsetDateTime latestUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC).minusDays(10);
         ConfigSource config = baseConfig
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))

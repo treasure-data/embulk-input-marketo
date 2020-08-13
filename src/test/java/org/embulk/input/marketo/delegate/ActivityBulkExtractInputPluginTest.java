@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -100,7 +100,7 @@ public class ActivityBulkExtractInputPluginTest
     {
         ActivityBulkExtractInputPlugin.PluginTask task = configSource.loadConfig(ActivityBulkExtractInputPlugin.PluginTask.class);
 
-        OffsetDateTime startDate = OffsetDateTime.ofInstant(task.getFromDate().toInstant(), ZoneId.systemDefault());
+        OffsetDateTime startDate = OffsetDateTime.ofInstant(task.getFromDate().toInstant(), ZoneOffset.UTC);
         List<Integer> activityTypeIds = new ArrayList<>();
 
         PageBuilder pageBuilder = Mockito.mock(PageBuilder.class);

@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -65,7 +65,7 @@ public class LeadBulkExtractInputPluginTest
     public void testRun() throws InterruptedException, IOException
     {
         LeadBulkExtractInputPlugin.PluginTask task = configSource.loadConfig(LeadBulkExtractInputPlugin.PluginTask.class);
-        OffsetDateTime startDate = OffsetDateTime.ofInstant(task.getFromDate().toInstant(), ZoneId.systemDefault());
+        OffsetDateTime startDate = OffsetDateTime.ofInstant(task.getFromDate().toInstant(), ZoneOffset.UTC);
         PageBuilder pageBuilder = Mockito.mock(PageBuilder.class);
         String exportId1 = "exportId1";
         String exportId2 = "exportId2";
