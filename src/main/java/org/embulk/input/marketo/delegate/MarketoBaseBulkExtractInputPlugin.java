@@ -39,6 +39,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -107,7 +108,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         if (task.getFromDate() == null) {
             throw new ConfigException("From date is required for Bulk Extract");
         }
-        if (task.getFromDate().getTime() >= task.getJobStartTime().toInstant().toEpochMilli()) {
+        if (task.getFromDate().getTime() >= OffsetDateTime.parse(task.getJobStartTime(), DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant().toEpochMilli()) {
             throw new ConfigException("From date can't not be in future");
         }
         if (task.getIncremental()
@@ -123,11 +124,12 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     public OffsetDateTime getToDate(T task)
     {
         Date fromDate = task.getFromDate();
+        final OffsetDateTime jobStartTime = OffsetDateTime.parse(task.getJobStartTime(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         OffsetDateTime dateTime = OffsetDateTime.ofInstant(fromDate.toInstant(), ZoneOffset.UTC);
         OffsetDateTime toDate = dateTime.plusDays(task.getFetchDays());
-        if (toDate.isAfter(task.getJobStartTime())) {
+        if (toDate.isAfter(jobStartTime)) {
             //Lock down to date
-            toDate = task.getJobStartTime();
+            toDate = jobStartTime;
         }
         return toDate;
     }

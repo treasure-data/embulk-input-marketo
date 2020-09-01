@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -54,9 +55,9 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
         @ConfigDefault("true")
         Boolean getIncremental();
 
-        OffsetDateTime getJobStartTime();
+        String getJobStartTime();
 
-        void setJobStartTime(OffsetDateTime dateTime);
+        void setJobStartTime(String dateTime);
     }
 
     @Override
@@ -68,7 +69,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
     @Override
     public void validateInputTask(T task)
     {
-        task.setJobStartTime(OffsetDateTime.now(ZoneOffset.UTC));
+        task.setJobStartTime(OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     }
 
     @Override
