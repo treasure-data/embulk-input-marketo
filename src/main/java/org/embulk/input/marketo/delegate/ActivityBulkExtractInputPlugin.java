@@ -15,13 +15,14 @@ import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.type.Types;
-import org.joda.time.DateTime;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.text.MessageFormat;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -140,10 +141,11 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
     }
 
     @Override
-    protected InputStream getExtractedStream(MarketoService service, PluginTask task, DateTime fromDate, DateTime toDate)
+    protected InputStream getExtractedStream(MarketoService service, PluginTask task, OffsetDateTime fromDate, OffsetDateTime toDate)
     {
         try {
-            return new FileInputStream(service.extractAllActivity(task.getActTypeIds(), fromDate.toDate(), toDate.toDate(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
+            return new FileInputStream(service.extractAllActivity(task.getActTypeIds(), Date.from(fromDate.toInstant()),
+                    Date.from(toDate.toInstant()), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
         }
         catch (FileNotFoundException e) {
             throw new RuntimeException("Exception when trying to extract activity", e);

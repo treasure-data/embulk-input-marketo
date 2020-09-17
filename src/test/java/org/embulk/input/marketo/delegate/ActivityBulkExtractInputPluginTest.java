@@ -18,7 +18,6 @@ import org.embulk.input.marketo.rest.RecordPagingIterable;
 import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
-import org.joda.time.DateTime;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -30,6 +29,8 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -99,7 +100,7 @@ public class ActivityBulkExtractInputPluginTest
     {
         ActivityBulkExtractInputPlugin.PluginTask task = configSource.loadConfig(ActivityBulkExtractInputPlugin.PluginTask.class);
 
-        DateTime startDate = new DateTime(task.getFromDate());
+        OffsetDateTime startDate = OffsetDateTime.ofInstant(task.getFromDate().toInstant(), ZoneOffset.UTC);
         List<Integer> activityTypeIds = new ArrayList<>();
 
         PageBuilder pageBuilder = Mockito.mock(PageBuilder.class);
@@ -118,11 +119,11 @@ public class ActivityBulkExtractInputPluginTest
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).waitActitvityExportJobComplete(Mockito.eq(exportId1), Mockito.eq(task.getPollingIntervalSecond()), Mockito.eq(task.getBulkJobTimeoutSecond()));
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).startActitvityBulkExtract(Mockito.eq(exportId2));
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).waitActitvityExportJobComplete(Mockito.eq(exportId2), Mockito.eq(task.getPollingIntervalSecond()), Mockito.eq(task.getBulkJobTimeoutSecond()));
-        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createActivityExtract(activityTypeIds, startDate.toDate(), startDate.plusDays(30).toDate());
-        DateTime startDate2 = startDate.plusDays(30).plusSeconds(1);
-        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createActivityExtract(activityTypeIds, startDate2.toDate(), startDate.plusDays(task.getFetchDays()).toDate());
+        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createActivityExtract(activityTypeIds, Date.from(startDate.toInstant()), Date.from(startDate.plusDays(30).toInstant()));
+        OffsetDateTime startDate2 = startDate.plusDays(30).plusSeconds(1);
+        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createActivityExtract(activityTypeIds, Date.from(startDate2.toInstant()), Date.from(startDate.plusDays(task.getFetchDays()).toInstant()));
         ConfigDiff configDiff = activityBulkExtractInputPlugin.buildConfigDiff(task, Mockito.mock(Schema.class), 1, Arrays.asList(taskReport));
         DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
-        Assert.assertEquals(df.format(startDate.plusDays(task.getFetchDays()).toDate()), configDiff.get(String.class, "from_date"));
+        Assert.assertEquals(df.format(Date.from(startDate.plusDays(task.getFetchDays()).toInstant())), configDiff.get(String.class, "from_date"));
     }
 }

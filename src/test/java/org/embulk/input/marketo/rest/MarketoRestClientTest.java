@@ -20,9 +20,6 @@ import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.spi.DataException;
 import org.embulk.util.retryhelper.jetty92.Jetty92ResponseReader;
 import org.embulk.util.retryhelper.jetty92.Jetty92RetryHelper;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -35,6 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -509,12 +508,13 @@ public class MarketoRestClientTest
                         (Map) ArgumentMatchers.isNull(),
                         Mockito.any(Multimap.class),
                         Mockito.any(MarketoResponseJetty92EntityReader.class));
-        DateTime earliestUpdatedAt = DateTime.now().minusDays(10);
-        DateTime latestUpdatedAt = earliestUpdatedAt.plusDays(5);
+        OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(10);
+        OffsetDateTime latestUpdatedAt = earliestUpdatedAt.plusDays(5);
         String filterType = "filter1";
         List<String> filterValues = Arrays.asList("value1", "value2");
 
-        Iterable<ObjectNode> lists = marketoRestClient.getProgramsByDateRange(earliestUpdatedAt.toDate(), latestUpdatedAt.toDate(), filterType, filterValues);
+        Iterable<ObjectNode> lists = marketoRestClient.getProgramsByDateRange(Date.from(earliestUpdatedAt.toInstant()),
+                Date.from(latestUpdatedAt.toInstant()), filterType, filterValues);
         Iterator<ObjectNode> iterator = lists.iterator();
         ObjectNode program1 = iterator.next();
         ObjectNode program2 = iterator.next();
@@ -531,20 +531,20 @@ public class MarketoRestClientTest
                         immutableListMultimapArgumentCaptor.capture(),
                         Mockito.any(MarketoResponseJetty92EntityReader.class));
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
-        DateTimeFormatter fmt = DateTimeFormat.forPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
 
         ImmutableListMultimap params1 = params.get(0);
         Assert.assertEquals("0", params1.get("offset").get(0));
         Assert.assertEquals("2", params1.get("maxReturn").get(0));
-        Assert.assertEquals(earliestUpdatedAt.toString(fmt), params1.get("earliestUpdatedAt").get(0));
-        Assert.assertEquals(latestUpdatedAt.toString(fmt), params1.get("latestUpdatedAt").get(0));
+        Assert.assertEquals(earliestUpdatedAt.format(fmt), params1.get("earliestUpdatedAt").get(0));
+        Assert.assertEquals(latestUpdatedAt.format(fmt), params1.get("latestUpdatedAt").get(0));
         Assert.assertEquals("filter1", params1.get("filterType").get(0));
         Assert.assertEquals(String.join(",", filterValues), params1.get("filterValues").get(0));
 
         ImmutableListMultimap params2 = params.get(1);
         Assert.assertEquals("2", params2.get("offset").get(0));
-        Assert.assertEquals(earliestUpdatedAt.toString(fmt), params2.get("earliestUpdatedAt").get(0));
-        Assert.assertEquals(latestUpdatedAt.toString(fmt), params2.get("latestUpdatedAt").get(0));
+        Assert.assertEquals(earliestUpdatedAt.format(fmt), params2.get("earliestUpdatedAt").get(0));
+        Assert.assertEquals(latestUpdatedAt.format(fmt), params2.get("latestUpdatedAt").get(0));
         Assert.assertEquals("filter1", params2.get("filterType").get(0));
         Assert.assertEquals(String.join(",", filterValues), params2.get("filterValues").get(0));
     }

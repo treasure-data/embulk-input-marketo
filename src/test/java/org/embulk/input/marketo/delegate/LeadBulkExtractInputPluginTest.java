@@ -16,7 +16,6 @@ import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Column;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
-import org.joda.time.DateTime;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -27,6 +26,8 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -64,7 +65,7 @@ public class LeadBulkExtractInputPluginTest
     public void testRun() throws InterruptedException, IOException
     {
         LeadBulkExtractInputPlugin.PluginTask task = configSource.loadConfig(LeadBulkExtractInputPlugin.PluginTask.class);
-        DateTime startDate = new DateTime(task.getFromDate());
+        OffsetDateTime startDate = OffsetDateTime.ofInstant(task.getFromDate().toInstant(), ZoneOffset.UTC);
         PageBuilder pageBuilder = Mockito.mock(PageBuilder.class);
         String exportId1 = "exportId1";
         String exportId2 = "exportId2";
@@ -86,14 +87,16 @@ public class LeadBulkExtractInputPluginTest
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).startLeadBulkExtract(eq(exportId2));
         Mockito.verify(mockMarketoRestclient, Mockito.times(1)).waitLeadExportJobComplete(eq(exportId2), eq(task.getPollingIntervalSecond()), eq(task.getBulkJobTimeoutSecond()));
         String filterField = "createdAt";
-        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createLeadBulkExtract(startDate.toDate(), startDate.plusDays(30).toDate(), fieldNameFromMarketoFields, filterField);
-        DateTime startDate2 = startDate.plusDays(30).plusSeconds(1);
-        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createLeadBulkExtract(startDate2.toDate(), startDate.plusDays(task.getFetchDays()).toDate(), fieldNameFromMarketoFields, filterField);
+        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createLeadBulkExtract(Date.from(startDate.toInstant()),
+                Date.from(startDate.plusDays(30).toInstant()), fieldNameFromMarketoFields, filterField);
+        OffsetDateTime startDate2 = startDate.plusDays(30).plusSeconds(1);
+        Mockito.verify(mockMarketoRestclient, Mockito.times(1)).createLeadBulkExtract(Date.from(startDate2.toInstant()),
+                Date.from(startDate.plusDays(task.getFetchDays()).toInstant()), fieldNameFromMarketoFields, filterField);
         List<Long> leadIds = argumentCaptor.getAllValues();
         Assert.assertEquals(19, leadIds.size());
         ConfigDiff configDiff = bulkExtractInputPlugin.buildConfigDiff(task, Mockito.mock(Schema.class), 1, Arrays.asList(taskReport));
         DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
-        Assert.assertEquals(df.format(startDate.plusDays(task.getFetchDays()).toDate()), configDiff.get(String.class, "from_date"));
+        Assert.assertEquals(df.format(Date.from(startDate.plusDays(task.getFetchDays()).toInstant())), configDiff.get(String.class, "from_date"));
         Assert.assertArrayEquals(new Long[]{102488L, 102456L, 102445L, 102439L, 102471L, 102503L, 102424L, 102473L, 102505L, 102492L, 102495L, 102452L, 102435L, 102467L, 102420L, 102496L, 102448L, 102499L, 102431L}, leadIds.toArray());
     }
 }

@@ -32,12 +32,14 @@ import org.embulk.spi.time.Timestamp;
 import org.embulk.spi.time.TimestampParser;
 import org.embulk.spi.util.InputStreamFileInput;
 import org.embulk.spi.util.LineDecoder;
-import org.joda.time.DateTime;
 import org.msgpack.value.Value;
 
 import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -106,7 +108,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         if (task.getFromDate() == null) {
             throw new ConfigException("From date is required for Bulk Extract");
         }
-        if (task.getFromDate().getTime() >= task.getJobStartTime().getMillis()) {
+        if (task.getFromDate().getTime() >= OffsetDateTime.parse(task.getJobStartTime(), DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant().toEpochMilli()) {
             throw new ConfigException("From date can't not be in future");
         }
         if (task.getIncremental()
@@ -115,18 +117,19 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
             throw new ConfigException("Column 'updatedAt' cannot be incremental imported");
         }
         //Calculate to date
-        DateTime toDate = getToDate(task);
-        task.setToDate(Optional.of(toDate.toDate()));
+        OffsetDateTime toDate = getToDate(task);
+        task.setToDate(Optional.of(Date.from(toDate.toInstant())));
     }
 
-    public DateTime getToDate(T task)
+    public OffsetDateTime getToDate(T task)
     {
         Date fromDate = task.getFromDate();
-        DateTime dateTime = new DateTime(fromDate);
-        DateTime toDate = dateTime.plusDays(task.getFetchDays());
-        if (toDate.isAfter(task.getJobStartTime())) {
+        final OffsetDateTime jobStartTime = OffsetDateTime.parse(task.getJobStartTime(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        OffsetDateTime dateTime = OffsetDateTime.ofInstant(fromDate.toInstant(), ZoneOffset.UTC);
+        OffsetDateTime toDate = dateTime.plusDays(task.getFetchDays());
+        if (toDate.isAfter(jobStartTime)) {
             //Lock down to date
-            toDate = task.getJobStartTime();
+            toDate = jobStartTime;
         }
         return toDate;
     }
@@ -234,7 +237,11 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
     private LineDecoderIterator getLineDecoderIterator(T task)
     {
-        List<MarketoUtils.DateRange> dateRanges = MarketoUtils.sliceRange(new DateTime(task.getFromDate()), new DateTime(task.getToDate().orNull()), MARKETO_MAX_RANGE_EXTRACT);
+        final OffsetDateTime fromDate = OffsetDateTime.ofInstant(task.getFromDate().toInstant(), ZoneOffset.UTC);
+        final OffsetDateTime toDate = task.getToDate().isPresent() ?
+                OffsetDateTime.ofInstant(task.getToDate().get().toInstant(), ZoneOffset.UTC) :
+                OffsetDateTime.now(ZoneOffset.UTC);
+        List<MarketoUtils.DateRange> dateRanges = MarketoUtils.sliceRange(fromDate, toDate, MARKETO_MAX_RANGE_EXTRACT);
         final Iterator<MarketoUtils.DateRange> iterator = dateRanges.iterator();
         return new LineDecoderIterator(iterator, task);
     }
@@ -245,7 +252,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         throw new UnsupportedOperationException();
     }
 
-    protected abstract InputStream getExtractedStream(MarketoService service, T task, DateTime fromDate, DateTime toDate);
+    protected abstract InputStream getExtractedStream(MarketoService service, T task, OffsetDateTime fromDate, OffsetDateTime toDate);
 
     private static class AllStringJacksonServiceRecord extends JacksonServiceRecord
     {
