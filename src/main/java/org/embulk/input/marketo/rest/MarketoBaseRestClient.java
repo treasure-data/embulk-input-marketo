@@ -7,6 +7,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.HttpResponseException;
 import org.eclipse.jetty.client.api.ContentProvider;
 import org.eclipse.jetty.client.api.Request;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -119,6 +121,11 @@ public class MarketoBaseRestClient implements AutoCloseable
             @Override
             public void requestOnce(HttpClient client, Response.Listener responseListener)
             {
+                if (hasProxySettings()) {
+                    LOGGER.info("Applying proxy setting");
+                    client.getProxyConfiguration().getProxies().add(getProxy());
+                }
+
                 Request request = client.newRequest(identityEndPoint + MarketoRESTEndpoint.ACCESS_TOKEN.getEndpoint()).method(HttpMethod.GET);
                 for (String key : params.keySet()) {
                     for (String value : params.get(key)) {
@@ -222,6 +229,11 @@ public class MarketoBaseRestClient implements AutoCloseable
             @Override
             public void requestOnce(HttpClient client, Response.Listener responseListener)
             {
+                if (hasProxySettings()) {
+                    LOGGER.info("Applying proxy setting");
+                    client.getProxyConfiguration().getProxies().add(getProxy());
+                }
+
                 Request request = client.newRequest(target).method(method);
                 if (headers != null) {
                     for (String key : headers.keySet()) {
@@ -303,4 +315,30 @@ public class MarketoBaseRestClient implements AutoCloseable
             retryHelper.close();
         }
     }
+
+    private Boolean hasProxySettings()
+    {
+        if (Objects.isNull(System.getenv("embulk_proxy_host"))) {
+            return false;
+        }
+        if (Objects.isNull(System.getenv( "embulk_proxy_port"))) {
+            return false;
+        }
+        return true;
+    }
+
+    private String getProxyHost()
+    {
+        return System.getenv("embulk_proxy_host").toString();
+    }
+
+    private int getProxyPort()
+    {
+        return Integer.parseInt(System.getenv("embulk_proxy_port"));
+    }
+
+    private HttpProxy getProxy(){
+        return new HttpProxy(getProxyHost(), getProxyPort());
+    }
+
 }

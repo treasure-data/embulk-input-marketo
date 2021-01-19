@@ -82,12 +82,12 @@ task gemspec {
 Gem::Specification.new do |spec|
   spec.name          = "${project.name}"
   spec.version       = "${project.version}"
-  spec.authors       = ["uu59", "yoshihara", "taikhuu"]
-  spec.summary       = %[Marketo input plugin for Embulk]
+  spec.authors       = ["uu59", "yoshihara", "taikhuu", "LowSE01"]
+  spec.summary       = %[Marketo input plugin for Embulk through proxy]
   spec.description   = %[Loads records from Marketo.]
-  spec.email         = ["k@uu59.org", "h.yoshihara@everyleaf.com", "tai@treasuredata.com"]
+  spec.email         = ["k@uu59.org", "h.yoshihara@everyleaf.com", "tai@treasuredata.com", "seimurakami@gmail.com"]
   spec.licenses      = ["Apache2"]
-  spec.homepage      = "https://github.com/treasure-data/embulk-input-marketo"
+  spec.homepage      = "https://github.com/LowSE01/embulk-input-marketo-through-proxy"
   
   spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
   spec.test_files    = spec.files.grep(%r"^(test|spec)/")
