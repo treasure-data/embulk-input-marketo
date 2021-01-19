@@ -321,7 +321,7 @@ public class MarketoBaseRestClient implements AutoCloseable
         if (Objects.isNull(System.getenv("embulk_proxy_host"))) {
             return false;
         }
-        if (Objects.isNull(System.getenv( "embulk_proxy_port"))) {
+        if (Objects.isNull(System.getenv("embulk_proxy_port"))) {
             return false;
         }
         return true;
@@ -337,8 +337,8 @@ public class MarketoBaseRestClient implements AutoCloseable
         return Integer.parseInt(System.getenv("embulk_proxy_port"));
     }
 
-    private HttpProxy getProxy(){
+    private HttpProxy getProxy()
+    {
         return new HttpProxy(getProxyHost(), getProxyPort());
     }
-
 }
