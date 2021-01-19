@@ -16,7 +16,7 @@ repositories {
 configurations {
     provided
 }
-version = "0.6.20"
+version = "0.6.21"
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
