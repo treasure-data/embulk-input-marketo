@@ -1,9 +1,6 @@
-[![Build Status](https://travis-ci.org/treasure-data/embulk-input-marketo.svg?branch=master)](https://travis-ci.org/treasure-data/embulk-input-marketo)
-[![Code Climate](https://codeclimate.com/github/treasure-data/embulk-input-marketo/badges/gpa.svg)](https://codeclimate.com/github/treasure-data/embulk-input-marketo)
-[![Test Coverage](https://codeclimate.com/github/treasure-data/embulk-input-marketo/badges/coverage.svg)](https://codeclimate.com/github/treasure-data/embulk-input-marketo/coverage)
-[![Gem Version](https://badge.fury.io/rb/embulk-input-marketo.svg)](http://badge.fury.io/rb/embulk-input-marketo)
+# Marketo input plugin for Embulk (through proxy)
 
-# Marketo input plugin for Embulk
+* This plugin is an extension of [embulk-input-marketo](https://rubygems.org/gems/embulk-input-marketo) that allows you to access Marketo API through a proxy server.
 
 embulk-input-marketo is the gem preparing Embulk input plugins for [Marketo](http://www.marketo.com/).
 
@@ -229,3 +226,10 @@ in:
   incremental: true
   ```
 
+If you need to access the Marketo API through a proxy, set the environment variable.
+
+```
+export embulk_proxy_host=<Your-Proxy-Host>
+export embulk_proxy_port=<Your-Proxy-Port>
+embulk run config.yml
+```
