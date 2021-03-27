@@ -1,11 +1,12 @@
 plugins {
-    id "com.jfrog.bintray" version "1.1"
-    id "com.github.jruby-gradle.base" version "0.1.5"
     id "java"
+    id "maven-publish"
     id "checkstyle"
     id "jacoco"
+    id "com.jfrog.bintray" version "1.8.4"
+    id "org.embulk.embulk-plugins" version "0.4.2"
 }
-import com.github.jrubygradle.JRubyExec
+
 repositories {
     mavenCentral()
     jcenter()
@@ -13,91 +14,113 @@ repositories {
         url "https://dl.bintray.com/embulk-base-restclient/maven"
     }
 }
-configurations {
-    provided
-}
+
+group = "com.treasuredata.embulk.plugins"
+description = "Loads records from Marketo."
 version = "0.6.20"
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.8.+"
-    provided "org.embulk:embulk-core:0.8.+"
+    compileOnly  "org.embulk:embulk-core:0.8.+"
     compile  "org.embulk.base.restclient:embulk-base-restclient:0.5.3"
     compile  "org.embulk.base.restclient:embulk-util-retryhelper-jetty92:0.5.3"
+    compile  "org.eclipse.jetty:jetty-client:9.2.14.v20151106"
     testCompile "junit:junit:4.+"
     testCompile "org.embulk:embulk-core:0.8.+:tests"
     testCompile "org.embulk:embulk-test:0.8.+"
     testCompile "org.mockito:mockito-core:2.+"
 }
 
-task classpath(type: Copy, dependsOn: ["jar"]) {
-    doFirst { file("classpath").deleteDir() }
-    from (configurations.runtime - configurations.provided + files(jar.archivePath))
-    into "classpath"
+embulkPlugin {
+    mainClass = "org.embulk.input.marketo.MarketoInputPlugin"
+    category = "input"
+    type = "marketo"
 }
-clean { delete "classpath" }
+
+gem {
+    authors = ["uu59", "yoshihara", "taikhuu", "Treasure Data"]
+    email = ["k@uu59.org", "h.yoshihara@everyleaf.com", "tai@treasuredata.com", "dev@treasure-data.com"]
+    summary = "Marketo input plugin for Embulk"
+    homepage = "https://github.com/treasure-data/embulk-input-marketo"
+    licenses = ["Apache2"]
+}
+
+javadoc {
+    options {
+        locale = 'en_US'
+        encoding = 'UTF-8'
+    }
+}
+
+// bintray and publishing
+bintray {
+    // write at your bintray user name and api key to ~/.gradle/gradle.properties file:
+    user = project.hasProperty('bintray_user') ? bintray_user : ''
+    key = project.hasProperty('bintray_api_key') ? bintray_api_key : ''
+
+    publications = [ "embulkMavenRelease" ]
+    publish = true
+
+    pkg {
+        userOrg = 'embulk-input-marketo'
+        repo = 'maven'
+        name = project.name
+        desc = 'Marketo input plugin for Embulk'
+        websiteUrl = 'https://github.com/treasure-data/embulk-input-marketo'
+        issueTrackerUrl = 'https://github.com/treasure-data/embulk-input-marketo/issues'
+        vcsUrl = 'https://github.com/treasure-data/embulk-input-marketo.git'
+        licenses = ['Apache2']
+        labels = ['embulk', 'java']
+        publicDownloadNumbers = true
+
+        version {
+            name = project.version
+        }
+    }
+}
+
+publishing {
+    publications {
+        embulkPluginMaven(MavenPublication) {  // Publish it with "publishEmbulkPluginMavenPublicationToMavenRepository".
+            from components.java  // Must be "components.java". The dependency modification works only for it.
+        }
+    }
+    repositories {
+        maven {
+            url = uri("https://rubygems.org")
+        }
+    }
+}
 
 checkstyle {
     configFile = file("${project.rootDir}/config/checkstyle/checkstyle.xml")
     toolVersion = '6.14.1'
 }
 checkstyleMain {
-    exclude '**/**/CsvTokenizer*'
     configFile = file("${project.rootDir}/config/checkstyle/default.xml")
-    ignoreFailures = false
+    ignoreFailures = true
 }
 checkstyleTest {
     configFile = file("${project.rootDir}/config/checkstyle/default.xml")
-    ignoreFailures = false
+    ignoreFailures = true
 }
 task checkstyle(type: Checkstyle) {
     classpath = sourceSets.main.output + sourceSets.test.output
     source = sourceSets.main.allJava + sourceSets.test.allJava
 }
 
-task gem(type: JRubyExec, dependsOn: ["gemspec", "classpath"]) {
-    jrubyArgs "-rrubygems/gem_runner", "-eGem::GemRunner.new.run(ARGV)", "build"
-    script "${project.name}.gemspec"
-    doLast { ant.move(file: "${project.name}-${project.version}.gem", todir: "pkg") }
-}
-
-task gemPush(type: JRubyExec, dependsOn: ["gem"]) {
-    jrubyArgs "-rrubygems/gem_runner", "-eGem::GemRunner.new.run(ARGV)", "push"
-    script "pkg/${project.name}-${project.version}.gem"
-}
-
-task "package"(dependsOn: ["gemspec", "classpath"]) {
-    doLast {
-        println "> Build succeeded."
-        println "> You can run embulk with '-L ${file(".").absolutePath}' argument."
+jacocoTestReport {
+    group = "Reporting"
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination file("${buildDir}/reports/coverage")
     }
 }
 
-task gemspec {
-    ext.gemspecFile = file("${project.name}.gemspec")
-    inputs.file "build.gradle"
-    outputs.file gemspecFile
-    doLast { gemspecFile.write($/
-Gem::Specification.new do |spec|
-  spec.name          = "${project.name}"
-  spec.version       = "${project.version}"
-  spec.authors       = ["uu59", "yoshihara", "taikhuu"]
-  spec.summary       = %[Marketo input plugin for Embulk]
-  spec.description   = %[Loads records from Marketo.]
-  spec.email         = ["k@uu59.org", "h.yoshihara@everyleaf.com", "tai@treasuredata.com"]
-  spec.licenses      = ["Apache2"]
-  spec.homepage      = "https://github.com/treasure-data/embulk-input-marketo"
-  
-  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
-  spec.test_files    = spec.files.grep(%r"^(test|spec)/")
-  spec.require_paths = ["lib"]
-
-  #spec.add_dependency 'YOUR_GEM_DEPENDENCY', ['~> YOUR_GEM_DEPENDENCY_VERSION']
-  spec.add_development_dependency 'bundler', ['~> 1.0']
-  spec.add_development_dependency 'rake', ['>= 10.0']
-end
-/$)
-    }
+gemPush {
+    host = "https://rubygems.org"
+    outputs.upToDateWhen { false }
 }
-clean { delete "${project.name}.gemspec" }
