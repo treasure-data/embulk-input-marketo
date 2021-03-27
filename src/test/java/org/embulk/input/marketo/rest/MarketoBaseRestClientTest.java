@@ -1,13 +1,11 @@
 package org.embulk.input.marketo.rest;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpResponseException;
-import org.eclipse.jetty.client.api.ContentProvider;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.client.util.StringContentProvider;
@@ -26,7 +24,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.function.ThrowingRunnable;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -36,6 +33,7 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -58,7 +56,7 @@ public class MarketoBaseRestClientTest
     public void prepare()
     {
         mockJetty92 = Mockito.mock(Jetty92RetryHelper.class);
-        marketoBaseRestClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.<String>absent(), MARKETO_LIMIT_INTERVAL_MILIS, 60000, mockJetty92);
+        marketoBaseRestClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.empty(), MARKETO_LIMIT_INTERVAL_MILIS, 60000, mockJetty92);
     }
 
     @Test
@@ -179,17 +177,10 @@ public class MarketoBaseRestClientTest
         Mockito.doThrow(exception).when(request).send(Mockito.any(Response.Listener.class));
 
         Jetty92RetryHelper retryHelper = new Jetty92RetryHelper(1, 1, 1, clientCreator);
-        final MarketoBaseRestClient restClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.<String>absent(), MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper);
+        final MarketoBaseRestClient restClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.empty(), MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper);
 
         // calling method should wrap the HttpResponseException by ConfigException
-        Assert.assertThrows(ConfigException.class, new ThrowingRunnable()
-        {
-            @Override
-            public void run() throws Throwable
-            {
-                restClient.getAccessToken();
-            }
-        });
+        Assert.assertThrows(ConfigException.class, restClient::getAccessToken);
     }
 
     @Test
@@ -197,14 +188,7 @@ public class MarketoBaseRestClientTest
     {
         final MarketoBaseRestClient client = doRequestWithWrapper(HttpMethod.GET);
         // calling method should wrap the HttpResponseException by DataException
-        Assert.assertThrows(DataException.class, new ThrowingRunnable()
-        {
-            @Override
-            public void run() throws Throwable
-            {
-                client.doGet("test_target", null, null, new MarketoResponseJetty92EntityReader<String>(1000));
-            }
-        });
+        Assert.assertThrows(DataException.class, () -> client.doGet("test_target", null, null, new MarketoResponseJetty92EntityReader<String>(1000)));
     }
 
     @Test
@@ -212,14 +196,7 @@ public class MarketoBaseRestClientTest
     {
         final MarketoBaseRestClient client = doRequestWithWrapper(HttpMethod.POST);
         // calling method should wrap the HttpResponseException by DataException
-        Assert.assertThrows(DataException.class, new ThrowingRunnable()
-        {
-            @Override
-            public void run() throws Throwable
-            {
-                client.doPost("test_target", null, null, "{\"any\": \"any\"}", new MarketoResponseJetty92EntityReader<String>(1000));
-            }
-        });
+        Assert.assertThrows(DataException.class, () -> client.doPost("test_target", null, null, "{\"any\": \"any\"}", new MarketoResponseJetty92EntityReader<String>(1000)));
     }
 
     private MarketoBaseRestClient doRequestWithWrapper(HttpMethod method) throws Exception
@@ -237,30 +214,30 @@ public class MarketoBaseRestClientTest
         Mockito.doThrow(exception).when(request).send(Mockito.any(Response.Listener.class));
 
         Jetty92RetryHelper retryHelper = new Jetty92RetryHelper(1, 1, 1, clientCreator);
-        final MarketoBaseRestClient restClient = Mockito.spy(new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.<String>absent(), MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper));
+        final MarketoBaseRestClient restClient = Mockito.spy(new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.empty(), MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper));
         Mockito.doReturn("test_access_token").when(restClient).getAccessToken();
 
         return restClient;
     }
 
     @Test
-    public void testDoPost() throws Exception
+    public void testDoPost()
     {
         MarketoBaseRestClient spy = Mockito.spy(marketoBaseRestClient);
-        spy.doPost("target", Maps.<String, String>newHashMap(), new ImmutableListMultimap.Builder<String, String>().build(), "test_content", new StringJetty92ResponseEntityReader(10));
+        spy.doPost("target", Maps.newHashMap(), new ImmutableListMultimap.Builder<String, String>().build(), "test_content", new StringJetty92ResponseEntityReader(10));
         Mockito.verify(spy, Mockito.times(1)).doRequest(Mockito.anyString(), Mockito.eq(HttpMethod.POST), Mockito.any(Map.class), Mockito.any(Multimap.class), Mockito.any(StringContentProvider.class), Mockito.any(StringJetty92ResponseEntityReader.class));
     }
 
     @Test
-    public void testDoGet() throws Exception
+    public void testDoGet()
     {
         MarketoBaseRestClient spy = Mockito.spy(marketoBaseRestClient);
-        spy.doGet("target", Maps.<String, String>newHashMap(), new ImmutableListMultimap.Builder<String, String>().build(), new StringJetty92ResponseEntityReader(10));
-        Mockito.verify(spy, Mockito.times(1)).doRequest(Mockito.anyString(), Mockito.eq(HttpMethod.GET), Mockito.any(Map.class), Mockito.any(Multimap.class), Mockito.isNull(ContentProvider.class), Mockito.any(StringJetty92ResponseEntityReader.class));
+        spy.doGet("target", Maps.newHashMap(), new ImmutableListMultimap.Builder<String, String>().build(), new StringJetty92ResponseEntityReader(10));
+        Mockito.verify(spy, Mockito.times(1)).doRequest(Mockito.anyString(), Mockito.eq(HttpMethod.GET), Mockito.any(Map.class), Mockito.any(Multimap.class), Mockito.isNull(), Mockito.any(StringJetty92ResponseEntityReader.class));
     }
 
     @Test
-    public void testDoRequestRequester() throws Exception
+    public void testDoRequestRequester()
     {
         MarketoBaseRestClient spy = Mockito.spy(marketoBaseRestClient);
         StringContentProvider contentProvider = new StringContentProvider("Content", StandardCharsets.UTF_8);
@@ -272,12 +249,12 @@ public class MarketoBaseRestClientTest
         Mockito.when(mockJetty92.requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), Mockito.any(Jetty92SingleRequester.class))).thenReturn("{\"access_token\": \"access_token\"}");
 
         String target = "target";
-        HashMap<String, String> headers = Maps.<String, String>newHashMap();
+        HashMap<String, String> headers = Maps.newHashMap();
         headers.put("testHeader1", "testHeaderValue1");
 
         ImmutableListMultimap<String, String> build = new ImmutableListMultimap.Builder<String, String>().put("param", "param1").build();
 
-        MarketoResponse<Object> marketoResponse = spy.doRequest(target, HttpMethod.POST, headers, build, contentProvider, new MarketoResponseJetty92EntityReader<Object>(10));
+        MarketoResponse<Object> marketoResponse = spy.doRequest(target, HttpMethod.POST, headers, build, contentProvider, new MarketoResponseJetty92EntityReader<>(10));
 
         HttpClient client = Mockito.mock(HttpClient.class);
         Response.Listener listener = Mockito.mock(Response.Listener.class);
@@ -297,7 +274,7 @@ public class MarketoBaseRestClientTest
     }
 
     @Test
-    public void testDoRequesterRetry() throws Exception
+    public void testDoRequesterRetry()
     {
         MarketoBaseRestClient spy = Mockito.spy(marketoBaseRestClient);
         ArgumentCaptor<Jetty92SingleRequester> jetty92SingleRequesterArgumentCaptor = ArgumentCaptor.forClass(Jetty92SingleRequester.class);
@@ -305,7 +282,7 @@ public class MarketoBaseRestClientTest
         Mockito.when(mockJetty92.requestWithRetry(Mockito.any(MarketoResponseJetty92EntityReader.class), jetty92SingleRequesterArgumentCaptor.capture())).thenReturn(new MarketoResponse<>());
         Mockito.when(mockJetty92.requestWithRetry(Mockito.any(StringJetty92ResponseEntityReader.class), Mockito.any(Jetty92SingleRequester.class))).thenReturn("{\"access_token\": \"access_token\"}");
 
-        spy.doRequest("", HttpMethod.POST, null, null, null, new MarketoResponseJetty92EntityReader<Object>(10));
+        spy.doRequest("", HttpMethod.POST, null, null, null, new MarketoResponseJetty92EntityReader<>(10));
 
         HttpClient client = Mockito.mock(HttpClient.class);
         Response.Listener listener = Mockito.mock(Response.Listener.class);

@@ -2,41 +2,39 @@ package org.embulk.input.marketo.delegate;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.collect.Iterators;
 import org.embulk.base.restclient.jackson.JacksonServiceRecord;
 import org.embulk.base.restclient.jackson.JacksonServiceValue;
 import org.embulk.base.restclient.record.RecordImporter;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
-import org.embulk.config.ConfigInject;
 import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.CsvTokenizer;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.rest.MarketoRestClient;
-import org.embulk.spi.BufferAllocator;
 import org.embulk.spi.Column;
 import org.embulk.spi.ColumnVisitor;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
-import org.embulk.spi.json.JsonParser;
-import org.embulk.spi.time.Timestamp;
-import org.embulk.spi.time.TimestampParser;
-import org.embulk.spi.util.InputStreamFileInput;
-import org.embulk.spi.util.LineDecoder;
+import org.embulk.util.config.Config;
+import org.embulk.util.config.ConfigDefault;
+import org.embulk.util.file.InputStreamFileInput;
+import org.embulk.util.json.JsonParser;
+import org.embulk.util.text.LineDecoder;
+import org.embulk.util.timestamp.TimestampFormatter;
 import org.msgpack.value.Value;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -47,6 +45,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
+
+import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
 
 /**
  * Created by tai.khuu on 9/18/17.
@@ -69,9 +70,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         @Config("latest_fetch_time")
         @ConfigDefault("null")
         Optional<Long> getLatestFetchTime();
-
-        @ConfigInject
-        BufferAllocator getBufferAllocator();
 
         @Config("polling_interval_second")
         @ConfigDefault("60")
@@ -138,11 +136,11 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     public ConfigDiff buildConfigDiff(T task, Schema schema, int taskCount, List<TaskReport> taskReports)
     {
         ConfigDiff configDiff = super.buildConfigDiff(task, schema, taskCount, taskReports);
-        String incrementalColumn = task.getIncrementalColumn().orNull();
+        String incrementalColumn = task.getIncrementalColumn().orElse(null);
         if (incrementalColumn != null && task.getIncremental()) {
             DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
             // We will always move the range forward.
-            Date toDate = task.getToDate().orNull();
+            Date toDate = task.getToDate().orElse(null);
             configDiff.set(FROM_DATE, df.format(toDate));
         }
         return configDiff;
@@ -151,20 +149,14 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     @Override
     public TaskReport ingestServiceData(final T task, RecordImporter recordImporter, int taskIndex, PageBuilder pageBuilder)
     {
-        TaskReport taskReport = Exec.newTaskReport();
+        TaskReport taskReport = CONFIG_MAPPER_FACTORY.newTaskReport();
         if (Exec.isPreview()) {
             return importMockPreviewData(pageBuilder);
         }
         else {
             try (LineDecoderIterator decoderIterator = getLineDecoderIterator(task)) {
-                Iterator<Map<String, String>> csvRecords = Iterators.concat(Iterators.transform(decoderIterator, new Function<LineDecoder, Iterator<Map<String, String>>>()
-                {
-                    @Override
-                    public Iterator<Map<String, String>> apply(LineDecoder input)
-                    {
-                        return new CsvRecordIterator(input, task);
-                    }
-                }));
+                Iterator<Map<String, String>> csvRecords = Iterators.concat(Iterators.transform(decoderIterator,
+                        (Function<LineDecoder, Iterator<Map<String, String>>>) input -> new CsvRecordIterator(input, task)));
                 //Keep the preview code here when we can enable real preview
                 if (Exec.isPreview()) {
                     csvRecords = Iterators.limit(csvRecords, PREVIEW_RECORD_LIMIT);
@@ -183,8 +175,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
     /**
      * This method should be removed when we allow skip preview phase
-     * @param pageBuilder
-     * @return TaskReport
      */
     private TaskReport importMockPreviewData(final PageBuilder pageBuilder)
     {
@@ -221,7 +211,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
                 @Override
                 public void timestampColumn(Column column)
                 {
-                    pageBuilder.setTimestamp(column, Timestamp.ofEpochMilli(System.currentTimeMillis()));
+                    pageBuilder.setTimestamp(column, Instant.ofEpochMilli(System.currentTimeMillis()));
                 }
 
                 @Override
@@ -232,7 +222,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
             });
             pageBuilder.addRecord();
         }
-        return Exec.newTaskReport();
+        return CONFIG_MAPPER_FACTORY.newTaskReport();
     }
 
     private LineDecoderIterator getLineDecoderIterator(T task)
@@ -272,7 +262,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
     private static class StringConverterJacksonServiceRecord extends JacksonServiceValue
     {
-        private String textValue;
+        private final String textValue;
 
         public StringConverterJacksonServiceRecord(String textValue)
         {
@@ -317,9 +307,9 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         }
 
         @Override
-        public Timestamp timestampValue(TimestampParser timestampParser)
+        public Instant timestampValue(TimestampFormatter timestampFormatter)
         {
-            return timestampParser.parse(textValue);
+            return timestampFormatter.parse(textValue);
         }
     }
 
@@ -327,12 +317,12 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     {
         private LineDecoder currentLineDecoder;
 
-        private Iterator<MarketoUtils.DateRange> dateRangeIterator;
+        private final Iterator<MarketoUtils.DateRange> dateRangeIterator;
 
-        private MarketoService marketoService;
+        private final MarketoService marketoService;
 
-        private MarketoRestClient marketoRestClient;
-        private T task;
+        private final MarketoRestClient marketoRestClient;
+        private final T task;
         public LineDecoderIterator(Iterator<MarketoUtils.DateRange> dateRangeIterator, T task)
         {
             marketoRestClient = createMarketoRestClient(task);
@@ -364,7 +354,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
             if (hasNext()) {
                 MarketoUtils.DateRange next = dateRangeIterator.next();
                 InputStream extractedStream = getExtractedStream(marketoService, task, next.fromDate, next.toDate);
-                currentLineDecoder = new LineDecoder(new InputStreamFileInput(task.getBufferAllocator(), extractedStream), task);
+                currentLineDecoder = LineDecoder.of(new InputStreamFileInput(Exec.getBufferAllocator(), extractedStream), StandardCharsets.UTF_8, null);
                 return currentLineDecoder;
             }
             throw new NoSuchElementException();
@@ -379,9 +369,9 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
     private class CsvRecordIterator implements Iterator<Map<String, String>>
     {
-        private CsvTokenizer tokenizer;
+        private final CsvTokenizer tokenizer;
 
-        private List<String> headers;
+        private final List<String> headers;
 
         private Map<String, String> currentCsvRecord;
         public CsvRecordIterator(LineDecoder lineDecoder, T task)

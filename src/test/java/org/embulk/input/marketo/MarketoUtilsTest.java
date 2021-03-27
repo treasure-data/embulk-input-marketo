@@ -5,6 +5,7 @@ import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.spi.Column;
 import org.embulk.spi.type.Types;
+import org.embulk.util.config.ConfigMapper;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -21,6 +22,7 @@ import static org.junit.Assert.assertFalse;
  */
 public class MarketoUtilsTest
 {
+    public static final ConfigMapper CONFIG_MAPPER = MarketoInputPlugin.CONFIG_MAPPER_FACTORY.createConfigMapper();
     @Test
     public void buildDynamicResponseMapper()
     {

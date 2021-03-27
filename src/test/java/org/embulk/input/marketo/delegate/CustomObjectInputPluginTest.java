@@ -20,12 +20,24 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.List;
 
+import static org.embulk.input.marketo.MarketoUtilsTest.CONFIG_MAPPER;
+import static org.embulk.input.marketo.delegate.CustomObjectInputPlugin.PluginTask;
 import static org.junit.Assert.assertArrayEquals;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class CustomObjectInputPluginTest
 {
@@ -43,17 +55,17 @@ public class CustomObjectInputPluginTest
     @Before
     public void setUp() throws Exception
     {
-        customObjectInputPlugin = Mockito.spy(new CustomObjectInputPlugin());
+        customObjectInputPlugin = spy(new CustomObjectInputPlugin());
         ConfigLoader configLoader = embulkTestRuntime.getInjector().getInstance(ConfigLoader.class);
         configSource = configLoader.fromYaml(this.getClass().getResourceAsStream("/config/custom_object_config.yaml"));
-        mockMarketoRestClient = Mockito.mock(MarketoRestClient.class);
-        Mockito.doReturn(mockMarketoRestClient).when(customObjectInputPlugin).createMarketoRestClient(Mockito.any(CustomObjectInputPlugin.PluginTask.class));
+        mockMarketoRestClient = mock(MarketoRestClient.class);
+        doReturn(mockMarketoRestClient).when(customObjectInputPlugin).createMarketoRestClient(any(PluginTask.class));
     }
 
     @Test
     public void testValidPluginTask()
     {
-        CustomObjectInputPlugin.PluginTask pluginTask = configSource.loadConfig(CustomObjectInputPlugin.PluginTask.class);
+        PluginTask pluginTask = mapTask(configSource);
         // should not cause exception
         customObjectInputPlugin.validateInputTask(pluginTask);
     }
@@ -61,45 +73,37 @@ public class CustomObjectInputPluginTest
     @Test
     public void testCustomObjectFilterTypeError()
     {
-        CustomObjectInputPlugin.PluginTask pluginTask = configSource
-                .set("custom_object_filter_type", "")
-                .loadConfig(CustomObjectInputPlugin.PluginTask.class);
+        PluginTask pluginTask = mapTask(configSource.set("custom_object_filter_type", ""));
         Assert.assertThrows(ConfigException.class, () -> customObjectInputPlugin.validateInputTask(pluginTask));
     }
 
     @Test
     public void testCustomObjectAPINameError()
     {
-        CustomObjectInputPlugin.PluginTask pluginTask = configSource
-                .set("custom_object_api_name", "")
-                .loadConfig(CustomObjectInputPlugin.PluginTask.class);
+        PluginTask pluginTask = mapTask(configSource.set("custom_object_api_name", ""));
         Assert.assertThrows(ConfigException.class, () -> customObjectInputPlugin.validateInputTask(pluginTask));
     }
 
     @Test
     public void testFromValueGreaterThanToValueError()
     {
-        CustomObjectInputPlugin.PluginTask pluginTask = configSource
+        PluginTask pluginTask = mapTask(configSource
                 .set("custom_object_filter_from_value", "10")
-                .set("custom_object_filter_to_value", "5").loadConfig(CustomObjectInputPlugin.PluginTask.class);
+                .set("custom_object_filter_to_value", "5"));
         Assert.assertThrows(ConfigException.class, () -> customObjectInputPlugin.validateInputTask(pluginTask));
     }
 
     @Test
     public void testEmptyStringFilterValues()
     {
-        CustomObjectInputPlugin.PluginTask pluginTask = configSource
-                .set("custom_object_filter_values", "").loadConfig(CustomObjectInputPlugin.PluginTask.class);
-
+        PluginTask pluginTask = mapTask(configSource.set("custom_object_filter_values", ""));
         Assert.assertThrows(ConfigException.class, () -> customObjectInputPlugin.validateInputTask(pluginTask));
     }
 
     @Test
     public void testAllEmptyStringFilterValues()
     {
-        CustomObjectInputPlugin.PluginTask pluginTask = configSource
-                .set("custom_object_filter_values", ",, , ").loadConfig(CustomObjectInputPlugin.PluginTask.class);
-
+        PluginTask pluginTask = mapTask(configSource.set("custom_object_filter_values", ",, , "));
         Assert.assertThrows(ConfigException.class, () -> customObjectInputPlugin.validateInputTask(pluginTask));
     }
 
@@ -107,14 +111,14 @@ public class CustomObjectInputPluginTest
     public void testRunStringFilterValues() throws IOException
     {
         RecordPagingIterable<ObjectNode> mockRecordPagingIterable = mockAndGetResponse();
-        Mockito.when(mockMarketoRestClient.getCustomObject(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(mockRecordPagingIterable);
+        when(mockMarketoRestClient.getCustomObject(anyString(), anyString(), anyString(), anyString())).thenReturn(mockRecordPagingIterable);
 
-        CustomObjectInputPlugin.PluginTask task = configSource.set("custom_object_filter_values", "value1,value2,value3,value4").loadConfig(CustomObjectInputPlugin.PluginTask.class);
+        PluginTask task = mapTask(configSource.set("custom_object_filter_values", "value1,value2,value3,value4"));
         ServiceResponseMapper<? extends ValueLocator> mapper = customObjectInputPlugin.buildServiceResponseMapper(task);
         RecordImporter recordImporter = mapper.createRecordImporter();
-        PageBuilder mockPageBuilder = Mockito.mock(PageBuilder.class);
+        PageBuilder mockPageBuilder = mock(PageBuilder.class);
         customObjectInputPlugin.ingestServiceData(task, recordImporter, 1, mockPageBuilder);
-        Mockito.verify(mockMarketoRestClient, Mockito.times(1)).getCustomObject(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        verify(mockMarketoRestClient, times(1)).getCustomObject(anyString(), anyString(), anyString(), anyString());
 
         verifyAfterRun(mapper, mockPageBuilder);
     }
@@ -123,14 +127,14 @@ public class CustomObjectInputPluginTest
     public void testRunWithFilterRange() throws IOException
     {
         RecordPagingIterable<ObjectNode> mockRecordPagingIterable = mockAndGetResponse();
-        Mockito.when(mockMarketoRestClient.getCustomObject(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(mockRecordPagingIterable);
+        when(mockMarketoRestClient.getCustomObject(anyString(), anyString(), anyString(), anyString())).thenReturn(mockRecordPagingIterable);
 
-        CustomObjectInputPlugin.PluginTask task = configSource.loadConfig(CustomObjectInputPlugin.PluginTask.class);
+        PluginTask task = mapTask(configSource);
         ServiceResponseMapper<? extends ValueLocator> mapper = customObjectInputPlugin.buildServiceResponseMapper(task);
         RecordImporter recordImporter = mapper.createRecordImporter();
-        PageBuilder mockPageBuilder = Mockito.mock(PageBuilder.class);
+        PageBuilder mockPageBuilder = mock(PageBuilder.class);
         customObjectInputPlugin.ingestServiceData(task, recordImporter, 1, mockPageBuilder);
-        Mockito.verify(mockMarketoRestClient, Mockito.times(1)).getCustomObject(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        verify(mockMarketoRestClient, times(1)).getCustomObject(anyString(), anyString(), anyString(), anyString());
 
         verifyAfterRun(mapper, mockPageBuilder);
     }
@@ -139,37 +143,42 @@ public class CustomObjectInputPluginTest
     public void testRunFromOnlyFilter() throws IOException
     {
         RecordPagingIterable<ObjectNode> mockRecordPagingIterable = mockAndGetResponse();
-        Mockito.when(mockMarketoRestClient.getCustomObject(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.isNull())).thenReturn(mockRecordPagingIterable);
+        when(mockMarketoRestClient.getCustomObject(anyString(), anyString(), anyString(), anyInt(), isNull())).thenReturn(mockRecordPagingIterable);
 
-        CustomObjectInputPlugin.PluginTask task = configSource.remove("custom_object_filter_to_value").loadConfig(CustomObjectInputPlugin.PluginTask.class);
+        PluginTask task = mapTask(configSource.remove("custom_object_filter_to_value"));
         ServiceResponseMapper<? extends ValueLocator> mapper = customObjectInputPlugin.buildServiceResponseMapper(task);
         RecordImporter recordImporter = mapper.createRecordImporter();
-        PageBuilder mockPageBuilder = Mockito.mock(PageBuilder.class);
+        PageBuilder mockPageBuilder = mock(PageBuilder.class);
         customObjectInputPlugin.ingestServiceData(task, recordImporter, 1, mockPageBuilder);
-        Mockito.verify(mockMarketoRestClient, Mockito.times(1)).getCustomObject(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.isNull());
+        verify(mockMarketoRestClient, times(1)).getCustomObject(anyString(), anyString(), anyString(), anyInt(), isNull());
 
         verifyAfterRun(mapper, mockPageBuilder);
     }
 
     private void verifyAfterRun(ServiceResponseMapper<? extends ValueLocator> mapper, PageBuilder mockPageBuilder)
     {
-        Mockito.verify(mockMarketoRestClient, Mockito.times(1)).describeCustomObject(Mockito.anyString());
+        verify(mockMarketoRestClient, times(1)).describeCustomObject(anyString());
         Schema schema = mapper.getEmbulkSchema();
         ArgumentCaptor<Long> longArgumentCaptor = ArgumentCaptor.forClass(Long.class);
-        Mockito.verify(mockPageBuilder, Mockito.times(3)).setLong(Mockito.eq(schema.lookupColumn("mk_id")), longArgumentCaptor.capture());
+        verify(mockPageBuilder, times(3)).setLong(eq(schema.lookupColumn("mk_id")), longArgumentCaptor.capture());
         List<Long> allValues = longArgumentCaptor.getAllValues();
         assertArrayEquals(new Long[]{1L, 2L, 3L}, allValues.toArray());
     }
 
     private RecordPagingIterable<ObjectNode> mockAndGetResponse() throws IOException
     {
-        RecordPagingIterable<ObjectNode> mockRecordPagingIterable = Mockito.mock(RecordPagingIterable.class);
+        RecordPagingIterable<ObjectNode> mockRecordPagingIterable = mock(RecordPagingIterable.class);
         JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, ObjectNode.class);
         List<ObjectNode> objectNodeList = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/custom_object_response_full.json"), javaType);
         JavaType marketoFieldsType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
         List<MarketoField> marketoFields = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/custom_object_describe_marketo_fields_full.json"), marketoFieldsType);
-        Mockito.when(mockRecordPagingIterable.iterator()).thenReturn(objectNodeList.iterator());
-        Mockito.when(mockMarketoRestClient.describeCustomObject(Mockito.anyString())).thenReturn(marketoFields);
+        when(mockRecordPagingIterable.iterator()).thenReturn(objectNodeList.iterator());
+        when(mockMarketoRestClient.describeCustomObject(anyString())).thenReturn(marketoFields);
         return mockRecordPagingIterable;
+    }
+
+    private PluginTask mapTask(ConfigSource configSource)
+    {
+        return CONFIG_MAPPER.map(configSource, PluginTask.class);
     }
 }
