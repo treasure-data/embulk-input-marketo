@@ -1,3 +1,12 @@
+## 0.6.21 - 2021-03-29
+- Upgrade `embulk-*` to `v0.10.25`.
+- Apply new lib `embulk-util-*`.
+- Upgrade `embulk-base-restclient` to `v0.10.0`
+- Upgrade Gradle to `6.6.1`.
+- Apply `org.embulk.embulk-plugins` Gradle plugin.
+- Use Java optional 8 in place of Guava
+- Miscellaneous code cleanup.
+
 ## 0.6.20 - 2020-07-17
 * [enhancement] Replace Joda-Time with java.time classes [101](https://github.com/treasure-data/embulk-input-marketo/pull/101)
 * [enhancement] Use GitHub Action instead of Travis CI [101](https://github.com/treasure-data/embulk-input-marketo/pull/101)
