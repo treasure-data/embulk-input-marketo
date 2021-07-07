@@ -14,17 +14,17 @@ repositories {
 
 group = "com.treasuredata.embulk.plugins"
 description = "Loads records from Marketo."
-version = "0.6.20"
+version = "0.6.21"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
-def embulkVersion = '0.10.25'
+def embulkVersion = '0.10.29'
 
 dependencies {
     compileOnly "org.embulk:embulk-api:$embulkVersion"
     compileOnly "org.embulk:embulk-spi:$embulkVersion"
 
-    compile('org.embulk:embulk-util-config:0.2.1') {
+    compile('org.embulk:embulk-util-config:0.3.1') {
         // Conflict with Embulk Core
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
@@ -33,8 +33,8 @@ dependencies {
         exclude group: 'javax.validation', module: 'validation-api'
     }
 
-    compile "org.embulk:embulk-util-json:0.1.0"
-    compile "org.embulk:embulk-util-text:0.1.0"
+    compile "org.embulk:embulk-util-json:0.1.1"
+    compile "org.embulk:embulk-util-text:0.1.1"
     compile "org.embulk:embulk-util-timestamp:0.2.1"
 
     // Explicit dependencies for embulk-util-* that matches with Embulk
@@ -44,10 +44,10 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.7'
     compile 'javax.validation:validation-api:1.1.0.Final'
 
-    compile('org.embulk:embulk-base-restclient:0.10.0') {
+    compile('org.embulk:embulk-base-restclient:0.10.1') {
         exclude group: 'org.msgpack', module: 'msgpack-core'
     }
-    compile('org.embulk:embulk-util-retryhelper-jetty92:0.8.1') {
+    compile('org.embulk:embulk-util-retryhelper-jetty92:0.8.2') {
         exclude group: 'org.slf4j', module: 'slf4j-api'
     }
 
