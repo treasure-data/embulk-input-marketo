@@ -44,12 +44,8 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.7'
     compile 'javax.validation:validation-api:1.1.0.Final'
 
-    compile('org.embulk:embulk-base-restclient:0.10.1') {
-        exclude group: 'org.msgpack', module: 'msgpack-core'
-    }
-    compile('org.embulk:embulk-util-retryhelper-jetty92:0.8.2') {
-        exclude group: 'org.slf4j', module: 'slf4j-api'
-    }
+    compile 'org.embulk:embulk-base-restclient:0.10.1'
+    compile 'org.embulk:embulk-util-retryhelper-jetty92:0.8.2'
 
     compile 'com.google.guava:guava:18.0'
     compile  "com.google.code.findbugs:annotations:3.0.1"
