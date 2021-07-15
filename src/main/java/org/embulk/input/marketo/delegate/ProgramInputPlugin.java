@@ -2,15 +2,12 @@ package org.embulk.input.marketo.delegate;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
 import org.embulk.base.restclient.record.RecordImporter;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
 import org.embulk.config.TaskReport;
@@ -20,7 +17,10 @@ import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
 import org.embulk.spi.type.Types;
+import org.embulk.util.config.Config;
+import org.embulk.util.config.ConfigDefault;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -30,11 +30,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+
+import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
 
 public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramInputPlugin.PluginTask>
 {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
-    private final Logger logger = Exec.getLogger(getClass());
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask
     {
@@ -48,7 +51,7 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
 
         @Config("tag_value")
         @ConfigDefault("null")
-        Optional<String> getTagVallue();
+        Optional<String> getTagValue();
 
         @Config("earliest_updated_at")
         @ConfigDefault("null")
@@ -86,7 +89,7 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
             switch(task.getQueryBy().get()) {
             case TAG_TYPE:
                 //make sure tag type and tag value are not empty
-                if (!task.getTagType().isPresent() || !task.getTagVallue().isPresent()) {
+                if (!task.getTagType().isPresent() || !task.getTagValue().isPresent()) {
                     throw new ConfigException("tag_type and tag_value are required when query by Tag Type");
                 }
                 break;
@@ -142,7 +145,7 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
                         latestUpdateAt.format(DATE_FORMATTER), now.format(DATE_FORMATTER));
 
                 OffsetDateTime earliest = OffsetDateTime.ofInstant(task.getEarliestUpdatedAt().get().toInstant(), ZoneOffset.UTC);
-                TaskReport taskReport = Exec.newTaskReport();
+                TaskReport taskReport = CONFIG_MAPPER_FACTORY.newTaskReport();
                 taskReport.set("earliest_updated_at", earliest.format(DATE_FORMATTER));
                 if (task.getReportDuration().isPresent()) {
                     taskReport.set("report_duration", task.getReportDuration().get());
@@ -160,13 +163,13 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
         if (task.getQueryBy().isPresent()) {
             switch (task.getQueryBy().get()) {
             case TAG_TYPE:
-                nodes = marketoService.getProgramsByTag(task.getTagType().get(), task.getTagVallue().get());
+                nodes = marketoService.getProgramsByTag(task.getTagType().get(), task.getTagValue().get());
                 break;
             case DATE_RANGE:
                 nodes = marketoService.getProgramsByDateRange(task.getEarliestUpdatedAt().get(),
                                 task.getLatestUpdatedAt().get(),
-                                task.getFilterType().orNull(),
-                                task.getFilterValues().orNull());
+                                task.getFilterType().orElse(null),
+                                task.getFilterValues().orElse(null));
             }
         }
         else {
@@ -192,7 +195,7 @@ public class ProgramInputPlugin extends MarketoBaseInputPluginDelegate<ProgramIn
             OffsetDateTime nextEarliestUpdatedAt = latest.plusSeconds(1);
 
             configDiff.set("earliest_updated_at", nextEarliestUpdatedAt.format(DATE_FORMATTER));
-            configDiff.set("report_duration", task.getReportDuration().or(d.toMillis()));
+            configDiff.set("report_duration", task.getReportDuration().orElse(d.toMillis()));
         }
         return configDiff;
     }

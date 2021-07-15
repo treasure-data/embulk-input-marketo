@@ -12,6 +12,7 @@ import org.embulk.input.marketo.rest.RecordPagingIterable;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,7 +30,7 @@ import java.util.stream.IntStream;
  */
 public class MarketoServiceImpl implements MarketoService
 {
-    private static final Logger LOGGER = Exec.getLogger(MarketoServiceImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private static final String DEFAULT_FILE_FORMAT = "csv";
 
@@ -53,7 +54,7 @@ public class MarketoServiceImpl implements MarketoService
             marketoRestClient.waitLeadExportJobComplete(exportID, pollingTimeIntervalSecond, bulkJobTimeoutSecond);
         }
         catch (InterruptedException e) {
-            LOGGER.error("Exception when waiting for export job id: {}", exportID, e);
+            logger.error("Exception when waiting for export job id: {}", exportID, e);
             throw new DataException("Error when wait for bulk extract");
         }
         return downloadBulkExtract(new Function<BulkExtractRangeHeader, InputStream>()
@@ -81,7 +82,7 @@ public class MarketoServiceImpl implements MarketoService
             }
         }
         catch (IOException e) {
-            LOGGER.error("Encounter exception when download bulk extract file", e);
+            logger.error("Encounter exception when download bulk extract file", e);
             throw new DownloadBulkExtractException("Encounter exception when download bulk extract file", e, total);
         }
         return total;
@@ -96,7 +97,7 @@ public class MarketoServiceImpl implements MarketoService
             marketoRestClient.waitActitvityExportJobComplete(exportID, pollingTimeIntervalSecond, bulkJobTimeoutSecond);
         }
         catch (InterruptedException e) {
-            LOGGER.error("Exception when waiting for export job id: {}", exportID, e);
+            logger.error("Exception when waiting for export job id: {}", exportID, e);
             throw new DataException("Error when wait for bulk extract");
         }
         return downloadBulkExtract(new Function<BulkExtractRangeHeader, InputStream>()
@@ -123,7 +124,7 @@ public class MarketoServiceImpl implements MarketoService
             }
             catch (DownloadBulkExtractException e) {
                 startByte = startByte + e.getByteWritten();
-                LOGGER.warn("will resume activity bulk extract at byte [{}]", startByte);
+                logger.warn("will resume activity bulk extract at byte [{}]", startByte);
             }
             resumeTime = resumeTime + 1;
         }
@@ -223,7 +224,7 @@ public class MarketoServiceImpl implements MarketoService
         }
 
         // make sure to import values in the whole range
-        Set<String> filterValues = IntStream.rangeClosed(fromValue, toValue.intValue()).mapToObj(String::valueOf).collect(Collectors.toSet());
+        Set<String> filterValues = IntStream.rangeClosed(fromValue, toValue).mapToObj(String::valueOf).collect(Collectors.toSet());
         return getCustomObject(customObjectAPIName, customObjectFilterType, filterValues, customObjectFields);
     }
 

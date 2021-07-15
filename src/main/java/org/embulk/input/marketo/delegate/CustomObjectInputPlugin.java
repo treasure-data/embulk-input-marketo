@@ -1,31 +1,31 @@
 package org.embulk.input.marketo.delegate;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang3.StringUtils;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigException;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.rest.MarketoRestClient;
-import org.embulk.spi.Exec;
+import org.embulk.util.config.Config;
+import org.embulk.util.config.ConfigDefault;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<CustomObjectInputPlugin.PluginTask>
 {
-    private final Logger logger = Exec.getLogger(getClass());
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, CustomObjectResponseMapperBuilder.PluginTask
     {
@@ -86,11 +86,11 @@ public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<Cust
         Iterable<ObjectNode> responseObj;
         if (task.getCustomObjectFilterValues().isPresent()) {
             Set<String> refinedValues = refineFilterValues(task.getCustomObjectFilterValues().get());
-            responseObj = marketoService.getCustomObject(task.getCustomObjectAPIName(), task.getCustomObjectFilterType(), refinedValues, task.getCustomObjectFields().orNull());
+            responseObj = marketoService.getCustomObject(task.getCustomObjectAPIName(), task.getCustomObjectFilterType(), refinedValues, task.getCustomObjectFields().orElse(null));
         }
         else {
             // When `to_value` is not set, will try to import all consecutive custom objects started from `from_value`
-            responseObj = marketoService.getCustomObject(task.getCustomObjectAPIName(), task.getCustomObjectFilterType(), task.getCustomObjectFields().orNull(), task.getFromValue(), task.getToValue().orNull());
+            responseObj = marketoService.getCustomObject(task.getCustomObjectAPIName(), task.getCustomObjectFilterType(), task.getCustomObjectFields().orElse(null), task.getFromValue(), task.getToValue().orElse(null));
         }
 
         return FluentIterable.from(filterInvalidRecords(responseObj)).transform(MarketoUtils.TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION).iterator();
@@ -98,8 +98,6 @@ public class CustomObjectInputPlugin extends MarketoBaseInputPluginDelegate<Cust
 
     /**
      * Marketo include error in invalid records. This method will filter those records and print it to output log
-     * @param resultIt
-     * @return
      */
     private Iterable<ObjectNode> filterInvalidRecords(Iterable<ObjectNode> resultIt)
     {

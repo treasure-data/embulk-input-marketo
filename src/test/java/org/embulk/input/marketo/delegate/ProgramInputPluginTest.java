@@ -3,9 +3,6 @@ package org.embulk.input.marketo.delegate;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.RecordImporter;
@@ -39,7 +36,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
+import static org.embulk.input.marketo.MarketoUtilsTest.CONFIG_MAPPER;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
@@ -52,10 +52,9 @@ public class ProgramInputPluginTest
     @Rule
     public EmbulkTestRuntime runtime = new EmbulkTestRuntime();
 
-    private ExpectedException thrown = ExpectedException.none();
+    private final ExpectedException thrown = ExpectedException.none();
 
     @Rule
-    @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     public TestRule chain = RuleChain.outerRule(runtime).around(thrown);
 
     private ConfigSource baseConfig;
@@ -70,7 +69,7 @@ public class ProgramInputPluginTest
         mockPlugin = Mockito.spy(new ProgramInputPlugin());
         baseConfig = config();
         mockRestClient = Mockito.mock(MarketoRestClient.class);
-        Mockito.doReturn(mockRestClient).when(mockPlugin).createMarketoRestClient(Mockito.any(ProgramInputPlugin.PluginTask.class));
+        Mockito.doReturn(mockRestClient).when(mockPlugin).createMarketoRestClient(Mockito.any(PluginTask.class));
     }
 
 //    -----------Verify configs --------------
@@ -80,7 +79,7 @@ public class ProgramInputPluginTest
         thrown.expect(ConfigException.class);
         thrown.expectMessage("tag_type and tag_value are required when query by Tag Type");
         ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.TAG_TYPE)).set("tag_value", Optional.of("dummy"));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+        mockPlugin.validateInputTask(mapTask(config));
     }
 
     @Test
@@ -89,16 +88,16 @@ public class ProgramInputPluginTest
         thrown.expect(ConfigException.class);
         thrown.expectMessage("tag_type and tag_value are required when query by Tag Type");
         ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.TAG_TYPE)).set("tag_type", Optional.of("dummy"));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+        mockPlugin.validateInputTask(mapTask(config));
     }
 
     @Test
-    public void testQueryByDateRangeConfigMissingEarliestUpatedAt()
+    public void testQueryByDateRangeConfigMissingEarliestUpdatedAt()
     {
         thrown.expect(ConfigException.class);
         thrown.expectMessage("`earliest_updated_at` is required when query by Date Range");
         ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.DATE_RANGE)).set("latest_updated_at", Optional.of(Date.from(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10).toInstant())));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+        mockPlugin.validateInputTask(mapTask(config));
     }
 
     @Test
@@ -107,7 +106,7 @@ public class ProgramInputPluginTest
         thrown.expect(ConfigException.class);
         thrown.expectMessage("`latest_updated_at` is required when query by Date Range");
         ConfigSource config = baseConfig.set("query_by", Optional.of(QueryBy.DATE_RANGE)).set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10).toInstant())));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+        mockPlugin.validateInputTask(mapTask(config));
     }
 
     @Test
@@ -119,7 +118,7 @@ public class ProgramInputPluginTest
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("incremental", Boolean.FALSE)
                         .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10).toInstant())));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+        mockPlugin.validateInputTask(mapTask(config));
     }
 
     @Test
@@ -130,7 +129,7 @@ public class ProgramInputPluginTest
                         .set("report_duration", Optional.of(60L * 1000))
                         .set("incremental", Boolean.FALSE)
                         .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10).toInstant())));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+        mockPlugin.validateInputTask(mapTask(config));
     }
 
     @Test
@@ -140,7 +139,7 @@ public class ProgramInputPluginTest
                         .set("report_duration", Optional.of(60L * 1000))
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("earliest_updated_at", Optional.of(Date.from(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10).toInstant())));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+        mockPlugin.validateInputTask(mapTask(config));
     }
 
     @Test
@@ -154,7 +153,7 @@ public class ProgramInputPluginTest
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))
                         .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+        mockPlugin.validateInputTask(mapTask(config));
     }
 
     @Test
@@ -171,7 +170,7 @@ public class ProgramInputPluginTest
                         .set("query_by", Optional.of(QueryBy.DATE_RANGE))
                         .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))
                         .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+        mockPlugin.validateInputTask(mapTask(config));
     }
 
     @Test
@@ -187,7 +186,7 @@ public class ProgramInputPluginTest
                         .set("earliest_updated_at", Optional.of(Date.from(earliestUpdatedAt.toInstant())))
                         .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())))
                         .set("filter_type", Optional.of("dummy"));
-        mockPlugin.validateInputTask(config.loadConfig(PluginTask.class));
+        mockPlugin.validateInputTask(mapTask(config));
     }
 
     @Test
@@ -204,10 +203,10 @@ public class ProgramInputPluginTest
                         .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())))
                         .set("report_duration", reportDuration)
                         .set("incremental", true);
-        ServiceResponseMapper<? extends ValueLocator> mapper = mockPlugin.buildServiceResponseMapper(config.loadConfig(PluginTask.class));
+        ServiceResponseMapper<? extends ValueLocator> mapper = mockPlugin.buildServiceResponseMapper(mapTask(config));
         RecordImporter recordImporter = mapper.createRecordImporter();
         PageBuilder mockPageBuilder = Mockito.mock(PageBuilder.class);
-        TaskReport taskReport = mockPlugin.ingestServiceData(config.loadConfig(PluginTask.class), recordImporter, 1, mockPageBuilder);
+        TaskReport taskReport = mockPlugin.ingestServiceData(mapTask(config), recordImporter, 1, mockPageBuilder);
         // page builder object should never get called.
         Mockito.verify(mockPageBuilder, Mockito.never()).addRecord();
 
@@ -229,13 +228,13 @@ public class ProgramInputPluginTest
                         .set("latest_updated_at", Optional.of(Date.from(latestUpdatedAt.toInstant())))
                         .set("incremental", true);
 
-        ConfigDiff diff = mockPlugin.buildConfigDiff(config.loadConfig(PluginTask.class), Mockito.mock(Schema.class), 1, Arrays.asList(taskReport1));
+        ConfigDiff diff = mockPlugin.buildConfigDiff(mapTask(config), Mockito.mock(Schema.class), 1, Arrays.asList(taskReport1));
 
         long reportDuration = diff.get(Long.class, "report_duration");
-        String nextErliestUpdatedAt = diff.get(String.class, "earliest_updated_at");
+        String nextEarliestUpdatedAt = diff.get(String.class, "earliest_updated_at");
 
         assertEquals(reportDuration, Duration.between(earliestUpdatedAt, latestUpdatedAt).toMillis());
-        assertEquals(nextErliestUpdatedAt, latestUpdatedAt.plusSeconds(1).format(DATE_FORMATTER));
+        assertEquals(nextEarliestUpdatedAt, latestUpdatedAt.plusSeconds(1).format(DATE_FORMATTER));
     }
 
     @SuppressWarnings("unchecked")
@@ -254,14 +253,14 @@ public class ProgramInputPluginTest
                       Mockito.nullable(String.class),
                       Mockito.nullable(List.class))).thenReturn(mockRecordPagingIterable);
 
-        ServiceResponseMapper<? extends ValueLocator> mapper = mockPlugin.buildServiceResponseMapper(config.loadConfig(PluginTask.class));
+        ServiceResponseMapper<? extends ValueLocator> mapper = mockPlugin.buildServiceResponseMapper(mapTask(config));
         RecordImporter recordImporter = mapper.createRecordImporter();
         PageBuilder mockPageBuilder = Mockito.mock(PageBuilder.class);
-        mockPlugin.ingestServiceData(config.loadConfig(PluginTask.class), recordImporter, 1, mockPageBuilder);
+        mockPlugin.ingestServiceData(mapTask(config), recordImporter, 1, mockPageBuilder);
 
         // The method getProgramByTag is called 1 time
 //        Mockito.verify(mockRestClient, Mockito.times(1)).getProgramsByTag(Mockito.anyString(), Mockito.anyString());
-        expectedCall.apply(mockRestClient);
+        expectedCall.test(mockRestClient);
 
         Schema embulkSchema = mapper.getEmbulkSchema();
         // 17 columns
@@ -315,6 +314,11 @@ public class ProgramInputPluginTest
             return true;
         };
         testRun(config, expectedCall);
+    }
+    
+    private PluginTask mapTask(ConfigSource config)
+    {
+        return CONFIG_MAPPER.map(config, PluginTask.class);
     }
 
     public ConfigSource config() throws IOException

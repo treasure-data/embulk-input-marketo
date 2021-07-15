@@ -29,14 +29,14 @@ public class MarketoBaseInputPluginDelegateTest
     @Rule
     public EmbulkTestRuntime embulkTestRuntime = new EmbulkTestRuntime();
     private final ObjectMapper mapper = new ObjectMapper();
-    private MarketoService service = mock(MarketoService.class);
+    private final MarketoService service = mock(MarketoService.class);
     MarketoBaseInputPluginDelegate delegate = spy(MarketoBaseInputPluginDelegate.class);
 
     @Test
     public void testInputIds()
     {
         doReturn(getSampleResp(), Collections.emptyList(), Collections.emptyList()).when(service).getListsByIds(anySet());
-        Function<Set<String>, Iterable<ObjectNode>> getListIds = (ids) -> service.getListsByIds(ids);
+        Function<Set<String>, Iterable<ObjectNode>> getListIds = service::getListsByIds;
 
         final String[] ids = StringUtils.split("123,abc,,123.45,1002 ", ID_LIST_SEPARATOR_CHAR);
         Iterable<ObjectNode> rs1 = delegate.getObjectsByIds(ids, getListIds);

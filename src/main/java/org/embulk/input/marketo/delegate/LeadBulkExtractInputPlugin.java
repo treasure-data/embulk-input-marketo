@@ -1,15 +1,12 @@
 package org.embulk.input.marketo.delegate;
 
-import com.google.common.base.Optional;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.ValueLocator;
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.rest.MarketoRestClient;
-import org.embulk.spi.Exec;
-import org.slf4j.Logger;
+import org.embulk.util.config.Config;
+import org.embulk.util.config.ConfigDefault;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -17,14 +14,13 @@ import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by tai.khuu on 9/18/17.
  */
 public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugin<LeadBulkExtractInputPlugin.PluginTask>
 {
-    private static final Logger LOGGER = Exec.getLogger(LeadBulkExtractInputPlugin.class);
-
     private static final String UPDATED_AT = "updatedAt";
 
     public interface PluginTask extends MarketoBaseBulkExtractInputPlugin.PluginTask, LeadServiceResponseMapperBuilder.PluginTask
@@ -49,7 +45,7 @@ public class LeadBulkExtractInputPlugin extends MarketoBaseBulkExtractInputPlugi
         try {
             List<String> fieldNames = task.getExtractedFields();
             return new FileInputStream(service.extractLead(Date.from(fromDate.toInstant()), Date.from(toDate.toInstant()),
-                    fieldNames, task.getIncrementalColumn().orNull(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
+                    fieldNames, task.getIncrementalColumn().orElse(null), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
         }
         catch (FileNotFoundException e) {
             throw new RuntimeException("File not found", e);

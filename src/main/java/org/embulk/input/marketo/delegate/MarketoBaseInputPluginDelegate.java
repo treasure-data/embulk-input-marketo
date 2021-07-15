@@ -10,8 +10,6 @@ import org.embulk.base.restclient.RestClientInputTaskBase;
 import org.embulk.base.restclient.ServiceDataSplitter;
 import org.embulk.base.restclient.record.RecordImporter;
 import org.embulk.base.restclient.record.ServiceRecord;
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
 import org.embulk.config.TaskReport;
@@ -21,6 +19,8 @@ import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
+import org.embulk.util.config.Config;
+import org.embulk.util.config.ConfigDefault;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
 
 /**
  * Created by tai.khuu on 9/18/17.
@@ -63,7 +65,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
     @Override
     public ConfigDiff buildConfigDiff(T task, Schema schema, int taskCount, List<TaskReport> taskReports)
     {
-        return Exec.newConfigDiff();
+        return CONFIG_MAPPER_FACTORY.newConfigDiff();
     }
 
     @Override
@@ -87,7 +89,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
                 recordImporter.importRecord(next, pageBuilder);
                 imported++;
             }
-            return Exec.newTaskReport();
+            return CONFIG_MAPPER_FACTORY.newTaskReport();
         }
     }
 
@@ -110,8 +112,8 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
         final Set<String> ids = new HashSet<>();
         final List<String> invalidIds = new ArrayList<>();
 
-        for (int i = 0; i < inputIds.length; i++) {
-            String currentId = StringUtils.trimToNull(inputIds[i]);
+        for (String inputId : inputIds) {
+            String currentId = StringUtils.trimToNull(inputId);
             // ignore null or empty ids
             if (currentId == null) {
                 continue;
@@ -122,7 +124,7 @@ public abstract class MarketoBaseInputPluginDelegate<T extends MarketoBaseInputP
                 ids.add(currentId);
             }
             else {
-                invalidIds.add(inputIds[i]);
+                invalidIds.add(inputId);
             }
         }
 
