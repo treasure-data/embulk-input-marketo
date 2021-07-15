@@ -91,18 +91,6 @@ publishing {
 
                 developers {
                     developer {
-                        name = "uu59"
-                        email = "k@uu59.org"
-                    }
-                    developer {
-                        name = "yoshihara"
-                        email = "h.yoshihara@everyleaf.com"
-                    }
-                    developer {
-                        name = "taikhuu"
-                        email = "tai@treasuredata.com"
-                    }
-                    developer {
                         name = "Treasure Data"
                         email = "dev@treasure-data.com"
                     }
