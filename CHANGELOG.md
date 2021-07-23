@@ -1,3 +1,6 @@
+## 0.6.21 - 2021-08-17
+- Support Program Members
+
 ## 0.6.21 - 2021-07-15
 - Upgrade `embulk-*` to `v0.10.29`.
 - Apply new lib `embulk-util-*`.

@@ -10,7 +10,13 @@ import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonTopLevelValueLocator;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
+import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.model.MarketoField;
+import org.embulk.spi.Column;
+import org.embulk.spi.ColumnVisitor;
+import org.embulk.spi.PageBuilder;
+import org.embulk.spi.Schema;
+import org.embulk.util.json.JsonParser;
 import org.embulk.util.retryhelper.RetryExecutor;
 import org.embulk.util.retryhelper.RetryGiveupException;
 import org.embulk.util.retryhelper.Retryable;
@@ -18,12 +24,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+
+import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
 
 /**
  * Created by tai.khuu on 9/18/17.
@@ -209,5 +219,54 @@ public class MarketoUtils
                 };
             }
         };
+    }
+
+    public static TaskReport importMockPreviewData(final PageBuilder pageBuilder, int numberRecords)
+    {
+        final JsonParser jsonParser = new JsonParser();
+        Schema schema = pageBuilder.getSchema();
+        for (int i = 1; i <= numberRecords; i++) {
+            final int rowNum = i;
+            schema.visitColumns(new ColumnVisitor()
+            {
+                @Override
+                public void booleanColumn(Column column)
+                {
+                    pageBuilder.setBoolean(column, false);
+                }
+
+                @Override
+                public void longColumn(Column column)
+                {
+                    pageBuilder.setLong(column, 12345L);
+                }
+
+                @Override
+                public void doubleColumn(Column column)
+                {
+                    pageBuilder.setDouble(column, 12345.123);
+                }
+
+                @Override
+                public void stringColumn(Column column)
+                {
+                    pageBuilder.setString(column, column.getName() + "_" + rowNum);
+                }
+
+                @Override
+                public void timestampColumn(Column column)
+                {
+                    pageBuilder.setTimestamp(column, Instant.ofEpochMilli(System.currentTimeMillis()));
+                }
+
+                @Override
+                public void jsonColumn(Column column)
+                {
+                    pageBuilder.setJson(column, jsonParser.parse("{\"mockKey\":\"mockValue\"}"));
+                }
+            });
+            pageBuilder.addRecord();
+        }
+        return CONFIG_MAPPER_FACTORY.newTaskReport();
     }
 }

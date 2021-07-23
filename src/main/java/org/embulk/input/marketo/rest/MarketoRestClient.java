@@ -588,4 +588,38 @@ public class MarketoRestClient extends MarketoBaseRestClient
     {
         return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_ACTIVITY_TYPES.getEndpoint(), new ImmutableListMultimap.Builder<String, String>().put(MAX_RETURN, DEFAULT_MAX_RETURN).build(), ObjectNode.class);
     }
+
+    public ObjectNode describeProgramMembers()
+    {
+        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_PROGRAM_MEMBERS.getEndpoint(), null, null, new MarketoResponseJetty92EntityReader<>(this.readTimeoutMillis));
+        return jsonResponse.getResult().get(0);
+    }
+
+    public String createProgramMembersBulkExtract(List<String> extractFields, int programId)
+    {
+        MarketoBulkExtractRequest marketoBulkExtractRequest = new MarketoBulkExtractRequest();
+        if (extractFields != null) {
+            marketoBulkExtractRequest.setFields(extractFields);
+        }
+        marketoBulkExtractRequest.setFormat("CSV");
+        Map<String, Object> filterMap = new HashMap<>();
+        filterMap.put("programId", programId);
+        marketoBulkExtractRequest.setFilter(filterMap);
+        return sendCreateBulkExtractRequest(marketoBulkExtractRequest, MarketoRESTEndpoint.CREATE_PROGRAM_MEMBERS_EXPORT_JOB);
+    }
+
+    public void startProgramMembersBulkExtract(String exportId)
+    {
+        startBulkExtract(MarketoRESTEndpoint.START_PROGRAM_MEMBERS_EXPORT_JOB, exportId);
+    }
+
+    public void waitProgramMembersExportJobComplete(String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
+    {
+        waitExportJobComplete(MarketoRESTEndpoint.GET_PROGRAM_MEMBERS_EXPORT_STATUS, exportId, pollingInterval, waitTimeout);
+    }
+
+    public InputStream getProgramMemberBulkExtractResult(String exportId, BulkExtractRangeHeader bulkExtractRangeHeader)
+    {
+        return getBulkExtractResult(MarketoRESTEndpoint.GET_PROGRAM_MEMBERS_EXPORT_RESULT, exportId, bulkExtractRangeHeader);
+    }
 }

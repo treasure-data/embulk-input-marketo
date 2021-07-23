@@ -256,4 +256,32 @@ public class MarketoServiceImpl implements MarketoService
     {
         return marketoRestClient.getLists();
     }
+
+    @Override
+    public ObjectNode describeProgramMembers()
+    {
+        return marketoRestClient.describeProgramMembers();
+    }
+
+    @Override
+    public File extractProgramMembers(List<String> extractedFields, int programId, int pollingTimeIntervalSecond, final int bulkJobTimeoutSecond)
+    {
+        final String exportID = marketoRestClient.createProgramMembersBulkExtract(extractedFields, programId);
+        marketoRestClient.startProgramMembersBulkExtract(exportID);
+        try {
+            marketoRestClient.waitProgramMembersExportJobComplete(exportID, pollingTimeIntervalSecond, bulkJobTimeoutSecond);
+        }
+        catch (InterruptedException e) {
+            logger.error("Exception when waiting for export job id: {}", exportID, e);
+            throw new DataException("Error when wait for bulk extract");
+        }
+        return downloadBulkExtract(new Function<BulkExtractRangeHeader, InputStream>()
+        {
+            @Override
+            public InputStream apply(BulkExtractRangeHeader bulkExtractRangeHeader)
+            {
+                return marketoRestClient.getProgramMemberBulkExtractResult(exportID, bulkExtractRangeHeader);
+            }
+        });
+    }
 }
