@@ -47,5 +47,5 @@ public interface MarketoService
 
     ObjectNode describeProgramMembers();
 
-    File extractProgramMembers(List<String> extractedFields, int programId, int pollingTimeIntervalSecond, int bulkJobTimeoutSecond);
+    File extractProgramMembers(String exportID);
 }

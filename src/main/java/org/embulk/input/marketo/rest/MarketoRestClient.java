@@ -288,7 +288,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
         waitExportJobComplete(MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_STATUS, exportId, pollingInterval, waitTimeout);
     }
 
-    private void waitExportJobComplete(MarketoRESTEndpoint marketoRESTEndpoint, String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
+    private ObjectNode waitExportJobComplete(MarketoRESTEndpoint marketoRESTEndpoint, String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
     {
         long waitTime = 0;
         long waitTimeoutMs = waitTimeout * 1000L;
@@ -307,7 +307,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                     case "Completed":
                         logger.info("Total wait time ms is [{}]", waitTime);
                         logger.info("File size is [{}] bytes", objectNode.get("fileSize"));
-                        return;
+                        return objectNode;
                     case "Failed":
                         throw new DataException("Bulk extract job failed exportId: " + exportId + " errorMessage: " + objectNode.get("errorMsg").asText());
                     case "Cancel":
@@ -613,9 +613,9 @@ public class MarketoRestClient extends MarketoBaseRestClient
         startBulkExtract(MarketoRESTEndpoint.START_PROGRAM_MEMBERS_EXPORT_JOB, exportId);
     }
 
-    public void waitProgramMembersExportJobComplete(String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
+    public ObjectNode waitProgramMembersExportJobComplete(String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
     {
-        waitExportJobComplete(MarketoRESTEndpoint.GET_PROGRAM_MEMBERS_EXPORT_STATUS, exportId, pollingInterval, waitTimeout);
+        return waitExportJobComplete(MarketoRESTEndpoint.GET_PROGRAM_MEMBERS_EXPORT_STATUS, exportId, pollingInterval, waitTimeout);
     }
 
     public InputStream getProgramMemberBulkExtractResult(String exportId, BulkExtractRangeHeader bulkExtractRangeHeader)

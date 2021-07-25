@@ -2,8 +2,6 @@ package org.embulk.input.marketo.delegate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Function;
-import com.google.common.collect.Iterators;
 import org.apache.commons.lang3.StringUtils;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.RecordImporter;
@@ -17,7 +15,6 @@ import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.bulk_extract.AllStringJacksonServiceRecord;
 import org.embulk.input.marketo.bulk_extract.CsvRecordIterator;
-import org.embulk.input.marketo.bulk_extract.ProgramMembersLineDecoderIterator;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.DataException;
@@ -26,20 +23,32 @@ import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
+import org.embulk.util.file.InputStreamFileInput;
 import org.embulk.util.text.LineDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
 
 public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPluginDelegate<ProgramMembersBulkExtractInputPlugin.PluginTask>
 {
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, CsvTokenizer.PluginTask
     {
         @Config("program_ids")
@@ -121,28 +130,72 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
             return MarketoUtils.importMockPreviewData(pageBuilder, PREVIEW_RECORD_LIMIT);
         }
         else {
-            try (ProgramMembersLineDecoderIterator decoderIterator = getLineDecoderIterator(task, task.getExtractedPrograms().iterator())) {
-                Iterator<Map<String, String>> csvRecords = Iterators.concat(Iterators.transform(decoderIterator,
-                        (Function<LineDecoder, Iterator<Map<String, String>>>) input -> new CsvRecordIterator(input, task)));
-                //Keep the preview code here when we can enable real preview
-                if (Exec.isPreview()) {
-                    csvRecords = Iterators.limit(csvRecords, PREVIEW_RECORD_LIMIT);
-                }
-                int imported = 0;
-                while (csvRecords.hasNext()) {
-                    Map<String, String> csvRecord = csvRecords.next();
-                    ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
-                    recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
-                    imported = imported + 1;
-                }
-                return taskReport;
-            }
-        }
-    }
+            final MarketoRestClient restClient = createMarketoRestClient(task);
+            final List<String> fieldNames = new ArrayList<>(task.getProgramMemberFields().keySet());
+            final List<String> exportIDs = Collections.synchronizedList(new ArrayList<>());
+            CompletableFuture[] listFutureExportIDs = task.getExtractedPrograms().stream()
+                .map(programId -> CompletableFuture
+                    .runAsync(() -> {
+                        String exportJobID = restClient.createProgramMembersBulkExtract(fieldNames, programId);
+                        exportIDs.add(exportJobID);
+                        restClient.startProgramMembersBulkExtract(exportJobID);
+                        int numberRecord;
+                        try {
+                            ObjectNode status = restClient.waitProgramMembersExportJobComplete(exportJobID, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
+                            numberRecord = status.get("numberOfRecords").asInt();
+                        }
+                        catch (InterruptedException e) {
+                            logger.error("Exception when waiting for export job id: {}", exportJobID, e);
+                            throw new DataException(e);
+                        }
+                        if (numberRecord == 0) {
+                            logger.info("Export ID [{}] have no record.", exportJobID);
+                            return;
+                        }
+                        MarketoService marketoService = new MarketoServiceImpl(restClient);
+                        LineDecoder lineDecoder = null;
+                        try {
+                            InputStream extractedStream = new FileInputStream(marketoService.extractProgramMembers(exportJobID));
+                            lineDecoder = LineDecoder.of(new InputStreamFileInput(Exec.getBufferAllocator(), extractedStream), StandardCharsets.UTF_8, null);
+                            Iterator<Map<String, String>> csvRecords = new CsvRecordIterator(lineDecoder, task);
+                            //Keep the preview code here when we can enable real preview
+//                            if (Exec.isPreview()) {
+//                                csvRecords = Iterators.limit(csvRecords, PREVIEW_RECORD_LIMIT);
+//                            }
+                            int imported = 0;
+                            while (csvRecords.hasNext()) {
+                                Map<String, String> csvRecord = csvRecords.next();
+                                ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
+                                recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
+                                imported = imported + 1;
+                            }
 
-    private ProgramMembersLineDecoderIterator getLineDecoderIterator(PluginTask task, Iterator<Integer> programIds)
-    {
-        return new ProgramMembersLineDecoderIterator(programIds, task, createMarketoRestClient(task));
+                            logger.info("Import data for export_id [{}] finish.[{}] records imported/total [{}]", exportJobID, imported, numberRecord);
+                        }
+                        catch (FileNotFoundException e) {
+                            throw new RuntimeException("File not found", e);
+                        }
+                        finally {
+                            if (lineDecoder != null) {
+                                lineDecoder.close();
+                            }
+                        }
+                    })
+                )
+                .toArray(CompletableFuture[]::new);
+
+            CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(listFutureExportIDs);
+            try {
+                combinedFuture.get();
+            }
+            catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+            finally {
+                restClient.close();
+            }
+            return taskReport;
+        }
     }
 
     @Override
