@@ -114,12 +114,12 @@ public class MarketoUtils
 
     public static String getIdentityEndPoint(String accountId)
     {
-        return "https://" + accountId + ".mktorest.com/identity";
+        return "https://" + accountId.trim() + ".mktorest.com/identity";
     }
 
     public static String getEndPoint(String accountID)
     {
-        return "https://" + accountID + ".mktorest.com";
+        return "https://" + accountID.trim() + ".mktorest.com";
     }
 
     public static  final class DateRange
