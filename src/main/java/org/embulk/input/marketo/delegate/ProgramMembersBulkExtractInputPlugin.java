@@ -37,17 +37,17 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.stream.Collectors;
 
 import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
 
@@ -81,10 +81,10 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
         Optional<Map<String, String>> getProgramMemberFields();
         void setProgramMemberFields(Optional<Map<String, String>> programMemberFields);
 
-        @Config("extracted_programs")
+        @Config("extracted_program_ids")
         @ConfigDefault("null")
-        Optional<List<Integer>> getExtractedPrograms();
-        void setExtractedPrograms(Optional<List<Integer>> extractedPrograms);
+        Optional<List<Integer>> getExtractedProgramIds();
+        void setExtractedProgramIds(Optional<List<Integer>> extractedProgramIds);
     }
 
     @Override
@@ -114,7 +114,7 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
             if (programIds.size() <= 0) {
                 throw new DataException("No program belong to this account.");
             }
-            task.setExtractedPrograms(Optional.of(programIds));
+            task.setExtractedProgramIds(Optional.of(programIds));
 
             ObjectNode result = marketoService.describeProgramMembers();
             JsonNode fields = result.get("fields");
@@ -143,22 +143,21 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
     public TaskReport ingestServiceData(final PluginTask task, RecordImporter recordImporter, int taskIndex, PageBuilder pageBuilder)
     {
         TaskReport taskReport = CONFIG_MAPPER_FACTORY.newTaskReport();
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(task.getNumberConcurrentExportJob());
         if (Exec.isPreview()) {
             return MarketoUtils.importMockPreviewData(pageBuilder, PREVIEW_RECORD_LIMIT);
         }
         else {
-            if (!task.getProgramMemberFields().isPresent() || !task.getExtractedPrograms().isPresent()) {
+            if (!task.getProgramMemberFields().isPresent() || !task.getExtractedProgramIds().isPresent()) {
                 throw new ConfigException("program_member_fields or extracted_programs are missing.");
             }
+            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(task.getNumberConcurrentExportJob());
             final MarketoRestClient restClient = createMarketoRestClient(task);
             final List<String> fieldNames = new ArrayList<>(task.getProgramMemberFields().get().keySet());
-            final List<String> exportIDs = Collections.synchronizedList(new ArrayList<>());
-            CompletableFuture[] listFutureExportIDs = task.getExtractedPrograms().get().stream()
-                .map(programId -> CompletableFuture
-                    .runAsync(() -> {
+
+            List<Future> listFutureExportIDs = task.getExtractedProgramIds().get().stream()
+                .map(programId -> {
+                    Runnable exportTask = () -> {
                         String exportJobID = restClient.createProgramMembersBulkExtract(fieldNames, programId);
-                        exportIDs.add(exportJobID);
                         restClient.startProgramMembersBulkExtract(exportJobID);
                         int numberRecord;
                         try {
@@ -179,10 +178,6 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                             InputStream extractedStream = new FileInputStream(marketoService.extractProgramMembers(exportJobID));
                             lineDecoder = LineDecoder.of(new InputStreamFileInput(Exec.getBufferAllocator(), extractedStream), StandardCharsets.UTF_8, null);
                             Iterator<Map<String, String>> csvRecords = new CsvRecordIterator(lineDecoder, task);
-                            //Keep the preview code here when we can enable real preview
-//                            if (Exec.isPreview()) {
-//                                csvRecords = Iterators.limit(csvRecords, PREVIEW_RECORD_LIMIT);
-//                            }
                             int imported = 0;
                             while (csvRecords.hasNext()) {
                                 Map<String, String> csvRecord = csvRecords.next();
@@ -194,30 +189,31 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                             logger.info("Import data for program [{}], job_id [{}] finish.[{}] records imported/total [{}]", programId, exportJobID, imported, numberRecord);
                         }
                         catch (FileNotFoundException e) {
-                            throw new RuntimeException("File not found", e);
+                            throw new RuntimeException("File export cannot be found", e);
                         }
                         finally {
                             if (lineDecoder != null) {
                                 lineDecoder.close();
                             }
                         }
-                    }, executor)
-                )
-                .toArray(CompletableFuture[]::new);
+                    };
+                    return executor.submit(exportTask);
+                })
+                .collect(Collectors.toList());
 
-            CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(listFutureExportIDs);
-            try {
-                combinedFuture.get();
-            }
-            catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-            finally {
-                restClient.close();
-                if (executor != null && !executor.isShutdown()) {
-                    executor.shutdown();
+            for (Future future : listFutureExportIDs) {
+                try {
+                    future.get();
+                }
+                catch (InterruptedException | ExecutionException ex) {
+                    logger.error("Exception occur. Shutdown execute service.........", ex);
+                    if (executor != null && !executor.isShutdown()) {
+                        executor.shutdownNow();
+                        break;
+                    }
                 }
             }
+            restClient.close();
             return taskReport;
         }
     }
