@@ -209,8 +209,8 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                     logger.error("Exception occur. Shutdown execute service.........", ex);
                     if (executor != null && !executor.isShutdown()) {
                         executor.shutdownNow();
-                        break;
                     }
+                    throw new RuntimeException(ex);
                 }
             }
             restClient.close();
