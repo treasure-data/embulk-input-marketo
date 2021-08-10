@@ -104,8 +104,8 @@ public class MarketoBaseRestClient implements AutoCloseable
     private String requestAccessToken()
     {
         final Multimap<String, String> params = ArrayListMultimap.create();
-        params.put("client_id", clientId);
-        params.put("client_secret", clientSecret);
+        params.put("client_id", clientId.trim());
+        params.put("client_secret", clientSecret.trim());
         params.put("grant_type", "client_credentials");
 
         // add partner api key to the request

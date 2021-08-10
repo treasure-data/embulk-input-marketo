@@ -1,0 +1,4 @@
+isExhausted,webinarUrl,program,reachedSuccessDate,trackName,acquiredBy,membershipDate,createdAt,statusReason,registrationLikelihood,nurtureCadence,programMemberCustomFieldTest,statusName,registrationCode,attendanceLikelihood,waitlistPriority,programId,reachedSuccess,leadId,updatedAt
+0,null,DA - Demo Account (DO NOT EDIT),null,null,1,2019-04-12T05:58:10Z,2019-04-12T05:58:10Z,null,null,null,null,02 Opened,null,null,null,1001,0,452,2019-04-12T05:58:10Z
+0,null,DA - Demo Account (DO NOT EDIT),null,null,1,2019-04-12T05:58:10Z,2019-04-12T05:58:10Z,null,null,null,null,01 Sent,null,null,null,1001,0,453,2019-04-12T05:58:10Z
+0,null,DA - Demo Account (DO NOT EDIT),null,null,1,2019-04-12T05:58:10Z,2019-04-12T05:58:10Z,null,null,null,null,03 Clicked,null,null,null,1001,1,454,2019-04-12T05:58:10Z

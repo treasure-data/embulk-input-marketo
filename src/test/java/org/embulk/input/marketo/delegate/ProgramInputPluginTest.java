@@ -315,7 +315,7 @@ public class ProgramInputPluginTest
         };
         testRun(config, expectedCall);
     }
-    
+
     private PluginTask mapTask(ConfigSource config)
     {
         return CONFIG_MAPPER.map(config, PluginTask.class);

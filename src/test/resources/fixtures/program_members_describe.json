@@ -1,0 +1,174 @@
+{
+  "name": "API Program Membership",
+  "description": "Map for API program membership fields",
+  "createdAt": "2021-03-20T01:24:34Z",
+  "updatedAt": "2021-03-20T01:24:34Z",
+  "dedupeFields": [
+    "leadId",
+    "programId"
+  ],
+  "searchableFields": [
+    [
+      "leadId"
+    ],
+    [
+      "programMemberCustomFieldTest"
+    ],
+    [
+      "reachedSuccess"
+    ],
+    [
+      "statusName"
+    ]
+  ],
+  "fields": [
+    {
+      "name": "acquiredBy",
+      "displayName": "acquiredBy",
+      "dataType": "boolean",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "attendanceLikelihood",
+      "displayName": "attendanceLikelihood",
+      "dataType": "integer",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "createdAt",
+      "displayName": "createdAt",
+      "dataType": "datetime",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "isExhausted",
+      "displayName": "isExhausted",
+      "dataType": "boolean",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "leadId",
+      "displayName": "leadId",
+      "dataType": "integer",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "membershipDate",
+      "displayName": "membershipDate",
+      "dataType": "datetime",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "nurtureCadence",
+      "displayName": "nurtureCadence",
+      "dataType": "string",
+      "length": 4,
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "program",
+      "displayName": "program",
+      "dataType": "string",
+      "length": 255,
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "programId",
+      "displayName": "programId",
+      "dataType": "integer",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "reachedSuccess",
+      "displayName": "reachedSuccess",
+      "dataType": "boolean",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "reachedSuccessDate",
+      "displayName": "reachedSuccessDate",
+      "dataType": "datetime",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "registrationLikelihood",
+      "displayName": "registrationLikelihood",
+      "dataType": "integer",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "statusName",
+      "displayName": "statusName",
+      "dataType": "string",
+      "length": 255,
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "statusReason",
+      "displayName": "statusReason",
+      "dataType": "string",
+      "length": 255,
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "trackName",
+      "displayName": "trackName",
+      "dataType": "string",
+      "length": 255,
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "updatedAt",
+      "displayName": "updatedAt",
+      "dataType": "datetime",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "waitlistPriority",
+      "displayName": "waitlistPriority",
+      "dataType": "integer",
+      "updateable": false,
+      "crmManaged": false
+    },
+    {
+      "name": "programMemberCustomFieldTest",
+      "displayName": "ProgramMemberCustomFieldTest",
+      "dataType": "string",
+      "length": 255,
+      "updateable": true,
+      "crmManaged": false
+    },
+    {
+      "name": "registrationCode",
+      "displayName": "registrationCode",
+      "dataType": "string",
+      "length": 100,
+      "updateable": true,
+      "crmManaged": false
+    },
+    {
+      "name": "webinarUrl",
+      "displayName": "webinarUrl",
+      "dataType": "string",
+      "length": 2000,
+      "updateable": true,
+      "crmManaged": false
+    }
+  ]
+}

@@ -27,7 +27,12 @@ public enum MarketoRESTEndpoint
     GET_PROGRAMS_BY_TAG("/rest/asset/v1/program/byTag.json"),
     GET_CUSTOM_OBJECT("/rest/v1/customobjects/${api_name}.json"),
     GET_CUSTOM_OBJECT_DESCRIBE("/rest/v1/customobjects/${api_name}/describe.json"),
-    GET_ACTIVITY_TYPES("/rest/v1/activities/types.json");
+    GET_ACTIVITY_TYPES("/rest/v1/activities/types.json"),
+    DESCRIBE_PROGRAM_MEMBERS("/rest/v1/programs/members/describe.json"),
+    CREATE_PROGRAM_MEMBERS_EXPORT_JOB("/bulk/v1/program/members/export/create.json"),
+    START_PROGRAM_MEMBERS_EXPORT_JOB("/bulk/v1/program/members/export/${export_id}/enqueue.json"),
+    GET_PROGRAM_MEMBERS_EXPORT_STATUS("/bulk/v1/program/members/export/${export_id}/status.json"),
+    GET_PROGRAM_MEMBERS_EXPORT_RESULT("/bulk/v1/program/members/export/${export_id}/file.json");
     private final String endpoint;
 
     MarketoRESTEndpoint(String endpoint)
