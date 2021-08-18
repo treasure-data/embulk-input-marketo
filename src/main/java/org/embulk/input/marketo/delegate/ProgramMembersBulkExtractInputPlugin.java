@@ -214,6 +214,9 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                 }
             }
             restClient.close();
+            if (executor != null && !executor.isShutdown()) {
+                executor.shutdownNow();
+            }
             return taskReport;
         }
     }
