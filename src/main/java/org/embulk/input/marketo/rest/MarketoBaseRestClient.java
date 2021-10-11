@@ -35,6 +35,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static org.embulk.input.marketo.rest.MarketoResponseJetty92EntityReader.jsonResponseInvalid;
 
 /**
  * Marketo base rest client
@@ -290,6 +291,10 @@ public class MarketoBaseRestClient implements AutoCloseable
                         default:
                             return false;
                     }
+                }
+                //retry in case request return data but invalid format
+                if ((exception instanceof DataException) && exception.getMessage().equals(jsonResponseInvalid)) {
+                    return true;
                 }
                 return false;
             }
