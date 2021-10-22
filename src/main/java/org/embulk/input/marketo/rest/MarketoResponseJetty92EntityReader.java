@@ -34,6 +34,8 @@ public class MarketoResponseJetty92EntityReader<T> implements Jetty92ResponseRea
 
     private final JavaType javaType;
 
+    public static String jsonResponseInvalid = "Exception when parse json content";
+
     public MarketoResponseJetty92EntityReader(long timeout)
     {
         this.timeout = timeout;
@@ -73,7 +75,7 @@ public class MarketoResponseJetty92EntityReader<T> implements Jetty92ResponseRea
         }
         catch (IOException ex) {
             LOGGER.error("Can't parse json content", ex);
-            throw new DataException("Exception when parse json content");
+            throw new DataException(jsonResponseInvalid);
         }
     }
 

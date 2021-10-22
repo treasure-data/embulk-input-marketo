@@ -1,3 +1,6 @@
+## 0.6.24 - 2021-10-19
+- Add retryable in case response data invalid json format
+
 ## 0.6.22 - 2021-08-17
 - Support Program Members
 
