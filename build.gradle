@@ -4,6 +4,7 @@ plugins {
     id "java"
     id "checkstyle"
     id "jacoco"
+    id "com.palantir.git-version" version "0.12.3"
 }
 import com.github.jrubygradle.JRubyExec
 repositories {
@@ -16,7 +17,15 @@ repositories {
 configurations {
     provided
 }
-version = "0.6.31"
+version = {
+    def baseVersion = "0.6.31"
+    def vd = versionDetails()
+    if (vd.commitDistance == 0 && vd.lastTag ==~ /^[0-9]+\.[0-9]+\.[0-9]+(\.[a-zA-Z0-9]+)?/) {
+        baseVersion
+    } else {
+        "${baseVersion}.${vd.gitHash}.pre"
+    }
+}()
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
