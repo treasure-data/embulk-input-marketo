@@ -13,12 +13,9 @@ embulk-input-marketo is the gem preparing Embulk input plugins for [Marketo](htt
 - Lead by program(all_lead_with_program_id)
 - Campaign(campaign)
 - Assets Programs (program)
-<<<<<<< HEAD
 - List (list)
 - Activity Type (activity_type)
-=======
 - Program Members (program_members)
->>>>>>> upstream/master
 
 This plugin uses Marketo REST API.
 
@@ -180,7 +177,6 @@ Incremental support: yes (Query by `date_range` only)
 
 Range ingestion: yes
 
-<<<<<<< HEAD
 ### List
 
 List extract all list data from Marketo
@@ -204,7 +200,6 @@ Schema type: Static schema
 Incremental support: no
 
 Range ingestion: no
-=======
 `target: all_lead_with_program_id`
 
 Configuration:
@@ -229,7 +224,6 @@ Get Members by Program Ids or All Program.
 |---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------|
 | **program_ids**     | false    | null          | Import Members by specified Program_ID (comma-separated). If not specified will import all Members by all Program IDs |
 
->>>>>>> upstream/master
 
 ## Example
 

@@ -3,21 +3,15 @@ plugins {
     id "maven-publish"
     id "checkstyle"
     id "jacoco"
-<<<<<<< HEAD
     id "com.palantir.git-version" version "0.12.3"
-=======
     id "signing"
     id "org.embulk.embulk-plugins" version "0.4.2"
->>>>>>> upstream/master
 }
 
 repositories {
     mavenCentral()
 }
-<<<<<<< HEAD
-configurations {
-    provided
-}
+
 version = {
     def baseVersion = "0.6.31"
     def vd = versionDetails()
@@ -27,18 +21,6 @@ version = {
         "${baseVersion}.${vd.gitHash}.pre"
     }
 }()
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
-
-dependencies {
-    compile  "org.embulk:embulk-core:0.8.+"
-    provided "org.embulk:embulk-core:0.8.+"
-    compile  "org.embulk.base.restclient:embulk-base-restclient:0.5.3"
-    compile  "org.embulk.base.restclient:embulk-util-retryhelper-jetty92:0.5.3"
-    compile 'org.apache.commons:commons-text:1.2'
-    // https://mvnrepository.com/artifact/org.apache.commons/commons-csv
-    compile group: 'org.apache.commons', name: 'commons-csv', version: '1.8'
-=======
 
 group = "com.treasuredata.embulk.plugins"
 description = "Loads records from Marketo."
@@ -82,8 +64,10 @@ dependencies {
     compile 'com.google.guava:guava:18.0'
     compile  "com.google.code.findbugs:annotations:3.0.1"
     compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'org.apache.commons:commons-text:1.2'
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-csv
+    compile group: 'org.apache.commons', name: 'commons-csv', version: '1.8'
 
->>>>>>> upstream/master
     testCompile "junit:junit:4.+"
     testCompile "org.embulk:embulk-core:$embulkVersion:tests"
     testCompile "org.embulk:embulk-junit4:$embulkVersion"
