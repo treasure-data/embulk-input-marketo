@@ -3,7 +3,6 @@ package org.embulk.input.marketo.rest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Optional;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -11,10 +10,7 @@ import com.google.common.collect.Multimap;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigException;
-import org.embulk.config.Task;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.model.MarketoBulkExtractRequest;
@@ -23,12 +19,15 @@ import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.input.marketo.model.filter.DateRangeFilter;
 import org.embulk.spi.DataException;
-import org.embulk.spi.Exec;
 import org.embulk.spi.type.Type;
 import org.embulk.spi.type.Types;
+import org.embulk.util.config.Config;
+import org.embulk.util.config.ConfigDefault;
+import org.embulk.util.config.Task;
 import org.embulk.util.retryhelper.jetty92.DefaultJetty92ClientCreator;
 import org.embulk.util.retryhelper.jetty92.Jetty92RetryHelper;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -37,6 +36,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Created by tai.khuu on 8/22/17.
@@ -68,13 +69,13 @@ public class MarketoRestClient extends MarketoBaseRestClient
     private static final int CONNECT_TIMEOUT_IN_MILLIS = 30000;
     private static final int IDLE_TIMEOUT_IN_MILLIS = 60000;
 
-    private String endPoint;
+    private final String endPoint;
 
-    private Integer batchSize;
+    private final Integer batchSize;
 
-    private Integer maxReturn;
+    private final Integer maxReturn;
 
-    private static final Logger LOGGER = Exec.getLogger(MarketoRestClient.class.getCanonicalName());
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private static final Map<String, Type> TYPE_MAPPING = new ImmutableMap.Builder<String, Type>()
             .put("datetime", Types.TIMESTAMP)
@@ -181,11 +182,10 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public List<MarketoField> describeLead()
     {
-        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_LEAD.getEndpoint(), null, null, new MarketoResponseJetty92EntityReader<ObjectNode>(this.readTimeoutMillis));
+        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_LEAD.getEndpoint(), null, null, new MarketoResponseJetty92EntityReader<>(this.readTimeoutMillis));
         List<MarketoField> marketoFields = new ArrayList<>();
         List<ObjectNode> fields = jsonResponse.getResult();
-        for (int i = 0; i < fields.size(); i++) {
-            ObjectNode field = fields.get(i);
+        for (ObjectNode field : fields) {
             String dataType = field.get("dataType").asText();
             if (field.has("rest")) {
                 ObjectNode restField = (ObjectNode) field.get("rest");
@@ -194,11 +194,6 @@ public class MarketoRestClient extends MarketoBaseRestClient
             }
         }
         return marketoFields;
-    }
-
-    private Type getType(String dataType)
-    {
-        return TYPE_MAPPING.containsKey(dataType.toLowerCase()) ? TYPE_MAPPING.get(dataType.toLowerCase()) : Types.STRING;
     }
 
     public String createLeadBulkExtract(Date startTime, Date endTime, List<String> extractFields, String fitlerField)
@@ -235,13 +230,13 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public String sendCreateBulkExtractRequest(MarketoBulkExtractRequest request, MarketoRESTEndpoint endpoint)
     {
-        MarketoResponse<ObjectNode> marketoResponse = null;
+        MarketoResponse<ObjectNode> marketoResponse;
         try {
-            LOGGER.info("Send bulk extract request [{}]", request);
-            marketoResponse = doPost(endPoint + endpoint.getEndpoint(), null, null, OBJECT_MAPPER.writeValueAsString(request), new MarketoResponseJetty92EntityReader<ObjectNode>(readTimeoutMillis));
+            logger.info("Send bulk extract request [{}]", request);
+            marketoResponse = doPost(endPoint + endpoint.getEndpoint(), null, null, OBJECT_MAPPER.writeValueAsString(request), new MarketoResponseJetty92EntityReader<>(readTimeoutMillis));
         }
         catch (JsonProcessingException e) {
-            LOGGER.error("Encounter exception when deserialize bulk extract request", e);
+            logger.error("Encounter exception when deserialize bulk extract request", e);
             throw new DataException("Can't create bulk extract");
         }
         if (!marketoResponse.isSuccess()) {
@@ -266,7 +261,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
     {
         MarketoResponse<ObjectNode> marketoResponse = doPost(endPoint + marketoRESTEndpoint.getEndpoint(
                 new ImmutableMap.Builder<String, String>().put("export_id", exportId).build()), null, null, null,
-                new MarketoResponseJetty92EntityReader<ObjectNode>(readTimeoutMillis));
+                new MarketoResponseJetty92EntityReader<>(readTimeoutMillis));
         if (!marketoResponse.isSuccess()) {
             MarketoError error = marketoResponse.getErrors().get(0);
             throw new DataException(String.format("Can't start job for export Job id : %s, error code: %s, error message: %s", exportId, error.getCode(), error.getMessage()));
@@ -279,8 +274,6 @@ public class MarketoRestClient extends MarketoBaseRestClient
      * If job run logger than bulk job timeout then will stop and throw exception
      * If job status is failed or cancel will also throw exception
      *
-     * @param exportId
-     * @throws InterruptedException
      */
     public void waitLeadExportJobComplete(String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
     {
@@ -293,41 +286,39 @@ public class MarketoRestClient extends MarketoBaseRestClient
      * If job run logger than bulk job timeout then will stop and throw exception
      * If job status is failed or cancel will also throw exception
      *
-     * @param exportId
-     * @throws InterruptedException
      */
     public void waitActitvityExportJobComplete(String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
     {
         waitExportJobComplete(MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_STATUS, exportId, pollingInterval, waitTimeout);
     }
 
-    private void waitExportJobComplete(MarketoRESTEndpoint marketoRESTEndpoint, String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
+    private ObjectNode waitExportJobComplete(MarketoRESTEndpoint marketoRESTEndpoint, String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
     {
         long waitTime = 0;
-        long waitTimeoutMs = waitTimeout * 1000;
+        long waitTimeoutMs = waitTimeout * 1000L;
         long now = System.currentTimeMillis();
         while (true) {
             MarketoResponse<ObjectNode> marketoResponse = doGet(this.endPoint + marketoRESTEndpoint.getEndpoint(
-                    new ImmutableMap.Builder<String, String>().put("export_id", exportId).build()), null, null, new MarketoResponseJetty92EntityReader<ObjectNode>(readTimeoutMillis));
+                    new ImmutableMap.Builder<String, String>().put("export_id", exportId).build()), null, null, new MarketoResponseJetty92EntityReader<>(readTimeoutMillis));
             if (marketoResponse.isSuccess()) {
                 ObjectNode objectNode = marketoResponse.getResult().get(0);
                 String status = objectNode.get("status").asText();
                 if (status == null) {
                     throw new DataException("Can't get bulk extract status export job id: " + exportId);
                 }
-                LOGGER.info("Jobs [{}] status is [{}]", exportId, status);
+                logger.info("Jobs [{}] status is [{}]", exportId, status);
                 switch (status) {
                     case "Completed":
-                        LOGGER.info("Total wait time ms is [{}]", waitTime);
-                        LOGGER.info("File size is [{}] bytes", objectNode.get("fileSize"));
-                        return;
+                        logger.info("Total wait time ms is [{}]", waitTime);
+                        logger.info("File size is [{}] bytes", objectNode.get("fileSize"));
+                        return objectNode;
                     case "Failed":
                         throw new DataException("Bulk extract job failed exportId: " + exportId + " errorMessage: " + objectNode.get("errorMsg").asText());
                     case "Cancel":
                         throw new DataException("Bulk extract job canceled, exportId: " + exportId);
                 }
             }
-            Thread.sleep(pollingInterval * 1000);
+            Thread.sleep(pollingInterval * 1000L);
             waitTime = System.currentTimeMillis() - now;
             if (waitTime >= waitTimeoutMs) {
                 throw new DataException("Job timeout exception, exportJob: " + exportId + ", run longer than " + waitTimeout + " seconds");
@@ -347,11 +338,11 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     private InputStream getBulkExtractResult(MarketoRESTEndpoint endpoint, String exportId, BulkExtractRangeHeader bulkExtractRangeHeader)
     {
-        LOGGER.info("Download bulk export job [{}]", exportId);
+        logger.info("Download bulk export job [{}]", exportId);
         Map<String, String> headers = new HashMap<>();
         if (bulkExtractRangeHeader != null) {
             headers.put(RANGE_HEADER, bulkExtractRangeHeader.toRangeHeaderValue());
-            LOGGER.info("Range header value [{}]", bulkExtractRangeHeader.toRangeHeaderValue());
+            logger.info("Range header value [{}]", bulkExtractRangeHeader.toRangeHeaderValue());
         }
         return doGet(this.endPoint + endpoint.getEndpoint(new ImmutableMap.Builder().put("export_id", exportId).build()), headers, null, new MarketoInputStreamResponseEntityReader(readTimeoutMillis));
     }
@@ -361,9 +352,28 @@ public class MarketoRestClient extends MarketoBaseRestClient
         return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_LISTS.getEndpoint(), new ImmutableListMultimap.Builder<String, String>().put(BATCH_SIZE, MAX_BATCH_SIZE).build(), ObjectNode.class);
     }
 
+    public RecordPagingIterable<ObjectNode> getListsByIds(Set<String> ids)
+    {
+        Multimap<String, String> params = new ImmutableListMultimap
+                .Builder<String, String>()
+                .put("id", StringUtils.join(ids, ","))
+                .put(BATCH_SIZE, MAX_BATCH_SIZE).build();
+        return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_LISTS.getEndpoint(), params, ObjectNode.class);
+    }
+
     public RecordPagingIterable<ObjectNode> getPrograms()
     {
         return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint(), new ImmutableListMultimap.Builder<String, String>().put(MAX_RETURN, DEFAULT_MAX_RETURN).build(), ObjectNode.class);
+    }
+
+    public RecordPagingIterable<ObjectNode> getProgramsByIds(Set<String> ids)
+    {
+        Multimap<String, String> params = new ImmutableListMultimap
+                .Builder<String, String>()
+                .put(FILTER_TYPE, "id")
+                .put(FILTER_VALUES, StringUtils.join(ids, ","))
+                .put(BATCH_SIZE, MAX_BATCH_SIZE).build();
+        return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint(), params, ObjectNode.class);
     }
 
     public RecordPagingIterable<ObjectNode> getLeadsByProgram(String programId, String fieldNames)
@@ -480,7 +490,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public List<MarketoField> describeCustomObject(String apiName)
     {
-        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT_DESCRIBE.getEndpoint(new ImmutableMap.Builder().put("api_name", apiName).build()), null, null, new MarketoResponseJetty92EntityReader<ObjectNode>(this.readTimeoutMillis));
+        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT_DESCRIBE.getEndpoint(new ImmutableMap.Builder().put("api_name", apiName).build()), null, null, new MarketoResponseJetty92EntityReader<>(this.readTimeoutMillis));
         if (jsonResponse.getResult().size() == 0) {
             throw new ConfigException(String.format("Custom Object %s is not exits.", apiName));
         }
@@ -561,6 +571,18 @@ public class MarketoRestClient extends MarketoBaseRestClient
             }
         });
     }
+
+    public Iterable<ObjectNode> getCustomObject(String customObjectApiName, String filterType, String filterValue, String returnFields)
+    {
+        Multimap<String, String> params = new ImmutableListMultimap
+                .Builder<String, String>()
+                .put("filterType", StringUtils.trimToEmpty(filterType))
+                .put("filterValues", StringUtils.trimToEmpty(filterValue))
+                .put("fields", StringUtils.trimToEmpty(returnFields))
+                .put(BATCH_SIZE, MAX_BATCH_SIZE).build();
+        return getRecordWithTokenPagination(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(new ImmutableMap.Builder().put("api_name", customObjectApiName).build()), params, ObjectNode.class);
+    }
+
     public Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue)
     {
         return getCustomObjectRecordWithPagination(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(new ImmutableMap.Builder().put("api_name", customObjectAPIName).build()), customObjectFilterType, customObjectFields, fromValue, toValue, ObjectNode.class);
@@ -569,5 +591,39 @@ public class MarketoRestClient extends MarketoBaseRestClient
     public Iterable<ObjectNode> getActivityTypes()
     {
         return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_ACTIVITY_TYPES.getEndpoint(), new ImmutableListMultimap.Builder<String, String>().put(MAX_RETURN, DEFAULT_MAX_RETURN).build(), ObjectNode.class);
+    }
+
+    public ObjectNode describeProgramMembers()
+    {
+        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_PROGRAM_MEMBERS.getEndpoint(), null, null, new MarketoResponseJetty92EntityReader<>(this.readTimeoutMillis));
+        return jsonResponse.getResult().get(0);
+    }
+
+    public String createProgramMembersBulkExtract(List<String> extractFields, int programId)
+    {
+        MarketoBulkExtractRequest marketoBulkExtractRequest = new MarketoBulkExtractRequest();
+        if (extractFields != null) {
+            marketoBulkExtractRequest.setFields(extractFields);
+        }
+        marketoBulkExtractRequest.setFormat("CSV");
+        Map<String, Object> filterMap = new HashMap<>();
+        filterMap.put("programId", programId);
+        marketoBulkExtractRequest.setFilter(filterMap);
+        return sendCreateBulkExtractRequest(marketoBulkExtractRequest, MarketoRESTEndpoint.CREATE_PROGRAM_MEMBERS_EXPORT_JOB);
+    }
+
+    public void startProgramMembersBulkExtract(String exportId)
+    {
+        startBulkExtract(MarketoRESTEndpoint.START_PROGRAM_MEMBERS_EXPORT_JOB, exportId);
+    }
+
+    public ObjectNode waitProgramMembersExportJobComplete(String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
+    {
+        return waitExportJobComplete(MarketoRESTEndpoint.GET_PROGRAM_MEMBERS_EXPORT_STATUS, exportId, pollingInterval, waitTimeout);
+    }
+
+    public InputStream getProgramMemberBulkExtractResult(String exportId, BulkExtractRangeHeader bulkExtractRangeHeader)
+    {
+        return getBulkExtractResult(MarketoRESTEndpoint.GET_PROGRAM_MEMBERS_EXPORT_RESULT, exportId, bulkExtractRangeHeader);
     }
 }

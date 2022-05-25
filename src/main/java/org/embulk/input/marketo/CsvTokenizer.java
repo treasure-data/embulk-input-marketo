@@ -2,7 +2,6 @@ package org.embulk.input.marketo;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 
 import org.apache.commons.csv.CSVFormat;
@@ -10,9 +9,13 @@ import org.apache.commons.csv.CSVParser;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigException;
+import org.embulk.util.config.Task;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.embulk.spi.util.LineDecoder;
+import org.embulk.util.text.LineDecoder;
+import org.embulk.util.text.Newline;
+import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
 import java.io.BufferedReader;
@@ -28,18 +31,22 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by tai.khuu on 9/15/17.
  */
-public class CsvTokenizer {
+public class CsvTokenizer
+{
     private static final Logger LOGGER = Exec.getLogger(CsvTokenizer.class);
-
-    static enum RecordState {
+    
+    enum RecordState
+    {
         NOT_END, END,
     }
 
-    static enum ColumnState {
+    enum ColumnState
+    {
         BEGIN, VALUE, QUOTED_VALUE, AFTER_QUOTED_VALUE, FIRST_TRIM, LAST_TRIM_OR_VALUE,
     }
 
@@ -47,7 +54,16 @@ public class CsvTokenizer {
     static final char NO_QUOTE = '\0';
     static final char NO_ESCAPE = '\0';
 
-    public interface PluginTask extends LineDecoder.DecoderTask {
+    public interface PluginTask extends Task
+    {
+        @Config("charset")
+        @ConfigDefault("\"utf-8\"")
+        Charset getCharset();
+
+        @Config("newline")
+        @ConfigDefault("\"CRLF\"")
+        Newline getNewline();
+
         @Config("delimiter")
         @ConfigDefault("\",\"")
         String getDelimiter();
@@ -97,14 +113,14 @@ public class CsvTokenizer {
     private String line = null;
     private int linePos = 0;
     private boolean wasQuotedColumn = false;
-    private List<String> quotedValueLines = new ArrayList<>();
-    private Deque<String> unreadLines = new ArrayDeque<>();
+    private final List<String> quotedValueLines = new ArrayList<>();
+    private final Deque<String> unreadLines = new ArrayDeque<>();
 
-    public CsvTokenizer(LineDecoder input, PluginTask task) {
-        this(task.getDelimiter(), task.getQuoteChar().or(QuoteCharacter.noQuote()).getCharacter(),
-                task.getEscapeChar().or(EscapeCharacter.noEscape()).getCharacter(), task.getNewline().getString(),
-                task.getTrimIfNotQuoted(), task.getMaxQuotedSizeLimit(), task.getCommentLineMarker().orNull(), input,
-                task.getNullString().orNull());
+    public CsvTokenizer(LineDecoder input, PluginTask task)
+    {
+        this(task.getDelimiter(), task.getQuoteChar().orElse(QuoteCharacter.noQuote()).getCharacter(),
+                task.getEscapeChar().orElse(EscapeCharacter.noEscape()).getCharacter(), task.getNewline().getString(),
+                task.getTrimIfNotQuoted(), task.getMaxQuotedSizeLimit(), task.getCommentLineMarker().orElse(null), input, task.getNullString().orElse(null));
     }
 
     public CsvTokenizer(String delimiter, char quote, char escape, String newline, boolean trimIfNotQuoted,
@@ -632,7 +648,7 @@ public class CsvTokenizer {
                 throw new ConfigException("\"quote\" option accepts only 1 character.");
             }
             else if (str.isEmpty()) {
-                Exec.getLogger(CsvTokenizer.class).warn("Setting '' (empty string) to \"quote\" option is obsoleted. Currently it becomes '\"' automatically but this behavior will be removed. Please set '\"' explicitly.");
+                LoggerFactory.getLogger(CsvTokenizer.class).warn("Setting '' (empty string) to \"quote\" option is obsoleted. Currently it becomes '\"' automatically but this behavior will be removed. Please set '\"' explicitly.");
                 return new QuoteCharacter('"');
             }
             else {
@@ -693,7 +709,7 @@ public class CsvTokenizer {
                 throw new ConfigException("\"escape\" option accepts only 1 character.");
             }
             else if (str.isEmpty()) {
-                Exec.getLogger(CsvTokenizer.class).warn("Setting '' (empty string) to \"escape\" option is obsoleted. Currently it becomes null automatically but this behavior will be removed. Please set \"escape: null\" explicitly.");
+                LoggerFactory.getLogger(CsvTokenizer.class).warn("Setting '' (empty string) to \"escape\" option is obsoleted. Currently it becomes null automatically but this behavior will be removed. Please set \"escape: null\" explicitly.");
                 return noEscape();
             }
             else {

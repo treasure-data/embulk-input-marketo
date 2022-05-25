@@ -1,3 +1,26 @@
+## 0.6.24 - 2021-10-19
+- Add retryable in case response data invalid json format
+
+## 0.6.22 - 2021-08-17
+- Support Program Members
+
+## 0.6.21 - 2021-07-15
+- Upgrade `embulk-*` to `v0.10.29`.
+- Apply new lib `embulk-util-*`.
+- Upgrade `embulk-base-restclient` to `v0.10.1`
+- Upgrade Gradle to `6.6.1`.
+- Apply `org.embulk.embulk-plugins` Gradle plugin.
+- Use Java optional 8 in place of Guava
+- Miscellaneous code cleanup.
+
+## 0.6.20 - 2020-07-17
+* [enhancement] Replace Joda-Time with java.time classes [101](https://github.com/treasure-data/embulk-input-marketo/pull/101)
+* [enhancement] Use GitHub Action instead of Travis CI [101](https://github.com/treasure-data/embulk-input-marketo/pull/101)
+
+## 0.6.19 - 2020-07-06
+* [enhancement] Support import Lead/Member by input static List,Program IDs [100](https://github.com/treasure-data/embulk-input-marketo/pull/100)
+* [enhancement] Support string comma-separated filterValues for Custom Objects [100](https://github.com/treasure-data/embulk-input-marketo/pull/100)
+
 ## 0.6.18 - 2020-01-06
 * [enhancement] Support Marketo Partner API Key [#98](https://github.com/treasure-data/embulk-input-marketo/pull/98)
 
@@ -156,7 +179,7 @@ This version breaks backword compatibility of marketo/lead. Please check README.
 
 ## 0.1.1 - 2015-08-19
 
-* [enhanement] Support scheduled execution [#20](https://github.com/treasure-data/embulk-input-marketo/pull/20) [[Reported by @muga](https://github.com/treasure-data/embulk-input-marketo/issues/18). Thanks!]
+* [enhancement] Support scheduled execution [#20](https://github.com/treasure-data/embulk-input-marketo/pull/20) [[Reported by @muga](https://github.com/treasure-data/embulk-input-marketo/issues/18). Thanks!]
 * [maintenance] Use everyleaf-embulk_helper [#19](https://github.com/treasure-data/embulk-input-marketo/pull/19)
 
 ## 0.1.0 - 2015-07-15

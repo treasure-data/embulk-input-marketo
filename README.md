@@ -13,8 +13,12 @@ embulk-input-marketo is the gem preparing Embulk input plugins for [Marketo](htt
 - Lead by program(all_lead_with_program_id)
 - Campaign(campaign)
 - Assets Programs (program)
+<<<<<<< HEAD
 - List (list)
 - Activity Type (activity_type)
+=======
+- Program Members (program_members)
+>>>>>>> upstream/master
 
 This plugin uses Marketo REST API.
 
@@ -122,7 +126,8 @@ Configuration:
 
 | name                | required | default value | description                                                                                                     |
 |---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------|
-| **included_fields** | false    | null         | List of lead fields to included in export request sent to Marketo, can be used to reduce request, response size |
+| **included_fields** | false    | null          | List of lead fields to included in export request sent to Marketo, can be used to reduce request, response size |
+| **list_ids**        | false    | null          | Import Leads by specified Lists_ID. If not specified will import all Leads by all List IDs                      |
 
 Schema type: Dynamic via describe leads. Schema will have 1 addition column name listId that contain the id of the list the lead belong to
 
@@ -138,9 +143,10 @@ Extract all Lead data including lead's program id
 
 Configuration:
 
-| name                | required | default value | description                                                                                                     |
-|---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------|
-| **included_fields** | false    | null         | List of lead fields to included in export request sent to Marketo, can be used to reduce request, response size |
+| name                | required | default value | description                                                                                                           |
+|---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------|
+| **included_fields** | false    | null          | List of lead fields to included in export request sent to Marketo, can be used to reduce request, response size       |
+| **program_ids**     | false    | null          | Import Members by specified Program_ID (comma-separated). If not specified will import all Members by all Program IDs |
 
 Schema type: Dynamic via describe leads. Schema will have 1 addition column name listId that contain the id of the list the lead belong to
 
@@ -166,7 +172,7 @@ Configuration:
 | **tag_type**                | false    |   null        | Required if query by `tag_type` is selected. Type of program tag                                                                                             |
 | **tag_value**               | false    |   null        | Required if query by `tag_type` is selected. Value of the tag                                                                                                |
 | **report_duration**         | false    |   null        | Amount of milliseconds to fetch from `earliest_updated_at`. If `incremental = true` this value will automatically calculated for the first run by `latest_updated_at` - `earliest_updated_at` |
-| **incremental**             | false    | true          | If incremental is set to true, next run will have `earliest_updated_at` set to the previous `latest_updated_at` + `report_duration`. Incremental import only support by query `date_range`     |
+| **incremental**             | false    |   true        | If incremental is set to true, next run will have `earliest_updated_at` set to the previous `latest_updated_at` + `report_duration`. Incremental import only support by query `date_range`     |
 
 Schema type: Static schema
 
@@ -174,6 +180,7 @@ Incremental support: yes (Query by `date_range` only)
 
 Range ingestion: yes
 
+<<<<<<< HEAD
 ### List
 
 List extract all list data from Marketo
@@ -197,6 +204,32 @@ Schema type: Static schema
 Incremental support: no
 
 Range ingestion: no
+=======
+`target: all_lead_with_program_id`
+
+Configuration:
+
+| name                                  | required | default value | description                                                                                                           |
+|---------------------------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------|
+| **custom_object_api_name**            | true     | null          | The API name of the custom object                                                                                     |
+| **custom_object_fields**              | false    | null          | Comma separated API name of fields of the custom object (Optional)                                                    |
+| **custom_object_filter_type**         | true     | null          | Field to search on Valid values are: dedupeFields, idFields, and any field defined in searchableFields attribute of Describe endpoint. Default is dedupeFields |
+| **custom_object_filter_values**       | false    | null          | Comma-separated list of field values to match.                                                                        |
+| **custom_object_filter_from_value**   | false    | null          | Filter Marketo Custom Object has value greater than this value                                                        |
+| **custom_object_filter_to_value**     | false    | null          | Filter Marketo Custom Object has value smaller than this value. If not set, only records that have value greater than "From Value" will be returned. Job will stop if no record found in 300 consecutive value. |
+
+Schema type: dynamic schema
+Incremental support: no 
+
+### Program Members configuration parameter
+
+Get Members by Program Ids or All Program.
+
+| name                | required | default value | description                                                                                                           |
+|---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------|
+| **program_ids**     | false    | null          | Import Members by specified Program_ID (comma-separated). If not specified will import all Members by all Program IDs |
+
+>>>>>>> upstream/master
 
 ## Example
 

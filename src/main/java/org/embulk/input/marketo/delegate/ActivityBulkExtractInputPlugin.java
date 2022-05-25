@@ -2,28 +2,29 @@ package org.embulk.input.marketo.delegate;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
 import org.embulk.base.restclient.record.ValueLocator;
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigException;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.type.Types;
-import org.joda.time.DateTime;
+import org.embulk.util.config.Config;
+import org.embulk.util.config.ConfigDefault;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.text.MessageFormat;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by tai.khuu on 9/18/17.
@@ -72,7 +73,6 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
 
     /**
      * Check if user input activity_type_ids valid
-     * @param task
      * @return values transformed to array of Integer
      */
     private List<Integer> checkValidActivityTypeIds(PluginTask task)
@@ -129,7 +129,7 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
             String name = node.get("name").asText("");
             if (id > 0) {
                 messageBuilder.append("- activity id: ");
-                messageBuilder.append(String.valueOf(id));
+                messageBuilder.append(id);
                 messageBuilder.append(", name: ");
                 messageBuilder.append(name);
                 messageBuilder.append("\n");
@@ -140,10 +140,11 @@ public class ActivityBulkExtractInputPlugin extends MarketoBaseBulkExtractInputP
     }
 
     @Override
-    protected InputStream getExtractedStream(MarketoService service, PluginTask task, DateTime fromDate, DateTime toDate)
+    protected InputStream getExtractedStream(MarketoService service, PluginTask task, OffsetDateTime fromDate, OffsetDateTime toDate)
     {
         try {
-            return new FileInputStream(service.extractAllActivity(task.getActTypeIds(), fromDate.toDate(), toDate.toDate(), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
+            return new FileInputStream(service.extractAllActivity(task.getActTypeIds(), Date.from(fromDate.toInstant()),
+                    Date.from(toDate.toInstant()), task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond()));
         }
         catch (FileNotFoundException e) {
             throw new RuntimeException("Exception when trying to extract activity", e);

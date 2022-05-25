@@ -13,19 +13,30 @@ import org.embulk.base.restclient.jackson.JacksonServiceResponseMapper;
 import org.embulk.base.restclient.jackson.JacksonTopLevelValueLocator;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.base.restclient.record.ValueLocator;
+import org.embulk.config.TaskReport;
 import org.embulk.input.marketo.model.MarketoField;
-import org.embulk.spi.Exec;
-import org.embulk.spi.util.RetryExecutor;
-import org.joda.time.DateTime;
+import org.embulk.spi.Column;
+import org.embulk.spi.ColumnVisitor;
+import org.embulk.spi.PageBuilder;
+import org.embulk.spi.Schema;
+import org.embulk.util.json.JsonParser;
+import org.embulk.util.retryhelper.RetryExecutor;
+import org.embulk.util.retryhelper.RetryGiveupException;
+import org.embulk.util.retryhelper.Retryable;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+
+import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
 
 /**
  * Created by tai.khuu on 9/18/17.
@@ -115,11 +126,11 @@ public class MarketoUtils
         return prefix.isEmpty() ? columnName : prefix + "_" + columnName;
     }
 
-    public static final List<DateRange> sliceRange(DateTime fromDate, DateTime toDate, int rangeSize)
+    public static List<DateRange> sliceRange(OffsetDateTime fromDate, OffsetDateTime toDate, int rangeSize)
     {
         List<DateRange> ranges = new ArrayList<>();
         while (fromDate.isBefore(toDate)) {
-            DateTime nextToDate = fromDate.plusDays(rangeSize);
+            OffsetDateTime nextToDate = fromDate.plusDays(rangeSize);
             if (nextToDate.isAfter(toDate)) {
                 ranges.add(new DateRange(fromDate, toDate));
                 break;
@@ -135,7 +146,7 @@ public class MarketoUtils
         if(endpoint.isPresent()){
             return endpoint.get() + "/identity";
         } else {
-            return "https://" + accountId + ".mktorest.com/identity";
+            return "https://" + accountId.trim() + ".mktorest.com/identity";
         }
     }
 
@@ -144,16 +155,16 @@ public class MarketoUtils
         if(endpoint.isPresent()){
             return endpoint.get();
         } else {
-            return "https://" + accountID + ".mktorest.com";
+            return "https://" + accountID.trim() + ".mktorest.com";
         }
     }
 
     public static  final class DateRange
     {
-        public final DateTime fromDate;
-        public final DateTime toDate;
+        public final OffsetDateTime fromDate;
+        public final OffsetDateTime toDate;
 
-        public DateRange(DateTime fromDate, DateTime toDate)
+        public DateRange(OffsetDateTime fromDate, OffsetDateTime toDate)
         {
             this.fromDate = fromDate;
             this.toDate = toDate;
@@ -169,19 +180,19 @@ public class MarketoUtils
         }
     }
 
-    public static <T> T executeWithRetry(int maximumRetries, int initialRetryIntervalMillis, int maximumRetryIntervalMillis, AlwaysRetryRetryable<T> alwaysRetryRetryable) throws RetryExecutor.RetryGiveupException, InterruptedException
+    public static <T> T executeWithRetry(int maximumRetries, int initialRetryIntervalMillis, int maximumRetryIntervalMillis, AlwaysRetryRetryable<T> alwaysRetryRetryable) throws InterruptedException, RetryGiveupException
     {
-        return RetryExecutor
-                .retryExecutor()
+        return RetryExecutor.builder()
                 .withRetryLimit(maximumRetries)
-                .withInitialRetryWait(initialRetryIntervalMillis)
-                .withMaxRetryWait(maximumRetryIntervalMillis)
+                .withInitialRetryWaitMillis(initialRetryIntervalMillis)
+                .withMaxRetryWaitMillis(maximumRetryIntervalMillis)
+                .build()
                 .runInterruptible(alwaysRetryRetryable);
     }
 
-    public abstract static class AlwaysRetryRetryable<T> implements  RetryExecutor.Retryable<T>
+    public abstract static class AlwaysRetryRetryable<T> implements Retryable<T>
     {
-        private static final Logger LOGGER = Exec.getLogger(AlwaysRetryRetryable.class);
+        private static final Logger LOGGER = LoggerFactory.getLogger(AlwaysRetryRetryable.class);
 
         @Override
         public abstract T call() throws Exception;
@@ -193,13 +204,13 @@ public class MarketoUtils
         }
 
         @Override
-        public void onRetry(Exception exception, int retryCount, int retryLimit, int retryWait) throws RetryExecutor.RetryGiveupException
+        public void onRetry(Exception exception, int retryCount, int retryLimit, int retryWait) throws RetryGiveupException
         {
             LOGGER.info("Retry [{}]/[{}] with retryWait [{}] on exception {}", retryCount, retryLimit, retryWait, exception.getMessage());
         }
 
         @Override
-        public void onGiveup(Exception firstException, Exception lastException) throws RetryExecutor.RetryGiveupException
+        public void onGiveup(Exception firstException, Exception lastException) throws RetryGiveupException
         {
             LOGGER.info("Giving up execution on exception", lastException);
         }
@@ -245,5 +256,58 @@ public class MarketoUtils
                 };
             }
         };
+    }
+
+    public static TaskReport importMockPreviewData(final PageBuilder pageBuilder, int numberRecords)
+    {
+        final JsonParser jsonParser = new JsonParser();
+        Schema schema = pageBuilder.getSchema();
+        for (int i = 1; i <= numberRecords; i++) {
+            final int rowNum = i;
+            schema.visitColumns(new ColumnVisitor()
+            {
+                @Override
+                public void booleanColumn(Column column)
+                {
+                    pageBuilder.setBoolean(column, false);
+                }
+
+                @Override
+                public void longColumn(Column column)
+                {
+                    pageBuilder.setLong(column, 12345L);
+                }
+
+                @Override
+                public void doubleColumn(Column column)
+                {
+                    pageBuilder.setDouble(column, 12345.123);
+                }
+
+                @Override
+                public void stringColumn(Column column)
+                {
+                    if(column.getName().endsWith("Id") || column.getName().equals("id")){
+                        pageBuilder.setString(column, Integer.toString(rowNum));
+                    }else{
+                        pageBuilder.setString(column, column.getName() + "_" + rowNum);
+                    }
+                }
+
+                @Override
+                public void timestampColumn(Column column)
+                {
+                    pageBuilder.setTimestamp(column, Instant.ofEpochMilli(System.currentTimeMillis()));
+                }
+
+                @Override
+                public void jsonColumn(Column column)
+                {
+                    pageBuilder.setJson(column, jsonParser.parse("{\"mockKey\":\"mockValue\"}"));
+                }
+            });
+            pageBuilder.addRecord();
+        }
+        return CONFIG_MAPPER_FACTORY.newTaskReport();
     }
 }
