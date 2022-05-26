@@ -181,7 +181,7 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                             int imported = 0;
                             while (csvRecords.hasNext()) {
                                 Map<String, String> csvRecord = csvRecords.next();
-                                ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
+                                ObjectNode objectNode = MarketoUtils.getObjectMapper().valueToTree(csvRecord);
                                 recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
                                 imported = imported + 1;
                             }

@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
-import com.google.common.base.Optional;
+import java.util.Optional;
 import org.eclipse.jetty.client.api.ContentProvider;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.embulk.EmbulkTestRuntime;

@@ -7,11 +7,15 @@ import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.util.json.JsonParser;
 import org.embulk.util.timestamp.TimestampFormatter;
 import org.msgpack.value.Value;
+import org.embulk.spi.Exec;
+import org.slf4j.Logger;
 
 import java.time.Instant;
 
 public class AllStringJacksonServiceRecord extends JacksonServiceRecord
 {
+    private static final Logger LOGGER = Exec.getLogger(AllStringJacksonServiceRecord.class);
+
     public AllStringJacksonServiceRecord(ObjectNode record)
     {
         super(record);
@@ -90,7 +94,7 @@ public class AllStringJacksonServiceRecord extends JacksonServiceRecord
         public Instant timestampValue(TimestampFormatter timestampFormatter)
         {
             try {
-                return timestampParser.parse(textValue);
+                return timestampFormatter.parse(textValue);
             } catch (Exception e) {
                 LOGGER.info("skipped to parse Timestamp: " + textValue);
                 return null;

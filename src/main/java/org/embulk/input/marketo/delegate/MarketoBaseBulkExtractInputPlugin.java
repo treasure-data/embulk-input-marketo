@@ -1,12 +1,12 @@
 package org.embulk.input.marketo.delegate;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Optional;
+// import com.google.common.base.Optional;
 
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.codehaus.plexus.util.CollectionUtils;
+// import org.codehaus.plexus.util.CollectionUtils;
 import org.embulk.base.restclient.jackson.JacksonServiceRecord;
 import org.embulk.base.restclient.jackson.JacksonServiceValue;
 import com.google.common.base.Function;
@@ -29,18 +29,19 @@ import org.embulk.spi.ColumnVisitor;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
-import org.embulk.spi.json.JsonParser;
+// import org.embulk.spi.json.JsonParser;
 import org.embulk.spi.time.Timestamp;
-import org.embulk.spi.time.TimestampParser;
-import org.embulk.spi.util.FileInputInputStream;
-import org.embulk.spi.util.InputStreamFileInput;
-import org.embulk.spi.util.LineDecoder;
-import org.joda.time.DateTime;
+// import org.embulk.spi.time.TimestampParser;
+// import org.embulk.spi.util.FileInputInputStream;
+// import org.embulk.spi.util.InputStreamFileInput;
+// import org.embulk.spi.util.LineDecoder;
+// import org.joda.time.DateTime;
 import org.msgpack.value.Value;
 import org.slf4j.Logger;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
 import org.embulk.util.file.InputStreamFileInput;
+import org.embulk.util.file.FileInputInputStream;
 import org.embulk.util.text.LineDecoder;
 
 import java.io.BufferedReader;
@@ -262,7 +263,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
             if (hasNext()) {
                 MarketoUtils.DateRange next = dateRangeIterator.next();
                 InputStream inputStream = getExtractedStream(marketoService, task, next.fromDate, next.toDate);
-                InputStreamFileInput in = new InputStreamFileInput(task.getBufferAllocator(), inputStream);
+                InputStreamFileInput in = new InputStreamFileInput(Exec.getBufferAllocator(), inputStream);
                 FileInputInputStream fileInputInputStream = new FileInputInputStream(in);
 
                 CharsetDecoder decoder = task.getCharset().newDecoder().onMalformedInput(CodingErrorAction.REPLACE)
