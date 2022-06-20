@@ -54,6 +54,8 @@ public class MarketoBaseRestClient implements AutoCloseable
 
     private String clientSecret;
 
+    private String accountId;
+
     private String accessToken;
 
     private int marketoLimitIntervalMillis;
@@ -69,6 +71,7 @@ public class MarketoBaseRestClient implements AutoCloseable
     MarketoBaseRestClient(String identityEndPoint,
                           String clientId,
                           String clientSecret,
+                          String accountId,
                           Optional<String> partnerApiKey,
                           int marketoLimitIntervalMillis,
                           long readTimeoutMillis,
@@ -77,6 +80,7 @@ public class MarketoBaseRestClient implements AutoCloseable
         this.identityEndPoint = identityEndPoint;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
+        this.accountId = accountId;
         this.readTimeoutMillis = readTimeoutMillis;
         this.retryHelper = retryHelper;
         this.marketoLimitIntervalMillis = marketoLimitIntervalMillis;
@@ -236,7 +240,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                         }
                     }
                 }
-                LOGGER.info("CALLING {} -> {} - params: {}", method, target, params);
+                LOGGER.info("CALLING Account ID: {} {} -> {} - params: {}", accountId, method, target, params);
                 if (contentProvider != null) {
                     request.content(contentProvider);
                 }

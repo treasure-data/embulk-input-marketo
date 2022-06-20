@@ -151,6 +151,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 MarketoUtils.getIdentityEndPoint(task.getAccountId(),task.getInputEndpoint()),
                 task.getClientId(),
                 task.getClientSecret(),
+                task.getAccountId(),
                 task.getPartnerApiKey(),
                 task.getBatchSize(),
                 task.getMaxReturn(),
@@ -166,6 +167,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                              String identityEndPoint,
                              String clientId,
                              String clientSecret,
+                             String accountId,
                              Optional<String> partnerApiKey,
                              Integer batchSize,
                              Integer maxReturn,
@@ -173,7 +175,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                              int marketoLimitIntervalMilis,
                              Jetty92RetryHelper retryHelper)
     {
-        super(identityEndPoint, clientId, clientSecret, partnerApiKey, marketoLimitIntervalMilis, readTimeoutMilis, retryHelper);
+        super(identityEndPoint, clientId, clientSecret, accountId, partnerApiKey, marketoLimitIntervalMilis, readTimeoutMilis, retryHelper);
         this.endPoint = endPoint;
         this.batchSize = batchSize;
         this.maxReturn = maxReturn;

@@ -17,8 +17,9 @@ repositories {
 configurations {
     provided
 }
+
 version = {
-    def baseVersion = "0.6.31"
+    def baseVersion = "0.6.32"
     def vd = versionDetails()
     if (vd.commitDistance == 0 && vd.lastTag ==~ /^[0-9]+\.[0-9]+\.[0-9]+(\.[a-zA-Z0-9]+)?/) {
         baseVersion
@@ -26,6 +27,7 @@ version = {
         "${baseVersion}.${vd.gitHash}.pre"
     }
 }()
+
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
