@@ -14,11 +14,14 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.embulk.input.marketo.MarketoUtilsTest.CONFIG_MAPPER;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by tai.khuu on 5/24/18.
@@ -62,15 +65,15 @@ public class LeadServiceResponseMapperBuilderTest
                 "  - externalcompanyId\n" +
                 "  - id\n" +
                 "target: all_lead_with_list_id\n");
-        pluginTask = configSource.loadConfig(LeadServiceResponseMapperBuilder.PluginTask.class);
-        marketoService = Mockito.mock(MarketoService.class);
-        JavaType marketoFieldsType = MarketoUtils.getObjectMapper().getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
-        List<MarketoField> marketoFields = MarketoUtils.getObjectMapper().readValue(this.getClass().getResourceAsStream("/fixtures/lead_describe_marketo_fields_full.json"), marketoFieldsType);
-        Mockito.when(marketoService.describeLead()).thenReturn(marketoFields);
+        pluginTask = CONFIG_MAPPER.map(configSource, LeadServiceResponseMapperBuilder.PluginTask.class);
+        marketoService = mock(MarketoService.class);
+        JavaType marketoFieldsType = MarketoUtils.OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
+        List<MarketoField> marketoFields = MarketoUtils.OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/lead_describe_marketo_fields_full.json"), marketoFieldsType);
+        when(marketoService.describeLead()).thenReturn(marketoFields);
     }
 
     @Test
-    public void buildServiceResponseMapper() throws Exception
+    public void buildServiceResponseMapper()
     {
         leadServiceResponseMapperBuilder = new LeadServiceResponseMapperBuilder<>(pluginTask, marketoService);
         ServiceResponseMapper<? extends ValueLocator> serviceResponseMapper = leadServiceResponseMapperBuilder.buildServiceResponseMapper(pluginTask);
@@ -87,8 +90,8 @@ public class LeadServiceResponseMapperBuilderTest
     @Test
     public void getLeadColumnsIncludedEmpty() throws IOException
     {
-        configSource = configSource.set("included_fields", MarketoUtils.getObjectMapper().readTree("[]"));
-        pluginTask = configSource.loadConfig(LeadServiceResponseMapperBuilder.PluginTask.class);
+        configSource = configSource.set("included_fields", MarketoUtils.OBJECT_MAPPER.readTree("[]"));
+        pluginTask = CONFIG_MAPPER.map(configSource, LeadServiceResponseMapperBuilder.PluginTask.class);
         leadServiceResponseMapperBuilder = new LeadServiceResponseMapperBuilder<>(pluginTask, marketoService);
         List<MarketoField> leadColumns = leadServiceResponseMapperBuilder.getLeadColumns();
         Assert.assertEquals(129, leadColumns.size());
@@ -97,8 +100,8 @@ public class LeadServiceResponseMapperBuilderTest
     @Test
     public void getLeadColumnsIncluded1() throws IOException
     {
-        configSource = configSource.set("included_fields", MarketoUtils.getObjectMapper().readTree("[\"company\",\"incorrect_value\"]"));
-        pluginTask = configSource.loadConfig(LeadServiceResponseMapperBuilder.PluginTask.class);
+        configSource = configSource.set("included_fields", MarketoUtils.OBJECT_MAPPER.readTree("[\"company\",\"incorrect_value\"]"));
+        pluginTask = CONFIG_MAPPER.map(configSource, LeadServiceResponseMapperBuilder.PluginTask.class);
         leadServiceResponseMapperBuilder = new LeadServiceResponseMapperBuilder<>(pluginTask, marketoService);
         List<MarketoField> leadColumns = leadServiceResponseMapperBuilder.getLeadColumns();
         Assert.assertEquals(1, leadColumns.size());
@@ -108,11 +111,11 @@ public class LeadServiceResponseMapperBuilderTest
     @Test
     public void getLeadColumnsIncluded2() throws IOException
     {
-        configSource = configSource.set("included_fields", MarketoUtils.getObjectMapper().readTree("[\"company\",\"incorrect_value\"]"));
-        pluginTask = configSource.loadConfig(LeadServiceResponseMapperBuilder.PluginTask.class);
-        marketoService = Mockito.mock(MarketoService.class);
+        configSource = configSource.set("included_fields", MarketoUtils.OBJECT_MAPPER.readTree("[\"company\",\"incorrect_value\"]"));
+        pluginTask = CONFIG_MAPPER.map(configSource, LeadServiceResponseMapperBuilder.PluginTask.class);
+        marketoService = mock(MarketoService.class);
         leadServiceResponseMapperBuilder = new LeadServiceResponseMapperBuilder<>(pluginTask, marketoService);
-        Mockito.when(marketoService.describeLead()).thenReturn(new ArrayList<MarketoField>());
+        when(marketoService.describeLead()).thenReturn(new ArrayList<>());
         List<MarketoField> leadColumns = leadServiceResponseMapperBuilder.getLeadColumns();
         Assert.assertTrue(leadColumns.isEmpty());
     }

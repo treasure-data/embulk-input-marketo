@@ -22,6 +22,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.util.List;
 
+import static org.embulk.input.marketo.MarketoUtilsTest.CONFIG_MAPPER;
 import static org.junit.Assert.assertArrayEquals;
 
 public class ListInputPluginTest
@@ -55,7 +56,7 @@ public class ListInputPluginTest
         List<ObjectNode> objectNodeList = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/list_reponse_full.json"), javaType);
         Mockito.when(mockRecordPagingIterable.iterator()).thenReturn(objectNodeList.iterator());
         Mockito.when(mockMarketoRestClient.getLists()).thenReturn(mockRecordPagingIterable);
-        ListInputPlugin.PluginTask task = configSource.loadConfig(ListInputPlugin.PluginTask.class);
+        ListInputPlugin.PluginTask task = CONFIG_MAPPER.map(configSource, ListInputPlugin.PluginTask.class);
         ServiceResponseMapper<? extends ValueLocator> mapper = listInputPlugin.buildServiceResponseMapper(task);
         RecordImporter recordImporter = mapper.createRecordImporter();
         PageBuilder mockPageBuilder = Mockito.mock(PageBuilder.class);

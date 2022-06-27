@@ -1,23 +1,19 @@
 plugins {
-    id "com.jfrog.bintray" version "1.1"
-    id "com.github.jruby-gradle.base" version "0.1.5"
     id "java"
+    id "maven-publish"
     id "checkstyle"
     id "jacoco"
+    id "signing"
+    id "org.embulk.embulk-plugins" version "0.4.2"
     id "com.palantir.git-version" version "0.12.3"
 }
-import com.github.jrubygradle.JRubyExec
+
 repositories {
     mavenCentral()
-    jcenter()
-    maven {
-        url "https://dl.bintray.com/embulk-base-restclient/maven"
-    }
-}
-configurations {
-    provided
 }
 
+group = "com.treasuredata.embulk.plugins"
+description = "Loads records from Marketo."
 version = {
     def baseVersion = "0.6.32"
     def vd = versionDetails()
@@ -28,90 +24,159 @@ version = {
     }
 }()
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+def embulkVersion = '0.10.29'
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.8.+"
-    provided "org.embulk:embulk-core:0.8.+"
-    compile  "org.embulk.base.restclient:embulk-base-restclient:0.5.3"
-    compile  "org.embulk.base.restclient:embulk-util-retryhelper-jetty92:0.5.3"
-    compile 'org.apache.commons:commons-text:1.2'
-    // https://mvnrepository.com/artifact/org.apache.commons/commons-csv
-    compile group: 'org.apache.commons', name: 'commons-csv', version: '1.8'
+    compileOnly "org.embulk:embulk-api:$embulkVersion"
+    compileOnly "org.embulk:embulk-spi:$embulkVersion"
+
+    compile('org.embulk:embulk-util-config:0.3.1') {
+        // Conflict with Embulk Core
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
+        exclude group: 'com.fasterxml.jackson.datatype', module: 'jackson-datatype-jdk8'
+        exclude group: 'javax.validation', module: 'validation-api'
+    }
+
+    compile "org.embulk:embulk-util-json:0.1.1"
+    compile "org.embulk:embulk-util-text:0.1.1"
+    compile "org.embulk:embulk-util-timestamp:0.2.1"
+
+    // Explicit dependencies for embulk-util-* that matches with Embulk
+    compile 'com.fasterxml.jackson.core:jackson-core:2.6.7'
+    compile 'com.fasterxml.jackson.core:jackson-annotations:2.6.7'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.6.7'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.7'
+    compile 'javax.validation:validation-api:1.1.0.Final'
+
+    compile 'org.embulk:embulk-base-restclient:0.10.1'
+    compile 'org.embulk:embulk-util-retryhelper-jetty92:0.8.2'
+
+    compile 'com.google.guava:guava:18.0'
+    compile  "com.google.code.findbugs:annotations:3.0.1"
+    compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'org.apache.commons:commons-csv:1.8'
+
     testCompile "junit:junit:4.+"
-    testCompile "org.embulk:embulk-core:0.8.+:tests"
-    testCompile "org.embulk:embulk-test:0.8.+"
+    testCompile "org.embulk:embulk-core:$embulkVersion:tests"
+    testCompile "org.embulk:embulk-junit4:$embulkVersion"
+    testCompile "org.embulk:embulk-deps:$embulkVersion"
     testCompile "org.mockito:mockito-core:2.+"
 }
 
-task classpath(type: Copy, dependsOn: ["jar"]) {
-    doFirst { file("classpath").deleteDir() }
-    from (configurations.runtime - configurations.provided + files(jar.archivePath))
-    into "classpath"
+embulkPlugin {
+    mainClass = "org.embulk.input.marketo.MarketoInputPlugin"
+    category = "input"
+    type = "marketo"
 }
-clean { delete "classpath" }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = project.group
+            artifactId = project.name
+
+            from components.java  // Must be "components.java". The dependency modification works only for it.
+            // javadocJar and sourcesJar are added by java.withJavadocJar() and java.withSourcesJar() above.
+            // See: https://docs.gradle.org/current/javadoc/org/gradle/api/plugins/JavaPluginExtension.html
+
+            pom {  // https://central.sonatype.org/pages/requirements.html
+                packaging "jar"
+
+                name = project.name
+                description = project.description
+                url = "https://www.embulk.org/"
+
+                licenses {
+                    license {
+                        // http://central.sonatype.org/pages/requirements.html#license-information
+                        name = "MIT License"
+                        url = "http://www.opensource.org/licenses/mit-license.php"
+                    }
+                }
+
+                developers {
+                    developer {
+                        name = "Treasure Data"
+                        email = "dev@treasure-data.com"
+                    }
+                }
+
+                scm {
+                    connection = "scm:git:git://github.com/treasure-data/embulk-input-marketo.git"
+                    developerConnection = "scm:git:git@github.com:treasure-data/embulk-input-marketo.git"
+                    url = "https://github.com/treasure-data/embulk-input-marketo"
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {  // publishMavenPublicationToMavenCentralRepository
+            name = "mavenCentral"
+            if (project.version.endsWith("-SNAPSHOT")) {
+                url "https://oss.sonatype.org/content/repositories/snapshots"
+            } else {
+                url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+            }
+
+            credentials {
+                username = project.hasProperty("ossrhUsername") ? ossrhUsername : ""
+                password = project.hasProperty("ossrhPassword") ? ossrhPassword : ""
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.maven
+}
+
+gem {
+    authors = ["uu59", "yoshihara", "taikhuu", "Treasure Data"]
+    email = ["k@uu59.org", "h.yoshihara@everyleaf.com", "tai@treasuredata.com", "dev@treasure-data.com"]
+    summary = "Marketo input plugin for Embulk"
+    homepage = "https://github.com/treasure-data/embulk-input-marketo"
+    licenses = ["MIT"]
+}
+
+gemPush {
+    host = "https://rubygems.org"
+}
+
+javadoc {
+    options {
+        locale = 'en_US'
+        encoding = 'UTF-8'
+    }
+}
 
 checkstyle {
     configFile = file("${project.rootDir}/config/checkstyle/checkstyle.xml")
     toolVersion = '6.14.1'
 }
 checkstyleMain {
-    exclude '**/**/CsvTokenizer*'
     configFile = file("${project.rootDir}/config/checkstyle/default.xml")
-    ignoreFailures = false
+    ignoreFailures = true
 }
 checkstyleTest {
     configFile = file("${project.rootDir}/config/checkstyle/default.xml")
-    ignoreFailures = false
+    ignoreFailures = true
 }
 task checkstyle(type: Checkstyle) {
     classpath = sourceSets.main.output + sourceSets.test.output
     source = sourceSets.main.allJava + sourceSets.test.allJava
 }
 
-task gem(type: JRubyExec, dependsOn: ["gemspec", "classpath"]) {
-    jrubyArgs "-rrubygems/gem_runner", "-eGem::GemRunner.new.run(ARGV)", "build"
-    script "${project.name}.gemspec"
-    doLast { ant.move(file: "${project.name}-${project.version}.gem", todir: "pkg") }
-}
-
-task gemPush(type: JRubyExec, dependsOn: ["gem"]) {
-    jrubyArgs "-rrubygems/gem_runner", "-eGem::GemRunner.new.run(ARGV)", "push"
-    script "pkg/${project.name}-${project.version}.gem"
-}
-
-task "package"(dependsOn: ["gemspec", "classpath"]) {
-    doLast {
-        println "> Build succeeded."
-        println "> You can run embulk with '-L ${file(".").absolutePath}' argument."
+jacocoTestReport {
+    group = "Reporting"
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination file("${buildDir}/reports/coverage")
     }
 }
-
-task gemspec {
-    ext.gemspecFile = file("${project.name}.gemspec")
-    inputs.file "build.gradle"
-    outputs.file gemspecFile
-    doLast { gemspecFile.write($/
-Gem::Specification.new do |spec|
-  spec.name          = "${project.name}"
-  spec.version       = "${project.version}"
-  spec.authors       = ["uu59", "yoshihara", "taikhuu"]
-  spec.summary       = %[Marketo input plugin for Embulk]
-  spec.description   = %[Loads records from Marketo.]
-  spec.email         = ["k@uu59.org", "h.yoshihara@everyleaf.com", "tai@treasuredata.com"]
-  spec.licenses      = ["Apache2"]
-  spec.homepage      = "https://github.com/treasure-data/embulk-input-marketo"
-  
-  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
-  spec.test_files    = spec.files.grep(%r"^(test|spec)/")
-  spec.require_paths = ["lib"]
-
-  #spec.add_dependency 'YOUR_GEM_DEPENDENCY', ['~> YOUR_GEM_DEPENDENCY_VERSION']
-  spec.add_development_dependency 'bundler', ['~> 1.0']
-  spec.add_development_dependency 'rake', ['>= 10.0']
-end
-/$)
-    }
-}
-clean { delete "${project.name}.gemspec" }

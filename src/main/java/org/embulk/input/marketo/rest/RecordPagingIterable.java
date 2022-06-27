@@ -12,7 +12,7 @@ import java.util.NoSuchElementException;
  */
 public class RecordPagingIterable<T> implements Iterable<T>
 {
-    private PagingFunction<Page<T>> pagingFunction;
+    private final PagingFunction<Page<T>> pagingFunction;
 
     public RecordPagingIterable(PagingFunction pagingFunction)
     {
@@ -138,7 +138,7 @@ public class RecordPagingIterable<T> implements Iterable<T>
 
     public static class OffsetPage<T> extends Page<T>
     {
-        private int nextOffSet;
+        private final int nextOffSet;
 
         public OffsetPage(Iterable<T> records, int nextOffSet, boolean moreResult)
         {
@@ -153,7 +153,7 @@ public class RecordPagingIterable<T> implements Iterable<T>
     }
     public static class OffsetWithTokenPage<T> extends Page<T>
     {
-        private int nextOffSet;
+        private final int nextOffSet;
         private String nextPageToken;
         public OffsetWithTokenPage(Iterable<T> records, int nextOffSet, String nextPageToken, boolean moreResult)
         {

@@ -1,29 +1,29 @@
 package org.embulk.input.marketo.delegate;
 
-import com.google.common.base.Optional;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.ServiceResponseMapperBuildable;
 import org.embulk.base.restclient.record.ValueLocator;
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.MarketoField;
-import org.embulk.spi.Exec;
+import org.embulk.util.config.Config;
+import org.embulk.util.config.ConfigDefault;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by tai.khuu on 5/21/18.
  */
 public class LeadServiceResponseMapperBuilder<T extends LeadServiceResponseMapperBuilder.PluginTask> implements ServiceResponseMapperBuildable<T>
 {
-    private static final Logger LOGGER = Exec.getLogger(LeadServiceResponseMapperBuilder.class);
-    private MarketoService marketoService;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final MarketoService marketoService;
 
-    private T pluginTask;
+    private final T pluginTask;
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask
     {
@@ -56,11 +56,11 @@ public class LeadServiceResponseMapperBuilder<T extends LeadServiceResponseMappe
                     filteredColumns.add(includedField.get());
                 }
                 else {
-                    LOGGER.warn("Included field [{}] not found in Marketo lead field", fieldName);
+                    logger.warn("Included field [{}] not found in Marketo lead field", fieldName);
                 }
             }
             columns = filteredColumns;
-            LOGGER.info("Included Fields option is set, included columns: [{}]", columns);
+            logger.info("Included Fields option is set, included columns: [{}]", columns);
         }
         return columns;
     }
@@ -72,7 +72,7 @@ public class LeadServiceResponseMapperBuilder<T extends LeadServiceResponseMappe
                 return Optional.of(marketoField);
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 
     @Override

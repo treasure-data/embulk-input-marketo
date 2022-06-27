@@ -5,12 +5,15 @@ import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.spi.Column;
 import org.embulk.spi.type.Types;
-import org.joda.time.DateTime;
+import org.embulk.util.config.ConfigMapper;
 import org.junit.Test;
-import com.google.common.base.Optional;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -20,8 +23,9 @@ import static org.junit.Assert.assertFalse;
  */
 public class MarketoUtilsTest
 {
+    public static final ConfigMapper CONFIG_MAPPER = MarketoInputPlugin.CONFIG_MAPPER_FACTORY.createConfigMapper();
     @Test
-    public void buildDynamicResponseMapper() throws Exception
+    public void buildDynamicResponseMapper()
     {
         List<MarketoField> marketoFields = new ArrayList<>();
         marketoFields.add(new MarketoField("marketoField1", "text"));
@@ -41,7 +45,7 @@ public class MarketoUtilsTest
     }
 
     @Test
-    public void getFieldNameFromMarketoFields() throws Exception
+    public void getFieldNameFromMarketoFields()
     {
         List<MarketoField> marketoFields = new ArrayList<>();
         marketoFields.add(new MarketoField("marketoField1", "text"));
@@ -53,7 +57,7 @@ public class MarketoUtilsTest
     }
 
     @Test
-    public void buildColumnName() throws Exception
+    public void buildColumnName()
     {
         String columnName = MarketoUtils.buildColumnName("prefix", "columnName");
         assertEquals("prefix_columnName", columnName);
@@ -62,31 +66,31 @@ public class MarketoUtilsTest
     }
 
     @Test
-    public void getIdentityEndPoint() throws Exception
+    public void getIdentityEndPoint()
     {
-        Optional<String> endpoint = Optional.absent();
-        String identityEndPoint = MarketoUtils.getIdentityEndPoint("accountId",endpoint);
+        Optional<String> endpoint = Optional.empty();
+        String identityEndPoint = MarketoUtils.getIdentityEndPoint("accountId", endpoint);
         assertEquals("https://accountId.mktorest.com/identity", identityEndPoint);
         Optional<String> endpoint2 = Optional.of("endpoint");
-        String identityEndPointUsingEndpoint = MarketoUtils.getIdentityEndPoint("accountId",endpoint2);
+        String identityEndPointUsingEndpoint = MarketoUtils.getIdentityEndPoint("accountId", endpoint2);
         assertEquals("endpoint/identity", identityEndPointUsingEndpoint);
     }
 
     @Test
-    public void getEndPoint() throws Exception
+    public void getEndPoint()
     {
-        Optional<String> endpoint = Optional.absent();
-        String endPoint = MarketoUtils.getEndPoint("accountId",endpoint);
+        Optional<String> endpoint = Optional.empty();
+        String endPoint = MarketoUtils.getEndPoint("accountId", endpoint);
         assertEquals("https://accountId.mktorest.com", endPoint);
         Optional<String> endpoint2 = Optional.of("endpoint");
-        String endPointUsingEndpoint = MarketoUtils.getEndPoint("accountId",endpoint2);
+        String endPointUsingEndpoint = MarketoUtils.getEndPoint("accountId", endpoint2);
         assertEquals("endpoint", endPointUsingEndpoint);
     }
 
     @Test
-    public void sliceRange() throws Exception
+    public void sliceRange()
     {
-        DateTime startDate = new DateTime(1507369760000L);
+        OffsetDateTime startDate = OffsetDateTime.ofInstant(Instant.ofEpochMilli(1507369760000L), ZoneOffset.UTC);
         List<MarketoUtils.DateRange> dateRanges1 = MarketoUtils.sliceRange(startDate, startDate.plusDays(7), 2);
         assertEquals(4, dateRanges1.size());
         assertEquals(startDate.plusDays(7), dateRanges1.get(3).toDate);

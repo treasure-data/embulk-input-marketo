@@ -2,7 +2,6 @@ package org.embulk.input.marketo.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.apache.commons.lang3.StringUtils;
@@ -18,18 +17,19 @@ import org.embulk.input.marketo.exception.MarketoAPIException;
 import org.embulk.input.marketo.model.MarketoAccessTokenResponse;
 import org.embulk.input.marketo.model.MarketoError;
 import org.embulk.spi.DataException;
-import org.embulk.spi.Exec;
 import org.embulk.util.retryhelper.jetty92.Jetty92ResponseReader;
 import org.embulk.util.retryhelper.jetty92.Jetty92RetryHelper;
 import org.embulk.util.retryhelper.jetty92.Jetty92SingleRequester;
 import org.embulk.util.retryhelper.jetty92.StringJetty92ResponseEntityReader;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -42,7 +42,7 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
  */
 public class MarketoBaseRestClient implements AutoCloseable
 {
-    private static final Logger LOGGER = Exec.getLogger(MarketoBaseRestClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MarketoBaseRestClient.class);
 
     private static final String APPLICATION_JSON = "application/json";
 

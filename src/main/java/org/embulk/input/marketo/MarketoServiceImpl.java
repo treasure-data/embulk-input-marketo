@@ -3,6 +3,7 @@ package org.embulk.input.marketo;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.model.MarketoField;
@@ -11,6 +12,7 @@ import org.embulk.input.marketo.rest.RecordPagingIterable;
 import org.embulk.spi.DataException;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,13 +21,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by tai.khuu on 9/6/17.
  */
 public class MarketoServiceImpl implements MarketoService
 {
-    private static final Logger LOGGER = Exec.getLogger(MarketoServiceImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private static final String DEFAULT_FILE_FORMAT = "csv";
 
@@ -49,7 +54,7 @@ public class MarketoServiceImpl implements MarketoService
             marketoRestClient.waitLeadExportJobComplete(exportID, pollingTimeIntervalSecond, bulkJobTimeoutSecond);
         }
         catch (InterruptedException e) {
-            LOGGER.error("Exception when waiting for export job id: {}", exportID, e);
+            logger.error("Exception when waiting for export job id: {}", exportID, e);
             throw new DataException("Error when wait for bulk extract");
         }
         return downloadBulkExtract(new Function<BulkExtractRangeHeader, InputStream>()
@@ -77,7 +82,7 @@ public class MarketoServiceImpl implements MarketoService
             }
         }
         catch (IOException e) {
-            LOGGER.error("Encounter exception when download bulk extract file", e);
+            logger.error("Encounter exception when download bulk extract file", e);
             throw new DownloadBulkExtractException("Encounter exception when download bulk extract file", e, total);
         }
         return total;
@@ -92,7 +97,7 @@ public class MarketoServiceImpl implements MarketoService
             marketoRestClient.waitActitvityExportJobComplete(exportID, pollingTimeIntervalSecond, bulkJobTimeoutSecond);
         }
         catch (InterruptedException e) {
-            LOGGER.error("Exception when waiting for export job id: {}", exportID, e);
+            logger.error("Exception when waiting for export job id: {}", exportID, e);
             throw new DataException("Error when wait for bulk extract");
         }
         return downloadBulkExtract(new Function<BulkExtractRangeHeader, InputStream>()
@@ -104,6 +109,7 @@ public class MarketoServiceImpl implements MarketoService
             }
         });
     }
+
     private File downloadBulkExtract(Function<BulkExtractRangeHeader, InputStream> getBulkExtractfunction)
     {
         final File tempFile = Exec.getTempFileSpace().createTempFile(DEFAULT_FILE_FORMAT);
@@ -118,58 +124,31 @@ public class MarketoServiceImpl implements MarketoService
             }
             catch (DownloadBulkExtractException e) {
                 startByte = startByte + e.getByteWritten();
-                LOGGER.warn("will resume activity bulk extract at byte [{}]", startByte);
+                logger.warn("will resume activity bulk extract at byte [{}]", startByte);
             }
             resumeTime = resumeTime + 1;
         }
         //Too many resume we still can't get the file
         throw new DataException("Can't down load bulk extract");
     }
+
     @Override
-    public Iterable<ObjectNode> getAllListLead(List<String> fieldNames)
+    public Iterable<ObjectNode> getAllListLead(List<String> fieldNames, Iterable<ObjectNode> inputListIds)
     {
-        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getLists();
         final String fieldNameString = StringUtils.join(fieldNames, ",");
-        return MarketoUtils.flatMap(lists, new Function<ObjectNode, Iterable<ObjectNode>>()
-        {
-            @Override
-            public Iterable<ObjectNode> apply(ObjectNode input)
-            {
-                final String id = input.get("id").asText();
-                return Iterables.transform(marketoRestClient.getLeadsByList(id, fieldNameString), new Function<ObjectNode, ObjectNode>()
-                {
-                    @Override
-                    public ObjectNode apply(ObjectNode input)
-                    {
-                        input.put(MarketoUtils.LIST_ID_COLUMN_NAME, id);
-                        return input;
-                    }
-                });
-            }
+        return MarketoUtils.flatMap(inputListIds, input -> {
+            final String id = input.get("id").asText();
+            return Iterables.transform(marketoRestClient.getLeadsByList(id, fieldNameString), input1 -> input1.put(MarketoUtils.LIST_ID_COLUMN_NAME, id));
         });
     }
 
     @Override
-    public Iterable<ObjectNode> getAllProgramLead(List<String> fieldNames)
+    public Iterable<ObjectNode> getAllProgramLead(List<String> fieldNames, Iterable<ObjectNode> requestProgs)
     {
-        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getPrograms();
         final String fieldNameString = StringUtils.join(fieldNames, ",");
-        return MarketoUtils.flatMap(lists, new Function<ObjectNode, Iterable<ObjectNode>>()
-        {
-            @Override
-            public Iterable<ObjectNode> apply(ObjectNode input)
-            {
-                final String id = input.get("id").asText();
-                return Iterables.transform(marketoRestClient.getLeadsByProgram(id, fieldNameString), new Function<ObjectNode, ObjectNode>()
-                {
-                    @Override
-                    public ObjectNode apply(ObjectNode input)
-                    {
-                        input.put(MarketoUtils.PROGRAM_ID_COLUMN_NAME, id);
-                        return input;
-                    }
-                });
-            }
+        return MarketoUtils.flatMap(requestProgs, input -> {
+            final String id = input.get("id").asText();
+            return Iterables.transform(marketoRestClient.getLeadsByProgram(id, fieldNameString), input1 -> input1.put(MarketoUtils.PROGRAM_ID_COLUMN_NAME, id));
         });
     }
 
@@ -214,6 +193,12 @@ public class MarketoServiceImpl implements MarketoService
     }
 
     @Override
+    public Iterable<ObjectNode> getProgramsByIds(Set<String> ids)
+    {
+        return marketoRestClient.getProgramsByIds(ids);
+    }
+
+    @Override
     public Iterable<ObjectNode> getProgramsByTag(String tagType, String tagValue)
     {
         return marketoRestClient.getProgramsByTag(tagType, tagValue);
@@ -234,18 +219,41 @@ public class MarketoServiceImpl implements MarketoService
     @Override
     public Iterable<ObjectNode> getCustomObject(String customObjectAPIName, String customObjectFilterType, String customObjectFields, Integer fromValue, Integer toValue)
     {
-        return marketoRestClient.getCustomObject(customObjectAPIName, customObjectFilterType, customObjectFields, fromValue, toValue);
+        if (toValue == null) {
+            return marketoRestClient.getCustomObject(customObjectAPIName, customObjectFilterType, customObjectFields, fromValue, toValue);
+        }
+
+        // make sure to import values in the whole range
+        Set<String> filterValues = IntStream.rangeClosed(fromValue, toValue).mapToObj(String::valueOf).collect(Collectors.toSet());
+        return getCustomObject(customObjectAPIName, customObjectFilterType, filterValues, customObjectFields);
     }
 
     @Override
-    public Iterable<ObjectNode> getLists()
+    public Iterable<ObjectNode> getCustomObject(String customObjectApiName, String filterType, Set<String> filterValues, String returnFields)
     {
-        return marketoRestClient.getLists();
+        // Marketo allows maximum 300 (comma separated) filterValues per request. Split the input and process by chunk.
+        List<List<String>> partitionedFilterValues = Lists.partition(Lists.newArrayList(filterValues), 300);
+        return MarketoUtils.flatMap(partitionedFilterValues, (part) -> {
+            String strFilterValues = StringUtils.join(part, ",");
+            return marketoRestClient.getCustomObject(customObjectApiName, filterType, strFilterValues, returnFields);
+        });
     }
 
     @Override
     public Iterable<ObjectNode> getActivityTypes()
     {
         return marketoRestClient.getActivityTypes();
+    }
+
+    @Override
+    public Iterable<ObjectNode> getListsByIds(Set<String> ids)
+    {
+        return marketoRestClient.getListsByIds(ids);
+    }
+
+    @Override
+    public Iterable<ObjectNode> getLists()
+    {
+        return marketoRestClient.getLists();
     }
 }
