@@ -28,7 +28,7 @@ public enum MarketoRESTEndpoint
     GET_CUSTOM_OBJECT("/rest/v1/customobjects/${api_name}.json"),
     GET_CUSTOM_OBJECT_DESCRIBE("/rest/v1/customobjects/${api_name}/describe.json"),
     GET_ACTIVITY_TYPES("/rest/v1/activities/types.json");
-    private String endpoint;
+    private final String endpoint;
 
     MarketoRESTEndpoint(String endpoint)
     {

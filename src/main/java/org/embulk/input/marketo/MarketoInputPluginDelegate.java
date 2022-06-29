@@ -2,25 +2,25 @@ package org.embulk.input.marketo;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.base.Optional;
 
 import org.embulk.base.restclient.DispatchingRestClientInputPluginDelegate;
 import org.embulk.base.restclient.RestClientInputPluginDelegate;
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigException;
 import org.embulk.input.marketo.delegate.ActivityBulkExtractInputPlugin;
+import org.embulk.input.marketo.delegate.ActivityTypeInputPlugin;
 import org.embulk.input.marketo.delegate.CampaignInputPlugin;
 import org.embulk.input.marketo.delegate.CustomObjectInputPlugin;
 import org.embulk.input.marketo.delegate.LeadBulkExtractInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithListInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithProgramInputPlugin;
-import org.embulk.input.marketo.delegate.ProgramInputPlugin;
 import org.embulk.input.marketo.delegate.ListInputPlugin;
-import org.embulk.input.marketo.delegate.ActivityTypeInputPlugin;
+import org.embulk.input.marketo.delegate.ProgramInputPlugin;
 import org.embulk.input.marketo.rest.MarketoRestClient;
+import org.embulk.util.config.Config;
+import org.embulk.util.config.ConfigDefault;
 
 import java.util.Date;
+import java.util.Optional;
 
 public class MarketoInputPluginDelegate
         extends DispatchingRestClientInputPluginDelegate<MarketoInputPluginDelegate.PluginTask>
@@ -84,7 +84,7 @@ public class MarketoInputPluginDelegate
         LIST(new ListInputPlugin()),
         ACTIVITY_TYPE(new ActivityTypeInputPlugin());
 
-        private RestClientInputPluginDelegate restClientInputPluginDelegate;
+        private final RestClientInputPluginDelegate restClientInputPluginDelegate;
 
         Target(RestClientInputPluginDelegate restClientInputPluginDelegate)
         {

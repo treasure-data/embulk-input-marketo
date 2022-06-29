@@ -10,9 +10,9 @@ import org.eclipse.jetty.client.util.InputStreamResponseListener;
 import org.embulk.input.marketo.exception.MarketoAPIException;
 import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.spi.DataException;
-import org.embulk.spi.Exec;
 import org.embulk.util.retryhelper.jetty92.Jetty92ResponseReader;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,10 +29,10 @@ public class MarketoResponseJetty92EntityReader<T> implements Jetty92ResponseRea
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    private static final Logger LOGGER = Exec.getLogger(MarketoResponseJetty92EntityReader.class);
-    private Long timeout;
+    private static final Logger LOGGER = LoggerFactory.getLogger(MarketoResponseJetty92EntityReader.class);
+    private final Long timeout;
 
-    private JavaType javaType;
+    private final JavaType javaType;
 
     public MarketoResponseJetty92EntityReader(long timeout)
     {
@@ -82,8 +82,7 @@ public class MarketoResponseJetty92EntityReader<T> implements Jetty92ResponseRea
     {
         InputStream inputStream = this.listener.getInputStream();
         try (InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
-            String reponseContent = CharStreams.toString(inputStreamReader);
-            return reponseContent;
+            return CharStreams.toString(inputStreamReader);
         }
     }
 }
