@@ -4,11 +4,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.embulk.base.restclient.jackson.JacksonServiceRecord;
-import org.embulk.base.restclient.jackson.JacksonServiceValue;
 import org.embulk.base.restclient.record.RecordImporter;
 import org.embulk.base.restclient.record.ServiceRecord;
-import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigException;
 import org.embulk.config.TaskReport;
@@ -16,21 +13,16 @@ import org.embulk.input.marketo.CsvTokenizer;
 import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
+import org.embulk.input.marketo.bulk_extract.AllStringJacksonServiceRecord;
 import org.embulk.input.marketo.rest.MarketoRestClient;
-import org.embulk.spi.Column;
-import org.embulk.spi.ColumnVisitor;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
-import org.embulk.spi.time.Timestamp;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
 import org.embulk.util.file.FileInputInputStream;
 import org.embulk.util.file.InputStreamFileInput;
-import org.embulk.util.json.JsonParser;
 import org.embulk.util.text.LineDecoder;
-import org.embulk.util.timestamp.TimestampFormatter;
-import org.msgpack.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +35,6 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -159,7 +150,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     {
         TaskReport taskReport = CONFIG_MAPPER_FACTORY.newTaskReport();
         if (Exec.isPreview()) {
-            return importMockPreviewData(pageBuilder);
+            return MarketoUtils.importMockPreviewData(pageBuilder, PREVIEW_RECORD_LIMIT);
         }
         else {
             try (LineDecoderIterator decoderIterator = getLineDecoderIterator(task)) {
@@ -196,63 +187,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         return csvTokenizer.csvParse();
     }
 
-    /**
-     * This method should be removed when we allow skip preview phase
-     */
-    private TaskReport importMockPreviewData(final PageBuilder pageBuilder)
-    {
-        final JsonParser jsonParser = new JsonParser();
-        Schema schema = pageBuilder.getSchema();
-        for (int i = 1; i <= PREVIEW_RECORD_LIMIT; i++) {
-            final int rowNum = i;
-            schema.visitColumns(new ColumnVisitor()
-            {
-                @Override
-                public void booleanColumn(Column column)
-                {
-                    pageBuilder.setBoolean(column, false);
-                }
-
-                @Override
-                public void longColumn(Column column)
-                {
-                    pageBuilder.setLong(column, 12345L);
-                }
-
-                @Override
-                public void doubleColumn(Column column)
-                {
-                    pageBuilder.setDouble(column, 12345.123);
-                }
-
-                @Override
-                public void stringColumn(Column column)
-                {
-                    if (column.getName().endsWith("Id") || column.getName().equals("id")) {
-                        pageBuilder.setString(column, Integer.toString(rowNum));
-                    }
-                    else {
-                        pageBuilder.setString(column, column.getName() + "_" + rowNum);
-                    }
-                }
-
-                @Override
-                public void timestampColumn(Column column)
-                {
-                    pageBuilder.setTimestamp(column, Timestamp.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis())));
-                }
-
-                @Override
-                public void jsonColumn(Column column)
-                {
-                    pageBuilder.setJson(column, jsonParser.parse("{\"mockKey\":\"mockValue\"}"));
-                }
-            });
-            pageBuilder.addRecord();
-        }
-        return CONFIG_MAPPER_FACTORY.newTaskReport();
-    }
-
     private LineDecoderIterator getLineDecoderIterator(T task)
     {
         final OffsetDateTime fromDate = OffsetDateTime.ofInstant(task.getFromDate().toInstant(), ZoneOffset.UTC);
@@ -271,99 +205,6 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
     }
 
     protected abstract InputStream getExtractedStream(MarketoService service, T task, OffsetDateTime fromDate, OffsetDateTime toDate);
-
-    private static class AllStringJacksonServiceRecord extends JacksonServiceRecord
-    {
-        public AllStringJacksonServiceRecord(ObjectNode record)
-        {
-            super(record);
-        }
-
-        @Override
-        public JacksonServiceValue getValue(ValueLocator locator)
-        {
-            // We know that this thing only contain text.
-            JacksonServiceValue value = super.getValue(locator);
-            return new StringConverterJacksonServiceRecord(value.stringValue());
-        }
-    }
-
-    private static class StringConverterJacksonServiceRecord extends JacksonServiceValue
-    {
-        private final String textValue;
-
-        public StringConverterJacksonServiceRecord(String textValue)
-        {
-            super(null);
-            this.textValue = textValue;
-        }
-
-        @Override
-        public boolean isNull()
-        {
-            return textValue == null || textValue.equals("null");
-        }
-
-        @Override
-        public boolean booleanValue()
-        {
-            return Boolean.parseBoolean(textValue);
-        }
-
-        @Override
-        public double doubleValue()
-        {
-            try {
-                return Double.parseDouble(textValue);
-            }
-            catch (Exception e) {
-                LOGGER.info("skipped to parse Double: " + textValue);
-                return Double.NaN;
-            }
-        }
-
-        @Override
-        public Value jsonValue(JsonParser jsonParser)
-        {
-            try {
-                return jsonParser.parse(textValue);
-            }
-            catch (Exception e) {
-                LOGGER.info("skipped to parse JSON: " + textValue);
-                return jsonParser.parse("{}");
-            }
-        }
-
-        @Override
-        public long longValue()
-        {
-            try {
-                return Long.parseLong(textValue);
-            }
-            catch (Exception e) {
-                LOGGER.info("skipped to parse Long: " + textValue);
-                return Long.MIN_VALUE;
-            }
-        }
-
-        @Override
-        public String stringValue()
-        {
-            return textValue;
-        }
-
-        @Override
-        public Instant timestampValue(TimestampFormatter timestampFormatter)
-        {
-            try {
-                return timestampFormatter.parse(textValue);
-            }
-            catch (Exception e) {
-                LOGGER.info("skipped to parse Timestamp: " + textValue);
-                return null;
-            }
-        }
-    }
 
     private final class LineDecoderIterator implements Iterator<Reader>, AutoCloseable
     {

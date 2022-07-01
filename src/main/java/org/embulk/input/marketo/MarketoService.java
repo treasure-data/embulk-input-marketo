@@ -44,4 +44,8 @@ public interface MarketoService
     Iterable<ObjectNode> getListsByIds(Set<String> ids);
 
     Iterable<ObjectNode> getLists();
+
+    ObjectNode describeProgramMembers();
+
+    File extractProgramMembers(String exportID);
 }

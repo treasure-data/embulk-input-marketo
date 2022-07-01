@@ -13,6 +13,7 @@ embulk-input-marketo is the gem preparing Embulk input plugins for [Marketo](htt
 - Lead by program(all_lead_with_program_id)
 - Campaign(campaign)
 - Assets Programs (program)
+- Program Members (program_members)
 - List (list)
 - Activity Type (activity_type)
 
@@ -191,6 +192,14 @@ Configuration:
 
 Schema type: dynamic schema
 Incremental support: no 
+
+### Program Members configuration parameter
+
+Get Members by Program Ids or All Program.
+
+| name                | required | default value | description                                                                                                           |
+|---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------|
+| **program_ids**     | false    | null          | Import Members by specified Program_ID (comma-separated). If not specified will import all Members by all Program IDs |
 
 ### List
 
