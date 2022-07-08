@@ -10,6 +10,7 @@ import org.embulk.input.marketo.delegate.ActivityBulkExtractInputPlugin;
 import org.embulk.input.marketo.delegate.ActivityTypeInputPlugin;
 import org.embulk.input.marketo.delegate.CampaignInputPlugin;
 import org.embulk.input.marketo.delegate.CustomObjectInputPlugin;
+import org.embulk.input.marketo.delegate.FolderInputPlugin;
 import org.embulk.input.marketo.delegate.LeadBulkExtractInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithListInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithProgramInputPlugin;
@@ -37,7 +38,8 @@ public class MarketoInputPluginDelegate
             CustomObjectInputPlugin.PluginTask,
             ProgramMembersBulkExtractInputPlugin.PluginTask,
             ListInputPlugin.PluginTask,
-            ActivityTypeInputPlugin.PluginTask
+            ActivityTypeInputPlugin.PluginTask,
+            FolderInputPlugin.PluginTask
     {
         @Config("target")
         Target getTarget();
@@ -85,7 +87,8 @@ public class MarketoInputPluginDelegate
         CUSTOM_OBJECT(new CustomObjectInputPlugin()),
         PROGRAM_MEMBERS(new ProgramMembersBulkExtractInputPlugin()),
         LIST(new ListInputPlugin()),
-        ACTIVITY_TYPE(new ActivityTypeInputPlugin());
+        ACTIVITY_TYPE(new ActivityTypeInputPlugin()),
+        FOLDER(new FolderInputPlugin());
 
         private final RestClientInputPluginDelegate restClientInputPluginDelegate;
 

@@ -32,7 +32,8 @@ public enum MarketoRESTEndpoint
     CREATE_PROGRAM_MEMBERS_EXPORT_JOB("/bulk/v1/program/members/export/create.json"),
     START_PROGRAM_MEMBERS_EXPORT_JOB("/bulk/v1/program/members/export/${export_id}/enqueue.json"),
     GET_PROGRAM_MEMBERS_EXPORT_STATUS("/bulk/v1/program/members/export/${export_id}/status.json"),
-    GET_PROGRAM_MEMBERS_EXPORT_RESULT("/bulk/v1/program/members/export/${export_id}/file.json");
+    GET_PROGRAM_MEMBERS_EXPORT_RESULT("/bulk/v1/program/members/export/${export_id}/file.json"),
+    GET_FOLDERS("/rest/asset/v1/folders.json");
     private final String endpoint;
 
     MarketoRESTEndpoint(String endpoint)
