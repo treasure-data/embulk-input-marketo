@@ -294,7 +294,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
         waitExportJobComplete(MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_STATUS, exportId, pollingInterval, waitTimeout);
     }
 
-    private void waitExportJobComplete(MarketoRESTEndpoint marketoRESTEndpoint, String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
+    private ObjectNode waitExportJobComplete(MarketoRESTEndpoint marketoRESTEndpoint, String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
     {
         long waitTime = 0;
         long waitTimeoutMs = waitTimeout * 1000L;
@@ -313,7 +313,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                     case "Completed":
                         logger.info("Total wait time ms is [{}]", waitTime);
                         logger.info("File size is [{}] bytes", objectNode.get("fileSize"));
-                        return;
+                        return objectNode;
                     case "Failed":
                         throw new DataException("Bulk extract job failed exportId: " + exportId + " errorMessage: " + objectNode.get("errorMsg").asText());
                     case "Cancel":
@@ -593,5 +593,39 @@ public class MarketoRestClient extends MarketoBaseRestClient
     public Iterable<ObjectNode> getActivityTypes()
     {
         return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_ACTIVITY_TYPES.getEndpoint(), new ImmutableListMultimap.Builder<String, String>().put(MAX_RETURN, DEFAULT_MAX_RETURN).build(), ObjectNode.class);
+    }
+
+    public ObjectNode describeProgramMembers()
+    {
+        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_PROGRAM_MEMBERS.getEndpoint(), null, null, new MarketoResponseJetty92EntityReader<>(this.readTimeoutMillis));
+        return jsonResponse.getResult().get(0);
+    }
+
+    public String createProgramMembersBulkExtract(List<String> extractFields, int programId)
+    {
+        MarketoBulkExtractRequest marketoBulkExtractRequest = new MarketoBulkExtractRequest();
+        if (extractFields != null) {
+            marketoBulkExtractRequest.setFields(extractFields);
+        }
+        marketoBulkExtractRequest.setFormat("CSV");
+        Map<String, Object> filterMap = new HashMap<>();
+        filterMap.put("programId", programId);
+        marketoBulkExtractRequest.setFilter(filterMap);
+        return sendCreateBulkExtractRequest(marketoBulkExtractRequest, MarketoRESTEndpoint.CREATE_PROGRAM_MEMBERS_EXPORT_JOB);
+    }
+
+    public void startProgramMembersBulkExtract(String exportId)
+    {
+        startBulkExtract(MarketoRESTEndpoint.START_PROGRAM_MEMBERS_EXPORT_JOB, exportId);
+    }
+
+    public ObjectNode waitProgramMembersExportJobComplete(String exportId, int pollingInterval, int waitTimeout) throws InterruptedException
+    {
+        return waitExportJobComplete(MarketoRESTEndpoint.GET_PROGRAM_MEMBERS_EXPORT_STATUS, exportId, pollingInterval, waitTimeout);
+    }
+
+    public InputStream getProgramMemberBulkExtractResult(String exportId, BulkExtractRangeHeader bulkExtractRangeHeader)
+    {
+        return getBulkExtractResult(MarketoRESTEndpoint.GET_PROGRAM_MEMBERS_EXPORT_RESULT, exportId, bulkExtractRangeHeader);
     }
 }

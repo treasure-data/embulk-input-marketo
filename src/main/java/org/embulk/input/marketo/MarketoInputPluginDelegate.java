@@ -15,6 +15,7 @@ import org.embulk.input.marketo.delegate.LeadWithListInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithProgramInputPlugin;
 import org.embulk.input.marketo.delegate.ListInputPlugin;
 import org.embulk.input.marketo.delegate.ProgramInputPlugin;
+import org.embulk.input.marketo.delegate.ProgramMembersBulkExtractInputPlugin;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
@@ -34,6 +35,7 @@ public class MarketoInputPluginDelegate
             ProgramInputPlugin.PluginTask,
             MarketoRestClient.PluginTask,
             CustomObjectInputPlugin.PluginTask,
+            ProgramMembersBulkExtractInputPlugin.PluginTask,
             ListInputPlugin.PluginTask,
             ActivityTypeInputPlugin.PluginTask
     {
@@ -81,6 +83,7 @@ public class MarketoInputPluginDelegate
         ALL_LEAD_WITH_PROGRAM_ID(new LeadWithProgramInputPlugin()),
         PROGRAM(new ProgramInputPlugin()),
         CUSTOM_OBJECT(new CustomObjectInputPlugin()),
+        PROGRAM_MEMBERS(new ProgramMembersBulkExtractInputPlugin()),
         LIST(new ListInputPlugin()),
         ACTIVITY_TYPE(new ActivityTypeInputPlugin());
 

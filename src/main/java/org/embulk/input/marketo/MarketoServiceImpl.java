@@ -256,4 +256,23 @@ public class MarketoServiceImpl implements MarketoService
     {
         return marketoRestClient.getLists();
     }
+
+    @Override
+    public ObjectNode describeProgramMembers()
+    {
+        return marketoRestClient.describeProgramMembers();
+    }
+
+    @Override
+    public File extractProgramMembers(String exportID)
+    {
+        return downloadBulkExtract(new Function<BulkExtractRangeHeader, InputStream>()
+        {
+            @Override
+            public InputStream apply(BulkExtractRangeHeader bulkExtractRangeHeader)
+            {
+                return marketoRestClient.getProgramMemberBulkExtractResult(exportID, bulkExtractRangeHeader);
+            }
+        });
+    }
 }
