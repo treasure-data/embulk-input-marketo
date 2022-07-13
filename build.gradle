@@ -22,7 +22,7 @@ version = {
     if (vd.lastTag != "${tag}") {
         logger.warn "lastTag '${vd.lastTag}' is not '${tag}'"
     }
-    if (vd.commitDistance == 0 && vd.lastTag ==~ /^[0-9]+\.[0-9]+\.[0-9]+(\[.-][.a-zA-Z0-9-]+)?/) {
+    if (vd.commitDistance == 0 && vd.lastTag ==~ /^[0-9]+\.[0-9]+\.[0-9]+([.-][.a-zA-Z0-9-]+)?/) {
         vd.lastTag
     } else {
         "0.0.0.${vd.gitHash}"
