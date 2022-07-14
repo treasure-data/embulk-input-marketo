@@ -16,13 +16,13 @@ group = "com.treasuredata.embulk.plugins"
 description = "Loads records from Marketo."
 version = {
     def baseVersion = "0.6.24"
-    def troccoVersion = "0.0.1"
+    def troccoVersion = "0.1.0"
     def tag = "${baseVersion}-trocco-${troccoVersion}"
     def vd = versionDetails()
     if (vd.lastTag != "${tag}") {
         logger.warn "lastTag '${vd.lastTag}' is not '${tag}'"
     }
-    if (vd.commitDistance == 0 && vd.lastTag ==~ /^[0-9]+\.[0-9]+\.[0-9]+(\[.-][.a-zA-Z0-9-]+)?/) {
+    if (vd.commitDistance == 0 && vd.lastTag ==~ /^[0-9]+\.[0-9]+\.[0-9]+([.-][.a-zA-Z0-9-]+)?/) {
         vd.lastTag
     } else {
         "0.0.0.${vd.gitHash}"

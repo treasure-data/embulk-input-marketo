@@ -628,4 +628,19 @@ public class MarketoRestClient extends MarketoBaseRestClient
     {
         return getBulkExtractResult(MarketoRESTEndpoint.GET_PROGRAM_MEMBERS_EXPORT_RESULT, exportId, bulkExtractRangeHeader);
     }
+
+    public RecordPagingIterable<ObjectNode> getFolders(Optional<String> root, int maxDepth, Optional<String> workspace)
+    {
+        ImmutableListMultimap.Builder<String, String> builder = new ImmutableListMultimap
+                .Builder<String, String>()
+                .put("maxDepth", String.valueOf(maxDepth))
+                .put(MAX_RETURN, DEFAULT_MAX_RETURN);
+        if (root.isPresent()) {
+            builder.put("root", root.get());
+        }
+        if (workspace.isPresent()) {
+            builder.put("workSpace", workspace.get());
+        }
+        return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_FOLDERS.getEndpoint(), builder.build(), ObjectNode.class);
+    }
 }
