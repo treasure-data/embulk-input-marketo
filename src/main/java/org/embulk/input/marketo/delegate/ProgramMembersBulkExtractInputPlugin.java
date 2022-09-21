@@ -229,7 +229,10 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
             }
         };
 
-        return executor.submit(exportTask);
+        Thread exportThread = new Thread(exportTask);
+        exportThread.setDaemon(true);
+
+        return executor.submit(exportThread);
     }
 
     @Override
