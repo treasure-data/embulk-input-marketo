@@ -221,6 +221,59 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
         }
     }
 
+    @VisibleForTesting
+    protected ThreadPoolExecutor createExecutor(PluginTask task)
+    {
+        return (ThreadPoolExecutor) Executors.newFixedThreadPool(task.getNumberConcurrentExportJob());
+    }
+
+    private Future<?> createFutureTask(PluginTask task, RecordImporter recordImporter, PageBuilder pageBuilder, ThreadPoolExecutor executor, MarketoRestClient restClient, List<String> fieldNames, Integer programId)
+    {
+        Runnable exportTask = () -> {
+            String exportJobID = restClient.createProgramMembersBulkExtract(fieldNames, programId);
+            restClient.startProgramMembersBulkExtract(exportJobID);
+            int numberRecord;
+            try {
+                ObjectNode status = restClient.waitProgramMembersExportJobComplete(exportJobID, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
+                numberRecord = status.get("numberOfRecords").asInt();
+            }
+            catch (InterruptedException e) {
+                logger.error("Exception when waiting for export program [{}], job id [{}]", programId, exportJobID, e);
+                throw new DataException(e);
+            }
+            if (numberRecord == 0) {
+                logger.info("Export program [{}], job [{}] have no record.", programId, exportJobID);
+                return;
+            }
+            MarketoService marketoService = new MarketoServiceImpl(restClient);
+            LineDecoder lineDecoder = null;
+            try {
+                InputStream extractedStream = new FileInputStream(marketoService.extractProgramMembers(exportJobID));
+                lineDecoder = LineDecoder.of(new InputStreamFileInput(Exec.getBufferAllocator(), extractedStream), StandardCharsets.UTF_8, null);
+                Iterator<Map<String, String>> csvRecords = new CsvRecordIterator(lineDecoder, task);
+                int imported = 0;
+                while (csvRecords.hasNext()) {
+                    Map<String, String> csvRecord = csvRecords.next();
+                    ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
+                    recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
+                    imported = imported + 1;
+                }
+
+                logger.info("Import data for program [{}], job_id [{}] finish.[{}] records imported/total [{}]", programId, exportJobID, imported, numberRecord);
+            }
+            catch (FileNotFoundException e) {
+                throw new RuntimeException("File export cannot be found", e);
+            }
+            finally {
+                if (lineDecoder != null) {
+                    lineDecoder.close();
+                }
+            }
+        };
+
+        return executor.submit(exportTask);
+    }
+
     @Override
     protected final Iterator<ServiceRecord> getServiceRecords(MarketoService marketoService, PluginTask task)
     {
