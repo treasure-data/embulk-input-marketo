@@ -151,9 +151,10 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
             if (!task.getProgramMemberFields().isPresent() || !task.getExtractedProgramIds().isPresent()) {
                 throw new ConfigException("program_member_fields or extracted_programs are missing.");
             }
-            ThreadPoolExecutor executor = createExecutor(task);
+            final ThreadPoolExecutor executor = createExecutor(task);
+            final MarketoRestClient restClient = createMarketoRestClient(task);
+
             try {
-                final MarketoRestClient restClient = createMarketoRestClient(task);
                 final List<String> fieldNames = new ArrayList<>(task.getProgramMemberFields().get().keySet());
 
                 List<Future> listFutureExportIDs = task.getExtractedProgramIds().get().stream()
@@ -168,9 +169,9 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                         throw new RuntimeException(ex);
                     }
                 }
-                restClient.close();
             }
             finally {
+                restClient.close();
                 if (!executor.isShutdown()) {
                     executor.shutdownNow();
                 }
