@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.embulk.EmbulkTestRuntime;
 import org.embulk.base.restclient.ServiceResponseMapper;
+import org.embulk.base.restclient.record.RecordImporter;
 import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.config.ConfigLoader;
 import org.embulk.config.ConfigSource;
@@ -20,7 +21,13 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.embulk.input.marketo.MarketoUtilsTest.CONFIG_MAPPER;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,6 +36,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -89,5 +97,35 @@ public class ProgramMembersBulkExtractInputPluginTest
         Assert.assertTrue(leadIds.contains(452L));
         Assert.assertTrue(leadIds.contains(453L));
         Assert.assertTrue(leadIds.contains(454L));
+    }
+
+    @Test
+    public void shouldShutdownExecutor()
+    {
+        ThreadPoolExecutor sampleExec = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
+        doReturn(sampleExec).when(bulkExtractInputPlugin).createExecutor(any());
+
+        ProgramMembersBulkExtractInputPlugin.PluginTask task = mock(ProgramMembersBulkExtractInputPlugin.PluginTask.class);
+        doReturn(Optional.of(Arrays.asList(1, 3, 4))).when(task).getExtractedProgramIds();
+
+        Map<String, String> fields = new HashMap<>();
+        fields.put("field1", "value1");
+        fields.put("field2", "value2");
+        doReturn(Optional.of(fields)).when(task).getProgramMemberFields();
+
+        // mimic an unexpected exception during process
+        doThrow(new RuntimeException("Unexpected error")).when(mockMarketoRestclient).createProgramMembersBulkExtract(anyList(), anyInt());
+
+        try {
+            bulkExtractInputPlugin.ingestServiceData(task, mock(RecordImporter.class), 0, mock(PageBuilder.class));
+            Assert.fail("Should not reach here");
+        }
+        catch (RuntimeException e) {
+            //
+        }
+        finally {
+            // the executor should be shutdown properly
+            Assert.assertTrue(sampleExec.isShutdown());
+        }
     }
 }
