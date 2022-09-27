@@ -20,6 +20,11 @@ targetCompatibility = 1.8
 
 def embulkVersion = '0.10.29'
 
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
 dependencies {
     compileOnly "org.embulk:embulk-api:$embulkVersion"
     compileOnly "org.embulk:embulk-spi:$embulkVersion"
