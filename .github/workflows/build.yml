@@ -36,4 +36,4 @@ jobs:
         if: success()
         with:
           name: jacoco
-          path: ./build/reports/jacoco/test
+          path: ./build/reports/coverage
