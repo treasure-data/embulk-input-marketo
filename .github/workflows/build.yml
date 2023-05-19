@@ -21,7 +21,7 @@ jobs:
       - name: Build with testing
         run: ./gradlew check --console rich --info
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: tests
@@ -31,7 +31,7 @@ jobs:
         if: success()
         run: ./gradlew jacocoTestReport
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: success()
         with:
           name: jacoco
