@@ -1,3 +1,6 @@
+## 0.6.26
+- Catch up to Java 11
+
 ## 0.6.25 - 2022-09-21
 - Properly shutdown ThreadExecutor when an unexpected error occurs
 

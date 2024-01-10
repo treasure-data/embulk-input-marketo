@@ -10,7 +10,7 @@ import org.eclipse.jetty.client.util.InputStreamResponseListener;
 import org.embulk.input.marketo.exception.MarketoAPIException;
 import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.spi.DataException;
-import org.embulk.util.retryhelper.jetty92.Jetty92ResponseReader;
+import org.embulk.util.retryhelper.jetty94.Jetty94ResponseReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,26 +23,26 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by tai.khuu on 9/1/17.
  */
-public class MarketoResponseJetty92EntityReader<T> implements Jetty92ResponseReader<MarketoResponse<T>>
+public class MarketoResponseJettyEntityReader<T> implements Jetty94ResponseReader<MarketoResponse<T>>
 {
     private InputStreamResponseListener listener;
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MarketoResponseJetty92EntityReader.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MarketoResponseJettyEntityReader.class);
     private final Long timeout;
 
     private final JavaType javaType;
 
     public static String jsonResponseInvalid = "Exception when parse json content";
 
-    public MarketoResponseJetty92EntityReader(long timeout)
+    public MarketoResponseJettyEntityReader(long timeout)
     {
         this.timeout = timeout;
         javaType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(MarketoResponse.class, MarketoResponse.class, ObjectNode.class);
     }
 
-    public MarketoResponseJetty92EntityReader(long timeout, Class<T> resultClass)
+    public MarketoResponseJettyEntityReader(long timeout, Class<T> resultClass)
     {
         this.listener = new InputStreamResponseListener();
         this.timeout = timeout;

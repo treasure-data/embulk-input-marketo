@@ -17,10 +17,10 @@ import org.embulk.input.marketo.exception.MarketoAPIException;
 import org.embulk.input.marketo.model.MarketoAccessTokenResponse;
 import org.embulk.input.marketo.model.MarketoError;
 import org.embulk.spi.DataException;
-import org.embulk.util.retryhelper.jetty92.Jetty92ResponseReader;
-import org.embulk.util.retryhelper.jetty92.Jetty92RetryHelper;
-import org.embulk.util.retryhelper.jetty92.Jetty92SingleRequester;
-import org.embulk.util.retryhelper.jetty92.StringJetty92ResponseEntityReader;
+import org.embulk.util.retryhelper.jetty94.Jetty94ResponseReader;
+import org.embulk.util.retryhelper.jetty94.Jetty94RetryHelper;
+import org.embulk.util.retryhelper.jetty94.Jetty94SingleRequester;
+import org.embulk.util.retryhelper.jetty94.StringJetty94ResponseEntityReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static org.embulk.input.marketo.rest.MarketoResponseJetty92EntityReader.jsonResponseInvalid;
+import static org.embulk.input.marketo.rest.MarketoResponseJettyEntityReader.jsonResponseInvalid;
 
 /**
  * Marketo base rest client
@@ -59,7 +59,7 @@ public class MarketoBaseRestClient implements AutoCloseable
 
     private int marketoLimitIntervalMillis;
 
-    private Jetty92RetryHelper retryHelper;
+    private Jetty94RetryHelper retryHelper;
 
     protected long readTimeoutMillis;
 
@@ -73,7 +73,7 @@ public class MarketoBaseRestClient implements AutoCloseable
                           Optional<String> partnerApiKey,
                           int marketoLimitIntervalMillis,
                           long readTimeoutMillis,
-                          Jetty92RetryHelper retryHelper)
+                          Jetty94RetryHelper retryHelper)
     {
         this.identityEndPoint = identityEndPoint;
         this.clientId = clientId;
@@ -115,7 +115,7 @@ public class MarketoBaseRestClient implements AutoCloseable
             params.put("partner_id", partnerApiKey.get());
         }
 
-        String response = retryHelper.requestWithRetry(new StringJetty92ResponseEntityReader(readTimeoutMillis), new Jetty92SingleRequester()
+        String response = retryHelper.requestWithRetry(new StringJetty94ResponseEntityReader(readTimeoutMillis), new Jetty94SingleRequester()
         {
             @Override
             public void requestOnce(HttpClient client, Response.Listener responseListener)
@@ -165,12 +165,12 @@ public class MarketoBaseRestClient implements AutoCloseable
         return accessTokenResponse.getAccessToken();
     }
 
-    protected <T> T doGet(final String target, final Map<String, String> headers, final Multimap<String, String> params, Jetty92ResponseReader<T> responseReader)
+    protected <T> T doGet(final String target, final Map<String, String> headers, final Multimap<String, String> params, Jetty94ResponseReader<T> responseReader)
     {
         return doRequestWithWrappedException(target, HttpMethod.GET, headers, params, null, responseReader);
     }
 
-    protected <T> T doPost(final String target, final Map<String, String> headers, final Multimap<String, String> params, final String content, Jetty92ResponseReader<T> responseReader)
+    protected <T> T doPost(final String target, final Map<String, String> headers, final Multimap<String, String> params, final String content, Jetty94ResponseReader<T> responseReader)
     {
         StringContentProvider contentProvider = null;
         if (content != null) {
@@ -179,7 +179,7 @@ public class MarketoBaseRestClient implements AutoCloseable
         return doPost(target, headers, params, responseReader, contentProvider);
     }
 
-    protected <T> T doPost(final String target, final Map<String, String> headers, final Multimap<String, String> params, Jetty92ResponseReader<T> responseReader, final ContentProvider content)
+    protected <T> T doPost(final String target, final Map<String, String> headers, final Multimap<String, String> params, Jetty94ResponseReader<T> responseReader, final ContentProvider content)
     {
         return doRequestWithWrappedException(target, HttpMethod.POST, headers, params, content, responseReader);
     }
@@ -200,7 +200,7 @@ public class MarketoBaseRestClient implements AutoCloseable
         }
     }
 
-    private <T> T doRequestWithWrappedException(final String target, final HttpMethod method, final Map<String, String> headers, final Multimap<String, String> params, final ContentProvider contentProvider, Jetty92ResponseReader<T> responseReader)
+    private <T> T doRequestWithWrappedException(final String target, final HttpMethod method, final Map<String, String> headers, final Multimap<String, String> params, final ContentProvider contentProvider, Jetty94ResponseReader<T> responseReader)
     {
         try {
             return doRequest(target, method, headers, params, contentProvider, responseReader);
@@ -216,9 +216,9 @@ public class MarketoBaseRestClient implements AutoCloseable
         }
     }
 
-    protected <T> T doRequest(final String target, final HttpMethod method, final Map<String, String> headers, final Multimap<String, String> params, final ContentProvider contentProvider, Jetty92ResponseReader<T> responseReader)
+    protected <T> T doRequest(final String target, final HttpMethod method, final Map<String, String> headers, final Multimap<String, String> params, final ContentProvider contentProvider, Jetty94ResponseReader<T> responseReader)
     {
-        return retryHelper.requestWithRetry(responseReader, new Jetty92SingleRequester()
+        return retryHelper.requestWithRetry(responseReader, new Jetty94SingleRequester()
         {
             @Override
             public void requestOnce(HttpClient client, Response.Listener responseListener)
