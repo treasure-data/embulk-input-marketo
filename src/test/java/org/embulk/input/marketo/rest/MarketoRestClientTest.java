@@ -664,7 +664,7 @@ public class MarketoRestClientTest
         ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/folder_response.json")))).get("responses");
         MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
         MarketoResponse<ObjectNode> page2 = OBJECT_MAPPER.readValue(listPages.get(1).toString(), RESPONSE_TYPE);
-        doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_FOLDERS.getEndpoint()), isNull(), any(Multimap.class), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_FOLDERS.getEndpoint()), isNull(), any(Multimap.class), any(MarketoResponseJettyEntityReader.class));
         RecordPagingIterable<ObjectNode> lists = marketoRestClient.getFolders(Optional.empty(), 2, Optional.empty());
         Iterator<ObjectNode> iterator = lists.iterator();
         ObjectNode folder1 = iterator.next();
@@ -675,7 +675,7 @@ public class MarketoRestClientTest
         Assert.assertEquals("folder_test_2_name", folder2.get("name").asText());
         Assert.assertEquals("program_test_1_name", folder3.get("name").asText());
         ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
-        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_FOLDERS.getEndpoint()), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class));
+        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_FOLDERS.getEndpoint()), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJettyEntityReader.class));
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
         ImmutableListMultimap params1 = params.get(0);
         Assert.assertEquals("0", params1.get("offset").get(0));
