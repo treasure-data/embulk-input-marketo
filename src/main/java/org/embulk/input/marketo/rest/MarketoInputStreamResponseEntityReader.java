@@ -10,7 +10,7 @@ import org.eclipse.jetty.client.util.InputStreamResponseListener;
 import org.eclipse.jetty.http.HttpHeader;
 import org.embulk.input.marketo.exception.MarketoAPIException;
 import org.embulk.input.marketo.model.MarketoResponse;
-import org.embulk.util.retryhelper.jetty92.Jetty92ResponseReader;
+import org.embulk.util.retryhelper.jetty94.Jetty94ResponseReader;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by tai.khuu on 9/5/17.
  */
-public class MarketoInputStreamResponseEntityReader implements Jetty92ResponseReader<InputStream>
+public class MarketoInputStreamResponseEntityReader implements Jetty94ResponseReader<InputStream>
 {
     private static final ObjectReader OBJECT_READER = new ObjectMapper().readerFor(new TypeReference<MarketoResponse<ObjectNode>>(){ });
 

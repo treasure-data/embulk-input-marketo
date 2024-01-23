@@ -2,6 +2,7 @@ package org.embulk.input.marketo.delegate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.embulk.base.restclient.ServiceResponseMapper;
 import org.embulk.base.restclient.record.RecordImporter;
@@ -150,75 +151,89 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
             if (!task.getProgramMemberFields().isPresent() || !task.getExtractedProgramIds().isPresent()) {
                 throw new ConfigException("program_member_fields or extracted_programs are missing.");
             }
-            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(task.getNumberConcurrentExportJob());
+            final ThreadPoolExecutor executor = createExecutor(task);
             final MarketoRestClient restClient = createMarketoRestClient(task);
-            final List<String> fieldNames = new ArrayList<>(task.getProgramMemberFields().get().keySet());
 
-            List<Future> listFutureExportIDs = task.getExtractedProgramIds().get().stream()
-                .map(programId -> {
-                    Runnable exportTask = () -> {
-                        String exportJobID = restClient.createProgramMembersBulkExtract(fieldNames, programId);
-                        restClient.startProgramMembersBulkExtract(exportJobID);
-                        int numberRecord;
-                        try {
-                            ObjectNode status = restClient.waitProgramMembersExportJobComplete(exportJobID, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
-                            numberRecord = status.get("numberOfRecords").asInt();
-                        }
-                        catch (InterruptedException e) {
-                            logger.error("Exception when waiting for export program [{}], job id [{}]", programId, exportJobID, e);
-                            throw new DataException(e);
-                        }
-                        if (numberRecord == 0) {
-                            logger.info("Export program [{}], job [{}] have no record.", programId, exportJobID);
-                            return;
-                        }
-                        MarketoService marketoService = new MarketoServiceImpl(restClient);
-                        LineDecoder lineDecoder = null;
-                        try {
-                            InputStream extractedStream = new FileInputStream(marketoService.extractProgramMembers(exportJobID));
-                            lineDecoder = LineDecoder.of(new InputStreamFileInput(Exec.getBufferAllocator(), extractedStream), StandardCharsets.UTF_8, null);
-                            Iterator<Map<String, String>> csvRecords = new CsvRecordIterator(lineDecoder, task);
-                            int imported = 0;
-                            while (csvRecords.hasNext()) {
-                                Map<String, String> csvRecord = csvRecords.next();
-                                ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
-                                recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
-                                imported = imported + 1;
-                            }
+            try {
+                final List<String> fieldNames = new ArrayList<>(task.getProgramMemberFields().get().keySet());
 
-                            logger.info("Import data for program [{}], job_id [{}] finish.[{}] records imported/total [{}]", programId, exportJobID, imported, numberRecord);
-                        }
-                        catch (FileNotFoundException e) {
-                            throw new RuntimeException("File export cannot be found", e);
-                        }
-                        finally {
-                            if (lineDecoder != null) {
-                                lineDecoder.close();
-                            }
-                        }
-                    };
-                    return executor.submit(exportTask);
-                })
-                .collect(Collectors.toList());
+                List<Future> listFutureExportIDs = task.getExtractedProgramIds().get().stream()
+                                                       .map(programId -> createFutureTask(task, recordImporter, pageBuilder, executor, restClient, fieldNames, programId))
+                                                       .collect(Collectors.toList());
 
-            for (Future future : listFutureExportIDs) {
-                try {
-                    future.get();
-                }
-                catch (InterruptedException | ExecutionException ex) {
-                    logger.error("Exception occur. Shutdown execute service.........", ex);
-                    if (executor != null && !executor.isShutdown()) {
-                        executor.shutdownNow();
+                for (Future future : listFutureExportIDs) {
+                    try {
+                        future.get();
                     }
-                    throw new RuntimeException(ex);
+                    catch (InterruptedException | ExecutionException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
             }
-            restClient.close();
-            if (executor != null && !executor.isShutdown()) {
-                executor.shutdownNow();
+            finally {
+                restClient.close();
+                if (!executor.isShutdown()) {
+                    executor.shutdownNow();
+                }
             }
             return taskReport;
         }
+    }
+
+    @VisibleForTesting
+    protected ThreadPoolExecutor createExecutor(PluginTask task)
+    {
+        return (ThreadPoolExecutor) Executors.newFixedThreadPool(task.getNumberConcurrentExportJob());
+    }
+
+    private Future<?> createFutureTask(PluginTask task, RecordImporter recordImporter, PageBuilder pageBuilder, ThreadPoolExecutor executor, MarketoRestClient restClient, List<String> fieldNames, Integer programId)
+    {
+        Runnable exportTask = () -> {
+            String exportJobID = restClient.createProgramMembersBulkExtract(fieldNames, programId);
+            restClient.startProgramMembersBulkExtract(exportJobID);
+            int numberRecord;
+            try {
+                ObjectNode status = restClient.waitProgramMembersExportJobComplete(exportJobID, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
+                numberRecord = status.get("numberOfRecords").asInt();
+            }
+            catch (InterruptedException e) {
+                logger.error("Exception when waiting for export program [{}], job id [{}]", programId, exportJobID, e);
+                throw new DataException(e);
+            }
+            if (numberRecord == 0) {
+                logger.info("Export program [{}], job [{}] have no record.", programId, exportJobID);
+                return;
+            }
+            MarketoService marketoService = new MarketoServiceImpl(restClient);
+            LineDecoder lineDecoder = null;
+            try {
+                InputStream extractedStream = new FileInputStream(marketoService.extractProgramMembers(exportJobID));
+                lineDecoder = LineDecoder.of(new InputStreamFileInput(Exec.getBufferAllocator(), extractedStream), StandardCharsets.UTF_8, null);
+                Iterator<Map<String, String>> csvRecords = new CsvRecordIterator(lineDecoder, task);
+                int imported = 0;
+                while (csvRecords.hasNext()) {
+                    Map<String, String> csvRecord = csvRecords.next();
+                    ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
+                    recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
+                    imported = imported + 1;
+                }
+
+                logger.info("Import data for program [{}], job_id [{}] finish.[{}] records imported/total [{}]", programId, exportJobID, imported, numberRecord);
+            }
+            catch (FileNotFoundException e) {
+                throw new RuntimeException("File export cannot be found", e);
+            }
+            finally {
+                if (lineDecoder != null) {
+                    lineDecoder.close();
+                }
+            }
+        };
+
+        Thread exportThread = new Thread(exportTask);
+        exportThread.setDaemon(true);
+
+        return executor.submit(exportThread);
     }
 
     @Override

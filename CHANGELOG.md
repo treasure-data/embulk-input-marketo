@@ -1,3 +1,9 @@
+## 0.6.26
+- Catch up to Java 11
+
+## 0.6.25 - 2022-09-21
+- Properly shutdown ThreadExecutor when an unexpected error occurs
+
 ## 0.6.24 - 2021-10-19
 - Add retryable in case response data invalid json format
 

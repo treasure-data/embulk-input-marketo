@@ -24,8 +24,8 @@ import org.embulk.spi.type.Types;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
 import org.embulk.util.config.Task;
-import org.embulk.util.retryhelper.jetty92.DefaultJetty92ClientCreator;
-import org.embulk.util.retryhelper.jetty92.Jetty92RetryHelper;
+import org.embulk.util.retryhelper.jetty94.DefaultJetty94ClientCreator;
+import org.embulk.util.retryhelper.jetty94.Jetty94RetryHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,10 +158,10 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 task.getMaxReturn(),
                 task.getReadTimeoutMillis(),
                 task.getMarketoLimitIntervalMilis(),
-                new Jetty92RetryHelper(task.getMaximumRetries(),
+                new Jetty94RetryHelper(task.getMaximumRetries(),
                         task.getInitialRetryIntervalMilis(),
                         task.getMaximumRetriesIntervalMilis(),
-                        new DefaultJetty92ClientCreator(CONNECT_TIMEOUT_IN_MILLIS, IDLE_TIMEOUT_IN_MILLIS)));
+                        new DefaultJetty94ClientCreator(CONNECT_TIMEOUT_IN_MILLIS, IDLE_TIMEOUT_IN_MILLIS)));
     }
 
     public MarketoRestClient(String endPoint,
@@ -174,7 +174,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                              Integer maxReturn,
                              long readTimeoutMilis,
                              int marketoLimitIntervalMilis,
-                             Jetty92RetryHelper retryHelper)
+                             Jetty94RetryHelper retryHelper)
     {
         super(identityEndPoint, clientId, clientSecret, accountId, partnerApiKey, marketoLimitIntervalMilis, readTimeoutMilis, retryHelper);
         this.endPoint = endPoint;
@@ -184,7 +184,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public List<MarketoField> describeLead()
     {
-        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_LEAD.getEndpoint(), null, null, new MarketoResponseJetty92EntityReader<>(this.readTimeoutMillis));
+        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_LEAD.getEndpoint(), null, null, new MarketoResponseJettyEntityReader<>(this.readTimeoutMillis));
         List<MarketoField> marketoFields = new ArrayList<>();
         List<ObjectNode> fields = jsonResponse.getResult();
         for (ObjectNode field : fields) {
@@ -235,7 +235,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
         MarketoResponse<ObjectNode> marketoResponse;
         try {
             logger.info("Send bulk extract request [{}]", request);
-            marketoResponse = doPost(endPoint + endpoint.getEndpoint(), null, null, OBJECT_MAPPER.writeValueAsString(request), new MarketoResponseJetty92EntityReader<>(readTimeoutMillis));
+            marketoResponse = doPost(endPoint + endpoint.getEndpoint(), null, null, OBJECT_MAPPER.writeValueAsString(request), new MarketoResponseJettyEntityReader<>(readTimeoutMillis));
         }
         catch (JsonProcessingException e) {
             logger.error("Encounter exception when deserialize bulk extract request", e);
@@ -263,7 +263,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
     {
         MarketoResponse<ObjectNode> marketoResponse = doPost(endPoint + marketoRESTEndpoint.getEndpoint(
                 new ImmutableMap.Builder<String, String>().put("export_id", exportId).build()), null, null, null,
-                new MarketoResponseJetty92EntityReader<>(readTimeoutMillis));
+                new MarketoResponseJettyEntityReader<>(readTimeoutMillis));
         if (!marketoResponse.isSuccess()) {
             MarketoError error = marketoResponse.getErrors().get(0);
             throw new DataException(String.format("Can't start job for export Job id : %s, error code: %s, error message: %s", exportId, error.getCode(), error.getMessage()));
@@ -301,7 +301,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
         long now = System.currentTimeMillis();
         while (true) {
             MarketoResponse<ObjectNode> marketoResponse = doGet(this.endPoint + marketoRESTEndpoint.getEndpoint(
-                    new ImmutableMap.Builder<String, String>().put("export_id", exportId).build()), null, null, new MarketoResponseJetty92EntityReader<>(readTimeoutMillis));
+                    new ImmutableMap.Builder<String, String>().put("export_id", exportId).build()), null, null, new MarketoResponseJettyEntityReader<>(readTimeoutMillis));
             if (marketoResponse.isSuccess()) {
                 ObjectNode objectNode = marketoResponse.getResult().get(0);
                 String status = objectNode.get("status").asText();
@@ -421,7 +421,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 if (parameters != null) {
                     params.putAll(parameters);
                 }
-                MarketoResponse<T> marketoResponse = doGet(endPoint, null, params.build(), new MarketoResponseJetty92EntityReader<>(readTimeoutMillis, recordClass));
+                MarketoResponse<T> marketoResponse = doGet(endPoint, null, params.build(), new MarketoResponseJettyEntityReader<>(readTimeoutMillis, recordClass));
                 return new RecordPagingIterable.OffsetPage<>(marketoResponse.getResult(), offset + marketoResponse.getResult().size(), marketoResponse.getResult().size() == maxReturn);
             }
         });
@@ -462,7 +462,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 }
                 //Let do GET Disguise in POST here to overcome Marketo URI Too long error
                 FormContentProvider formContentProvider = new FormContentProvider(fields);
-                MarketoResponse<T> marketoResponse = doPost(endPoint, null, params.build(), new MarketoResponseJetty92EntityReader<>(readTimeoutMillis, recordClass), formContentProvider);
+                MarketoResponse<T> marketoResponse = doPost(endPoint, null, params.build(), new MarketoResponseJettyEntityReader<>(readTimeoutMillis, recordClass), formContentProvider);
                 return new RecordPagingIterable.TokenPage<>(marketoResponse.getResult(), marketoResponse.getNextPageToken(), marketoResponse.getNextPageToken() != null);
             }
         });
@@ -492,7 +492,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public List<MarketoField> describeCustomObject(String apiName)
     {
-        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT_DESCRIBE.getEndpoint(new ImmutableMap.Builder().put("api_name", apiName).build()), null, null, new MarketoResponseJetty92EntityReader<>(this.readTimeoutMillis));
+        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.GET_CUSTOM_OBJECT_DESCRIBE.getEndpoint(new ImmutableMap.Builder().put("api_name", apiName).build()), null, null, new MarketoResponseJettyEntityReader<>(this.readTimeoutMillis));
         if (jsonResponse.getResult().size() == 0) {
             throw new ConfigException(String.format("Custom Object %s is not exits.", apiName));
         }
@@ -551,7 +551,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                 if (customObjectFields != null) {
                     params.put(FIELDS, customObjectFields);
                 }
-                MarketoResponse<T> marketoResponse = doGet(endPoint, null, params.build(), new MarketoResponseJetty92EntityReader<>(readTimeoutMillis, recordClass));
+                MarketoResponse<T> marketoResponse = doGet(endPoint, null, params.build(), new MarketoResponseJettyEntityReader<>(readTimeoutMillis, recordClass));
                 String nextToken = "";
                 if (StringUtils.isNotBlank(marketoResponse.getNextPageToken())) {
                     nextToken = marketoResponse.getNextPageToken();
@@ -597,7 +597,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public ObjectNode describeProgramMembers()
     {
-        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_PROGRAM_MEMBERS.getEndpoint(), null, null, new MarketoResponseJetty92EntityReader<>(this.readTimeoutMillis));
+        MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_PROGRAM_MEMBERS.getEndpoint(), null, null, new MarketoResponseJettyEntityReader<>(this.readTimeoutMillis));
         return jsonResponse.getResult().get(0);
     }
 

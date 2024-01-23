@@ -18,7 +18,7 @@ import org.embulk.input.marketo.model.MarketoError;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.model.MarketoResponse;
 import org.embulk.spi.DataException;
-import org.embulk.util.retryhelper.jetty92.Jetty92ResponseReader;
+import org.embulk.util.retryhelper.jetty94.Jetty94ResponseReader;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -98,7 +98,7 @@ public class MarketoRestClientTest
     {
         String leadSchema = new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/lead_describe.json")));
         MarketoResponse<ObjectNode> marketoResponse = OBJECT_MAPPER.readValue(leadSchema, RESPONSE_TYPE);
-        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.DESCRIBE_LEAD.getEndpoint()), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.DESCRIBE_LEAD.getEndpoint()), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
         List<MarketoField> marketoFields = marketoRestClient.describeLead();
         Assert.assertEquals(16, marketoFields.size());
         JavaType marketoFieldType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
@@ -117,7 +117,7 @@ public class MarketoRestClientTest
         bulkExtractResult.set("exportId", new TextNode("bulkExtractId"));
         marketoResponse.setResult(Arrays.asList(bulkExtractResult));
         ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
-        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.CREATE_LEAD_EXTRACT.getEndpoint()), isNull(), isNull(), argumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.CREATE_LEAD_EXTRACT.getEndpoint()), isNull(), isNull(), argumentCaptor.capture(), any(MarketoResponseJettyEntityReader.class));
         String filterField = "filterField";
         String bulkExtractId = marketoRestClient.createLeadBulkExtract(startDate, endDate, Arrays.asList("extract_field1", "extract_field2"), filterField);
         Assert.assertEquals("bulkExtractId", bulkExtractId);
@@ -143,7 +143,7 @@ public class MarketoRestClientTest
         marketoError.setCode("ErrorCode1");
         marketoError.setMessage("Message");
         marketoResponse.setErrors(Arrays.asList(marketoError));
-        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.CREATE_LEAD_EXTRACT.getEndpoint()), isNull(), isNull(), anyString(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.CREATE_LEAD_EXTRACT.getEndpoint()), isNull(), isNull(), anyString(), any(MarketoResponseJettyEntityReader.class));
         String filterField = "filterField";
         try {
             marketoRestClient.createLeadBulkExtract(new Date(), new Date(), Arrays.asList("extract_field1", "extract_field2"), filterField);
@@ -167,7 +167,7 @@ public class MarketoRestClientTest
         bulkExtractResult.set("exportId", new TextNode("bulkExtractId"));
         marketoResponse.setResult(Arrays.asList(bulkExtractResult));
         ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
-        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.CREATE_ACTIVITY_EXTRACT.getEndpoint()), isNull(), isNull(), argumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.CREATE_ACTIVITY_EXTRACT.getEndpoint()), isNull(), isNull(), argumentCaptor.capture(), any(MarketoResponseJettyEntityReader.class));
         String bulkExtractId = marketoRestClient.createActivityExtract(activityTypeIds, startDate, endDate);
         Assert.assertEquals("bulkExtractId", bulkExtractId);
         String postContent = argumentCaptor.getValue();
@@ -184,9 +184,9 @@ public class MarketoRestClientTest
         pathParams.put("export_id", bulkExportId);
         MarketoResponse<ObjectNode> marketoResponse = new MarketoResponse<>();
         marketoResponse.setSuccess(true);
-        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.START_LEAD_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.START_LEAD_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
         marketoRestClient.startLeadBulkExtract(bulkExportId);
-        verify(marketoRestClient, times(1)).doPost(eq(END_POINT + MarketoRESTEndpoint.START_LEAD_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        verify(marketoRestClient, times(1)).doPost(eq(END_POINT + MarketoRESTEndpoint.START_LEAD_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
     }
 
     @Test
@@ -201,12 +201,12 @@ public class MarketoRestClientTest
         marketoError.setCode("ErrorCode");
         marketoError.setMessage("Message");
         marketoResponse.setErrors(Arrays.asList(marketoError));
-        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.START_LEAD_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.START_LEAD_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
         try {
             marketoRestClient.startLeadBulkExtract(bulkExportId);
         }
         catch (DataException ex) {
-            verify(marketoRestClient, times(1)).doPost(eq(END_POINT + MarketoRESTEndpoint.START_LEAD_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+            verify(marketoRestClient, times(1)).doPost(eq(END_POINT + MarketoRESTEndpoint.START_LEAD_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
             return;
         }
         Assert.fail();
@@ -220,9 +220,9 @@ public class MarketoRestClientTest
         pathParams.put("export_id", bulkExportId);
         MarketoResponse<ObjectNode> marketoResponse = new MarketoResponse<>();
         marketoResponse.setSuccess(true);
-        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.START_ACTIVITY_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doPost(eq(END_POINT + MarketoRESTEndpoint.START_ACTIVITY_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
         marketoRestClient.startActitvityBulkExtract(bulkExportId);
-        verify(marketoRestClient, times(1)).doPost(eq(END_POINT + MarketoRESTEndpoint.START_ACTIVITY_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        verify(marketoRestClient, times(1)).doPost(eq(END_POINT + MarketoRESTEndpoint.START_ACTIVITY_EXPORT_JOB.getEndpoint(pathParams)), isNull(), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
     }
 
     @Test
@@ -236,9 +236,9 @@ public class MarketoRestClientTest
         ObjectNode result = mock(ObjectNode.class);
         when(marketoResponse.getResult()).thenReturn(Arrays.asList(result));
         when(result.get("status")).thenReturn(new TextNode("Queued")).thenReturn(new TextNode("Processing")).thenReturn(new TextNode("Completed"));
-        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
         marketoRestClient.waitLeadExportJobComplete(bulkExportId, 1, 4);
-        verify(marketoRestClient, times(3)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        verify(marketoRestClient, times(3)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
     }
 
     @Test
@@ -252,13 +252,13 @@ public class MarketoRestClientTest
         ObjectNode result = mock(ObjectNode.class);
         when(marketoResponse.getResult()).thenReturn(Arrays.asList(result));
         when(result.get("status")).thenReturn(new TextNode("Queued")).thenReturn(new TextNode("Processing"));
-        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
         try {
             marketoRestClient.waitLeadExportJobComplete(bulkExportId, 2, 4);
         }
         catch (DataException e) {
             Assert.assertTrue(e.getMessage().contains("Job timeout exception"));
-            verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+            verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
             return;
         }
         Assert.fail();
@@ -276,14 +276,14 @@ public class MarketoRestClientTest
         when(marketoResponse.getResult()).thenReturn(Arrays.asList(result));
         when(result.get("status")).thenReturn(new TextNode("Queued")).thenReturn(new TextNode("Failed"));
         when(result.get("errorMsg")).thenReturn(new TextNode("ErrorMessage"));
-        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
         try {
             marketoRestClient.waitLeadExportJobComplete(bulkExportId, 1, 4);
         }
         catch (DataException e) {
             Assert.assertTrue(e.getMessage().contains("Bulk extract job failed"));
             Assert.assertTrue(e.getMessage().contains("ErrorMessage"));
-            verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+            verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_LEAD_EXPORT_STATUS.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
             return;
         }
         Assert.fail();
@@ -300,9 +300,9 @@ public class MarketoRestClientTest
         ObjectNode mockObjectNode = mock(ObjectNode.class);
         when(marketoResponse.getResult()).thenReturn(Arrays.asList(mockObjectNode));
         when(mockObjectNode.get("status")).thenReturn(new TextNode("Completed"));
-        doReturn(marketoResponse).when(marketoRestClient).doGet(anyString(), isNull(), isNull(), any(Jetty92ResponseReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doGet(anyString(), isNull(), isNull(), any(Jetty94ResponseReader.class));
         marketoRestClient.waitActitvityExportJobComplete(exportId, 1, 3);
-        verify(marketoRestClient, times(1)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_STATUS.getEndpoint(pathParamMap)), isNull(), isNull(), any(Jetty92ResponseReader.class));
+        verify(marketoRestClient, times(1)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_ACTIVITY_EXPORT_STATUS.getEndpoint(pathParamMap)), isNull(), isNull(), any(Jetty94ResponseReader.class));
     }
 
     @Test
@@ -340,7 +340,7 @@ public class MarketoRestClientTest
         Assert.assertEquals("Test list 2", list2.get("name").asText());
         ArgumentCaptor<Multimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(Multimap.class);
         ArgumentCaptor<FormContentProvider> formContentProviderArgumentCaptor = ArgumentCaptor.forClass(FormContentProvider.class);
-        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LISTS.getEndpoint()), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class), formContentProviderArgumentCaptor.capture());
+        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LISTS.getEndpoint()), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJettyEntityReader.class), formContentProviderArgumentCaptor.capture());
         List<Multimap> params = immutableListMultimapArgumentCaptor.getAllValues();
         Multimap params1 = params.get(0);
         Assert.assertEquals("GET", params1.get("_method").iterator().next());
@@ -353,7 +353,7 @@ public class MarketoRestClientTest
         ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/program_response.json")))).get("responses");
         MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
         MarketoResponse<ObjectNode> page2 = OBJECT_MAPPER.readValue(listPages.get(1).toString(), RESPONSE_TYPE);
-        doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), isNull(), any(Multimap.class), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), isNull(), any(Multimap.class), any(MarketoResponseJettyEntityReader.class));
         RecordPagingIterable<ObjectNode> lists = marketoRestClient.getPrograms();
         Iterator<ObjectNode> iterator = lists.iterator();
         ObjectNode program1 = iterator.next();
@@ -364,7 +364,7 @@ public class MarketoRestClientTest
         Assert.assertEquals("TD Output Test Program", program2.get("name").asText());
         Assert.assertEquals("Bill_progream", program3.get("name").asText());
         ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
-        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class));
+        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJettyEntityReader.class));
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
         ImmutableListMultimap params1 = params.get(0);
         Assert.assertEquals("0", params1.get("offset").get(0));
@@ -378,7 +378,7 @@ public class MarketoRestClientTest
         ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream(fixtureName)))).get("responses");
         MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
         MarketoResponse<ObjectNode> page2 = OBJECT_MAPPER.readValue(listPages.get(1).toString(), RESPONSE_TYPE);
-        doReturn(page1).doReturn(page2).when(marketoRestClient).doPost(eq(mockEndpoint), isNull(), any(Multimap.class), any(MarketoResponseJetty92EntityReader.class), any(FormContentProvider.class));
+        doReturn(page1).doReturn(page2).when(marketoRestClient).doPost(eq(mockEndpoint), isNull(), any(Multimap.class), any(MarketoResponseJettyEntityReader.class), any(FormContentProvider.class));
     }
 
     @Test
@@ -397,7 +397,7 @@ public class MarketoRestClientTest
         Assert.assertEquals("Tai", lead2.get("firstName").asText());
         ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
         ArgumentCaptor<FormContentProvider> formContentProviderArgumentCaptor = ArgumentCaptor.forClass(FormContentProvider.class);
-        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LEADS_BY_PROGRAM.getEndpoint(pathParamPath)), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class), formContentProviderArgumentCaptor.capture());
+        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LEADS_BY_PROGRAM.getEndpoint(pathParamPath)), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJettyEntityReader.class), formContentProviderArgumentCaptor.capture());
         String formContent = fromContentProviderToString(formContentProviderArgumentCaptor.getValue());
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
         Multimap params1 = params.get(0);
@@ -432,7 +432,7 @@ public class MarketoRestClientTest
         Assert.assertEquals("John10094", lead2.get("firstName").asText());
         ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
         ArgumentCaptor<FormContentProvider> formContentProviderArgumentCaptor = ArgumentCaptor.forClass(FormContentProvider.class);
-        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LEADS_BY_LIST.getEndpoint(pathParamPath)), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class), formContentProviderArgumentCaptor.capture());
+        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LEADS_BY_LIST.getEndpoint(pathParamPath)), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJettyEntityReader.class), formContentProviderArgumentCaptor.capture());
         String formContent = fromContentProviderToString(formContentProviderArgumentCaptor.getValue());
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
         Multimap params1 = params.get(0);
@@ -453,7 +453,7 @@ public class MarketoRestClientTest
         Assert.assertEquals("Clicks Link in Email", campaign2.get("name").asText());
         ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
         ArgumentCaptor<FormContentProvider> formContentProviderArgumentCaptor = ArgumentCaptor.forClass(FormContentProvider.class);
-        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_CAMPAIGN.getEndpoint()), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJetty92EntityReader.class), formContentProviderArgumentCaptor.capture());
+        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_CAMPAIGN.getEndpoint()), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJettyEntityReader.class), formContentProviderArgumentCaptor.capture());
         String content = fromContentProviderToString(formContentProviderArgumentCaptor.getValue());
 
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
@@ -476,7 +476,7 @@ public class MarketoRestClientTest
                         eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS_BY_TAG.getEndpoint()),
                         ArgumentMatchers.isNull(),
                         any(Multimap.class),
-                        any(MarketoResponseJetty92EntityReader.class));
+                        any(MarketoResponseJettyEntityReader.class));
         Iterable<ObjectNode> lists = marketoRestClient.getProgramsByTag(tagType, tagValue);
         Iterator<ObjectNode> iterator = lists.iterator();
         ObjectNode program1 = iterator.next();
@@ -492,7 +492,7 @@ public class MarketoRestClientTest
                         eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS_BY_TAG.getEndpoint()),
                         ArgumentMatchers.isNull(),
                         immutableListMultimapArgumentCaptor.capture(),
-                        any(MarketoResponseJetty92EntityReader.class));
+                        any(MarketoResponseJettyEntityReader.class));
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
 
         ImmutableListMultimap params1 = params.get(0);
@@ -518,7 +518,7 @@ public class MarketoRestClientTest
                         eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()),
                         ArgumentMatchers.isNull(),
                         any(Multimap.class),
-                        any(MarketoResponseJetty92EntityReader.class));
+                        any(MarketoResponseJettyEntityReader.class));
         OffsetDateTime earliestUpdatedAt = OffsetDateTime.now().minusDays(10);
         OffsetDateTime latestUpdatedAt = earliestUpdatedAt.plusDays(5);
         String filterType = "filter1";
@@ -540,7 +540,7 @@ public class MarketoRestClientTest
                         eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()),
                         ArgumentMatchers.isNull(),
                         immutableListMultimapArgumentCaptor.capture(),
-                        any(MarketoResponseJetty92EntityReader.class));
+                        any(MarketoResponseJettyEntityReader.class));
         List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
 
@@ -568,7 +568,7 @@ public class MarketoRestClientTest
         String apiName = "custom_object";
         Map<String, String> pathParams = new HashMap<>();
         pathParams.put("api_name", apiName);
-        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_CUSTOM_OBJECT_DESCRIBE.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(marketoResponse).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_CUSTOM_OBJECT_DESCRIBE.getEndpoint(pathParams)), isNull(), isNull(), any(MarketoResponseJettyEntityReader.class));
         List<MarketoField> marketoFields = marketoRestClient.describeCustomObject(apiName);
         Assert.assertEquals(16, marketoFields.size());
         JavaType marketoFieldType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
@@ -585,7 +585,7 @@ public class MarketoRestClientTest
 
         ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/custom_object_response.json")))).get("responses");
         MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
-        doReturn(page1).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(pathParams)), isNull(), any(ImmutableListMultimap.class), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(page1).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_CUSTOM_OBJECT.getEndpoint(pathParams)), isNull(), any(ImmutableListMultimap.class), any(MarketoResponseJettyEntityReader.class));
         RecordPagingIterable<ObjectNode> pages = (RecordPagingIterable<ObjectNode>) marketoRestClient.getCustomObject(apiName, "id", null, 1, 2);
         Iterator<ObjectNode> iterator = pages.iterator();
         ObjectNode customObject1 = iterator.next();
@@ -605,7 +605,7 @@ public class MarketoRestClientTest
         ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/program_response.json")))).get("responses");
         MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
         MarketoResponse<ObjectNode> page2 = OBJECT_MAPPER.readValue(listPages.get(1).toString(), RESPONSE_TYPE);
-        doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), isNull(), any(Multimap.class), any(MarketoResponseJetty92EntityReader.class));
+        doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), isNull(), any(Multimap.class), any(MarketoResponseJettyEntityReader.class));
         RecordPagingIterable<ObjectNode> lists = marketoRestClient.getProgramsByIds(ids);
         Iterator<ObjectNode> iterator = lists.iterator();
         ObjectNode program1 = iterator.next();
@@ -617,7 +617,7 @@ public class MarketoRestClientTest
         Assert.assertEquals("Bill_progream", program3.get("name").asText());
 
         ArgumentCaptor<ImmutableListMultimap> paramCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
-        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), isNull(), paramCaptor.capture(), any(MarketoResponseJetty92EntityReader.class));
+        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_PROGRAMS.getEndpoint()), isNull(), paramCaptor.capture(), any(MarketoResponseJettyEntityReader.class));
 
         List<ImmutableListMultimap> params = paramCaptor.getAllValues();
 
@@ -649,7 +649,7 @@ public class MarketoRestClientTest
 
         ArgumentCaptor<ImmutableListMultimap> paramsCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
         ArgumentCaptor<FormContentProvider> formCaptor = ArgumentCaptor.forClass(FormContentProvider.class);
-        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LISTS.getEndpoint()), isNull(), paramsCaptor.capture(), any(MarketoResponseJetty92EntityReader.class), formCaptor.capture());
+        verify(marketoRestClient, times(2)).doPost(eq(END_POINT + MarketoRESTEndpoint.GET_LISTS.getEndpoint()), isNull(), paramsCaptor.capture(), any(MarketoResponseJettyEntityReader.class), formCaptor.capture());
 
         ImmutableListMultimap params = paramsCaptor.getValue();
         Assert.assertEquals("GET", params.get("_method").iterator().next());
