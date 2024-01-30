@@ -215,6 +215,7 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                 while (csvRecords.hasNext()) {
                     Map<String, String> csvRecord = csvRecords.next();
                     ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
+                    // MEMO: pageBuilderがスレッドアンセーフなために排他制御を利用する
                     synchronized (pageBuilderLock) {
                         recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
                     }
