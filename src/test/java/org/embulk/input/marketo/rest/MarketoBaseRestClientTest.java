@@ -59,7 +59,7 @@ public class MarketoBaseRestClientTest
     public void prepare()
     {
         mockJetty94 = Mockito.mock(Jetty94RetryHelper.class);
-        marketoBaseRestClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.empty(), MARKETO_LIMIT_INTERVAL_MILIS, 60000, mockJetty94);
+        marketoBaseRestClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", "accountId", Optional.empty(), MARKETO_LIMIT_INTERVAL_MILIS, 60000, mockJetty94);
     }
 
     @Test
@@ -122,6 +122,7 @@ public class MarketoBaseRestClientTest
         MarketoBaseRestClient restClient = Mockito.spy(new MarketoBaseRestClient("identityEndPoint",
                 "clientId",
                 "clientSecret",
+                "accountId",
                 Optional.of(partnerId),
                 MARKETO_LIMIT_INTERVAL_MILIS,
                 60000,
@@ -180,7 +181,7 @@ public class MarketoBaseRestClientTest
         Mockito.doThrow(exception).when(request).send(Mockito.any(Response.Listener.class));
 
         Jetty94RetryHelper retryHelper = new Jetty94RetryHelper(1, 1, 1, clientCreator);
-        final MarketoBaseRestClient restClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.empty(), MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper);
+        final MarketoBaseRestClient restClient = new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", "accountId", Optional.empty(), MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper);
 
         // calling method should wrap the HttpResponseException by ConfigException
         Assert.assertThrows(ConfigException.class, restClient::getAccessToken);
@@ -217,7 +218,7 @@ public class MarketoBaseRestClientTest
         Mockito.doThrow(exception).when(request).send(Mockito.any(Response.Listener.class));
 
         Jetty94RetryHelper retryHelper = new Jetty94RetryHelper(1, 1, 1, clientCreator);
-        final MarketoBaseRestClient restClient = Mockito.spy(new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", Optional.empty(), MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper));
+        final MarketoBaseRestClient restClient = Mockito.spy(new MarketoBaseRestClient("identityEndPoint", "clientId", "clientSecret", "accountId", Optional.empty(), MARKETO_LIMIT_INTERVAL_MILIS, 1000, retryHelper));
         Mockito.doReturn("test_access_token").when(restClient).getAccessToken();
 
         return restClient;

@@ -1,5 +1,7 @@
 package org.embulk.input.marketo;
 
+import com.fasterxml.jackson.core.SerializableString;
+import com.fasterxml.jackson.core.io.CharacterEscapes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
@@ -16,6 +18,7 @@ import org.embulk.spi.Column;
 import org.embulk.spi.ColumnVisitor;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
+import org.embulk.spi.time.Timestamp;
 import org.embulk.util.json.JsonParser;
 import org.embulk.util.retryhelper.RetryExecutor;
 import org.embulk.util.retryhelper.RetryGiveupException;
@@ -31,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
@@ -42,7 +46,7 @@ public class MarketoUtils
 {
     public static final String MARKETO_DATE_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S%z";
     public static final String MARKETO_DATE_FORMAT = "%Y-%m-%d";
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    public static final ObjectMapper OBJECT_MAPPER = getObjectMapper();
     public static final Function<ObjectNode, ServiceRecord> TRANSFORM_OBJECT_TO_JACKSON_SERVICE_RECORD_FUNCTION = new Function<ObjectNode, ServiceRecord>()
     {
         @Nullable
@@ -61,6 +65,35 @@ public class MarketoUtils
 
     private MarketoUtils()
     {
+    }
+
+    private static ObjectMapper getObjectMapper()
+    {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.getFactory().setCharacterEscapes(new CharacterEscapes() {
+
+            private final int[] escapeCodes;
+
+            {
+                escapeCodes = standardAsciiEscapesForJSON();
+                escapeCodes['\''] = CharacterEscapes.ESCAPE_STANDARD;
+                escapeCodes['/']  = CharacterEscapes.ESCAPE_STANDARD;
+                escapeCodes['\n'] = CharacterEscapes.ESCAPE_STANDARD;
+            }
+
+            @Override
+            public int[] getEscapeCodesForAscii()
+            {
+              return escapeCodes;
+            }
+
+            @Override
+            public SerializableString getEscapeSequence(int ch)
+            {
+              return null;
+            }
+          });
+        return new ObjectMapper();
     }
 
     public static ServiceResponseMapper<? extends ValueLocator> buildDynamicResponseMapper(String prefix, List<MarketoField> columns)
@@ -94,7 +127,7 @@ public class MarketoUtils
 
     public static String buildColumnName(String prefix, String columnName)
     {
-        return prefix + "_" + columnName;
+        return prefix.isEmpty() ? columnName : prefix + "_" + columnName;
     }
 
     public static List<DateRange> sliceRange(OffsetDateTime fromDate, OffsetDateTime toDate, int rangeSize)
@@ -112,13 +145,19 @@ public class MarketoUtils
         return ranges;
     }
 
-    public static String getIdentityEndPoint(String accountId)
+    public static String getIdentityEndPoint(String accountId, Optional<String> endpoint)
     {
+        if (endpoint.isPresent()) {
+            return endpoint.get() + "/identity";
+        }
         return "https://" + accountId.trim() + ".mktorest.com/identity";
     }
 
-    public static String getEndPoint(String accountID)
+    public static String getEndPoint(String accountID, Optional<String> endpoint)
     {
+        if (endpoint.isPresent()) {
+            return endpoint.get();
+        }
         return "https://" + accountID.trim() + ".mktorest.com";
     }
 
@@ -250,13 +289,13 @@ public class MarketoUtils
                 @Override
                 public void stringColumn(Column column)
                 {
-                    pageBuilder.setString(column, column.getName() + "_" + rowNum);
+                    pageBuilder.setString(column, column.getName().endsWith("Id") || column.getName().equals("id") ? Integer.toString(rowNum) : column.getName() + "_" + rowNum);
                 }
 
                 @Override
                 public void timestampColumn(Column column)
                 {
-                    pageBuilder.setTimestamp(column, Instant.ofEpochMilli(System.currentTimeMillis()));
+                    pageBuilder.setTimestamp(column, Timestamp.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis())));
                 }
 
                 @Override

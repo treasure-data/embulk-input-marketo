@@ -7,11 +7,14 @@ import org.embulk.base.restclient.DispatchingRestClientInputPluginDelegate;
 import org.embulk.base.restclient.RestClientInputPluginDelegate;
 import org.embulk.config.ConfigException;
 import org.embulk.input.marketo.delegate.ActivityBulkExtractInputPlugin;
+import org.embulk.input.marketo.delegate.ActivityTypeInputPlugin;
 import org.embulk.input.marketo.delegate.CampaignInputPlugin;
 import org.embulk.input.marketo.delegate.CustomObjectInputPlugin;
+import org.embulk.input.marketo.delegate.FolderInputPlugin;
 import org.embulk.input.marketo.delegate.LeadBulkExtractInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithListInputPlugin;
 import org.embulk.input.marketo.delegate.LeadWithProgramInputPlugin;
+import org.embulk.input.marketo.delegate.ListInputPlugin;
 import org.embulk.input.marketo.delegate.ProgramInputPlugin;
 import org.embulk.input.marketo.delegate.ProgramMembersBulkExtractInputPlugin;
 import org.embulk.input.marketo.rest.MarketoRestClient;
@@ -33,7 +36,10 @@ public class MarketoInputPluginDelegate
             ProgramInputPlugin.PluginTask,
             MarketoRestClient.PluginTask,
             CustomObjectInputPlugin.PluginTask,
-            ProgramMembersBulkExtractInputPlugin.PluginTask
+            ProgramMembersBulkExtractInputPlugin.PluginTask,
+            ListInputPlugin.PluginTask,
+            ActivityTypeInputPlugin.PluginTask,
+            FolderInputPlugin.PluginTask
     {
         @Config("target")
         Target getTarget();
@@ -79,7 +85,10 @@ public class MarketoInputPluginDelegate
         ALL_LEAD_WITH_PROGRAM_ID(new LeadWithProgramInputPlugin()),
         PROGRAM(new ProgramInputPlugin()),
         CUSTOM_OBJECT(new CustomObjectInputPlugin()),
-        PROGRAM_MEMBERS(new ProgramMembersBulkExtractInputPlugin());
+        PROGRAM_MEMBERS(new ProgramMembersBulkExtractInputPlugin()),
+        LIST(new ListInputPlugin()),
+        ACTIVITY_TYPE(new ActivityTypeInputPlugin()),
+        FOLDER(new FolderInputPlugin());
 
         private final RestClientInputPluginDelegate restClientInputPluginDelegate;
 

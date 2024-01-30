@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
@@ -66,7 +67,9 @@ public class MarketoRestClientTest
 
     private static final String TEST_CLIENT_ID = "test_client_id";
 
-    private static final String END_POINT = MarketoUtils.getEndPoint(TEST_ACCOUNT_ID);
+    private static final Optional<String> TEST_ENDPOINT = Optional.empty();
+
+    private static final String END_POINT = MarketoUtils.getEndPoint(TEST_ACCOUNT_ID, TEST_ENDPOINT);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
@@ -653,5 +656,31 @@ public class MarketoRestClientTest
 
         FormContentProvider form = formCaptor.getValue();
         Assert.assertEquals("nextPageToken=GWP55GLCVCZLPE6SS7OCG5IEXQ%3D%3D%3D%3D%3D%3D&id=123%2C456&batchSize=300", fromContentProviderToString(form));
+    }
+
+    @Test
+    public void getFolders() throws Exception
+    {
+        ArrayNode listPages = (ArrayNode) OBJECT_MAPPER.readTree(new String(ByteStreams.toByteArray(this.getClass().getResourceAsStream("/fixtures/folder_response.json")))).get("responses");
+        MarketoResponse<ObjectNode> page1 = OBJECT_MAPPER.readValue(listPages.get(0).toString(), RESPONSE_TYPE);
+        MarketoResponse<ObjectNode> page2 = OBJECT_MAPPER.readValue(listPages.get(1).toString(), RESPONSE_TYPE);
+        doReturn(page1).doReturn(page2).when(marketoRestClient).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_FOLDERS.getEndpoint()), isNull(), any(Multimap.class), any(MarketoResponseJettyEntityReader.class));
+        RecordPagingIterable<ObjectNode> lists = marketoRestClient.getFolders(Optional.empty(), 2, Optional.empty());
+        Iterator<ObjectNode> iterator = lists.iterator();
+        ObjectNode folder1 = iterator.next();
+        ObjectNode folder2 = iterator.next();
+        ObjectNode folder3 = iterator.next();
+        Assert.assertFalse(iterator.hasNext());
+        Assert.assertEquals("folder_test_1_name", folder1.get("name").asText());
+        Assert.assertEquals("folder_test_2_name", folder2.get("name").asText());
+        Assert.assertEquals("program_test_1_name", folder3.get("name").asText());
+        ArgumentCaptor<ImmutableListMultimap> immutableListMultimapArgumentCaptor = ArgumentCaptor.forClass(ImmutableListMultimap.class);
+        verify(marketoRestClient, times(2)).doGet(eq(END_POINT + MarketoRESTEndpoint.GET_FOLDERS.getEndpoint()), isNull(), immutableListMultimapArgumentCaptor.capture(), any(MarketoResponseJettyEntityReader.class));
+        List<ImmutableListMultimap> params = immutableListMultimapArgumentCaptor.getAllValues();
+        ImmutableListMultimap params1 = params.get(0);
+        Assert.assertEquals("0", params1.get("offset").get(0));
+        Assert.assertEquals("2", params1.get("maxReturn").get(0));
+        ImmutableListMultimap params2 = params.get(1);
+        Assert.assertEquals("2", params2.get("offset").get(0));
     }
 }

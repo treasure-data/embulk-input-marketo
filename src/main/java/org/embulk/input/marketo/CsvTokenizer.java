@@ -3,6 +3,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.Preconditions;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.embulk.config.ConfigException;
 import org.embulk.spi.DataException;
 import org.embulk.util.config.Config;
@@ -10,11 +12,19 @@ import org.embulk.util.config.ConfigDefault;
 import org.embulk.util.config.Task;
 import org.embulk.util.text.LineDecoder;
 import org.embulk.util.text.Newline;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +34,8 @@ import java.util.Optional;
  */
 public class CsvTokenizer
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CsvTokenizer.class);
+
     enum RecordState
     {
         NOT_END, END,
@@ -128,6 +140,58 @@ public class CsvTokenizer
         this.commentLineMarker = commentLineMarker;
         this.input = input;
         this.nullStringOrNull = nullStringOrNull;
+    }
+
+    private Reader inputStream;
+
+    public CsvTokenizer(Reader inputStream)
+    {
+        this.inputStream = inputStream;
+        this.delimiterChar = 0; // Unused
+        this.delimiterFollowingString = null; // Unused
+        this.quote = 0; // Unused
+        this.escape = 0; // Unused
+        this.newline = null; // Unused;
+        this.trimIfNotQuoted = false; // Unused
+        this.maxQuotedSizeLimit = 0; // Unused
+        this.commentLineMarker = null; // Unused
+        this.input = null; // Unused
+        this.nullStringOrNull = null; // Unused
+    }
+
+    public CSVParser csvParse()
+    {
+        try {
+            String path = String.format("tmp_%d.csv", Calendar.getInstance().getTimeInMillis());
+            File file = new File(path);
+            FileWriter filewriter = new FileWriter(file);
+
+            LOGGER.info("create tmp file: " + path);
+
+            BufferedReader b = new BufferedReader(inputStream);
+            String line = b.readLine();
+            int count = 0;
+            while (true) {
+                filewriter.write(line);
+                line = b.readLine();
+                if (line == null) {
+                    break;
+                }
+                filewriter.write("\r\n");
+                count += 1;
+                if (count % 10000 == 0) {
+                    LOGGER.info("import record count: " + count);
+                }
+            }
+            filewriter.close();
+            inputStream.close();
+
+            CSVParser csvParser = CSVParser.parse(file, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withFirstRecordAsHeader());
+            return csvParser;
+        }
+        catch (IOException e) {
+            throw new InvalidValueException(e.getMessage());
+        }
     }
 
     public long getCurrentLineNumber()
@@ -434,7 +498,7 @@ public class CsvTokenizer
                     else if (isSpace(c)) {
                         // column has trailing spaces and quoted. TODO should this be rejected?
                     } else {
-                        throw new InvalidValueException(String.format("Unexpected extra character '%c' after a value quoted by '%c'", c, quote));
+                        columnState = ColumnState.QUOTED_VALUE;
                     }
                     break;
 

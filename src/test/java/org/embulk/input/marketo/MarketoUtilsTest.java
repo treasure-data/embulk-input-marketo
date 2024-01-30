@@ -13,6 +13,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -60,20 +61,30 @@ public class MarketoUtilsTest
     {
         String columnName = MarketoUtils.buildColumnName("prefix", "columnName");
         assertEquals("prefix_columnName", columnName);
+        String noPrefixColumn = MarketoUtils.buildColumnName("", "columnName");
+        assertEquals("columnName", noPrefixColumn);
     }
 
     @Test
     public void getIdentityEndPoint()
     {
-        String identityEndPoint = MarketoUtils.getIdentityEndPoint("accountId");
+        Optional<String> endpoint = Optional.empty();
+        String identityEndPoint = MarketoUtils.getIdentityEndPoint("accountId", endpoint);
         assertEquals("https://accountId.mktorest.com/identity", identityEndPoint);
+        Optional<String> endpoint2 = Optional.of("endpoint");
+        String identityEndPointUsingEndpoint = MarketoUtils.getIdentityEndPoint("accountId", endpoint2);
+        assertEquals("endpoint/identity", identityEndPointUsingEndpoint);
     }
 
     @Test
     public void getEndPoint()
     {
-        String endPoint = MarketoUtils.getEndPoint("accountId");
+        Optional<String> endpoint = Optional.empty();
+        String endPoint = MarketoUtils.getEndPoint("accountId", endpoint);
         assertEquals("https://accountId.mktorest.com", endPoint);
+        Optional<String> endpoint2 = Optional.of("endpoint");
+        String endPointUsingEndpoint = MarketoUtils.getEndPoint("accountId", endpoint2);
+        assertEquals("endpoint", endPointUsingEndpoint);
     }
 
     @Test

@@ -1,0 +1,68 @@
+[
+  {
+    "name": "folder_test_1_name",
+    "description": "",
+    "createdAt": "2022-05-30T10:01:40Z+0000",
+    "updatedAt": "2022-05-30T10:01:40Z+0000",
+    "url": "https://app-sjdemo1.marketo.com/#MF1001A1",
+    "folderId": {
+      "id": 1001,
+      "type": "Folder"
+    },
+    "folderType": "Marketing Folder",
+    "parent": {
+      "id": 1000,
+      "type": "Folder"
+    },
+    "path": "/Marketing Activities/Default/folder_test_1_name",
+    "isArchive": false,
+    "isSystem": false,
+    "accessZoneId": 1011,
+    "workspace": "Default",
+    "id": 1001
+  },
+  {
+    "name": "folder_test_2_name",
+    "description": "",
+    "createdAt": "2022-07-08T06:56:01Z+0000",
+    "updatedAt": "2022-07-08T06:56:01Z+0000",
+    "url": "https://app-sjdemo1.marketo.com/#MF1002A1",
+    "folderId": {
+      "id": 1002,
+      "type": "Folder"
+    },
+    "folderType": "Marketing Folder",
+    "parent": {
+      "id": 1001,
+      "type": "Folder"
+    },
+    "path": "/Marketing Activities/Default/folder_test_1_name/folder_test_2_name",
+    "isArchive": false,
+    "isSystem": false,
+    "accessZoneId": 1011,
+    "workspace": "Default",
+    "id": 1002
+  },
+  {
+    "name": "program_test_1_name",
+    "description": "",
+    "createdAt": "2022-06-01T01:58:52Z+0000",
+    "updatedAt": "2022-06-01T01:58:52Z+0000",
+    "url": "https://app-sjdemo1.marketo.com/#PG2001A1",
+    "folderId": {
+      "id": 2001,
+      "type": "Program"
+    },
+    "folderType": "Marketing Program",
+    "parent": {
+      "id": 1001,
+      "type": "Folder"
+    },
+    "path": "/Marketing Activities/Default/folder_test_1_name/program_test_1_name",
+    "isArchive": false,
+    "isSystem": false,
+    "accessZoneId": 1011,
+    "workspace": "Default",
+    "id": 2001
+  }
+]

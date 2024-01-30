@@ -14,6 +14,9 @@ embulk-input-marketo is the gem preparing Embulk input plugins for [Marketo](htt
 - Campaign(campaign)
 - Assets Programs (program)
 - Program Members (program_members)
+- List (list)
+- Activity Type (activity_type)
+- Assets Folders (folder)
 
 This plugin uses Marketo REST API.
 
@@ -199,6 +202,50 @@ Get Members by Program Ids or All Program.
 |---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------|
 | **program_ids**     | false    | null          | Import Members by specified Program_ID (comma-separated). If not specified will import all Members by all Program IDs |
 
+### List
+
+List extract all list data from Marketo
+
+`target: list`
+
+Schema type: Static schema
+
+Incremental support: no
+
+Range ingestion: no
+
+### Activity Type
+
+Activity Type extract all activity type data from Marketo
+
+`target: activity_type`
+
+Schema type: Static schema
+
+Incremental support: no
+
+Range ingestion: no
+
+### Assets folders
+
+Get child folders from within a specified root folder or all folders if no root folder is specified.
+
+`target: folder`
+
+Configuration:
+
+| name                | required | default value | description                                                                                                           |
+|---------------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------|
+| **root_id**         | false    | null          | Parent folder id                                                                                                      |
+| **root_type**       | false    | folder        | Parent folder type, supported values `folder`, `program`                                                              |
+| **max_depth**       | false    | 2             | Maximum folder depth to traverse                                                                                      |
+| **workspace**       | false    | null          | Name of the workspace                                                                                                 |
+
+Schema type: Static schema
+
+Incremental support: no
+
+Range ingestion: no
 
 ## Example
 

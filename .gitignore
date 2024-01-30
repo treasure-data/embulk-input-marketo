@@ -11,4 +11,5 @@ build/
 /.metadata/
 .classpath
 .project
-
+bin/
+example.yml

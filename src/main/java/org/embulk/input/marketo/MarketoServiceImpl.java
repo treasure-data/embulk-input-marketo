@@ -1,10 +1,12 @@
 package org.embulk.input.marketo;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.CaseFormat;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.embulk.input.marketo.delegate.FolderInputPlugin.RootType;
 import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.model.MarketoField;
 import org.embulk.input.marketo.rest.MarketoRestClient;
@@ -21,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -274,5 +277,13 @@ public class MarketoServiceImpl implements MarketoService
                 return marketoRestClient.getProgramMemberBulkExtractResult(exportID, bulkExtractRangeHeader);
             }
         });
+    }
+
+    @Override
+    public Iterable<ObjectNode> getFolders(Optional<Long> rootId, RootType rootType, Integer maxDepth, Optional<String> workspace)
+    {
+        String type = CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, rootType.name());
+        Optional<String> root = rootId.isPresent() ? Optional.of(String.format("{\"id\": %d, \"type\": \"%s\"}", rootId.get(), type)) : Optional.empty();
+        return marketoRestClient.getFolders(root, maxDepth, workspace);
     }
 }

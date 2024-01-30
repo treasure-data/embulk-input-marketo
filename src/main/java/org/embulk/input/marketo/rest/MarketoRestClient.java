@@ -101,6 +101,10 @@ public class MarketoRestClient extends MarketoBaseRestClient
         @Config("account_id")
         String getAccountId();
 
+        @Config("endpoint")
+        @ConfigDefault("null")
+        Optional<String> getInputEndpoint();
+
         @Config("client_secret")
         String getClientSecret();
 
@@ -144,10 +148,11 @@ public class MarketoRestClient extends MarketoBaseRestClient
 
     public MarketoRestClient(PluginTask task)
     {
-        this(MarketoUtils.getEndPoint(task.getAccountId()),
-                MarketoUtils.getIdentityEndPoint(task.getAccountId()),
+        this(MarketoUtils.getEndPoint(task.getAccountId(), task.getInputEndpoint()),
+                MarketoUtils.getIdentityEndPoint(task.getAccountId(), task.getInputEndpoint()),
                 task.getClientId(),
                 task.getClientSecret(),
+                task.getAccountId(),
                 task.getPartnerApiKey(),
                 task.getBatchSize(),
                 task.getMaxReturn(),
@@ -163,6 +168,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                              String identityEndPoint,
                              String clientId,
                              String clientSecret,
+                             String accountId,
                              Optional<String> partnerApiKey,
                              Integer batchSize,
                              Integer maxReturn,
@@ -170,7 +176,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
                              int marketoLimitIntervalMilis,
                              Jetty94RetryHelper retryHelper)
     {
-        super(identityEndPoint, clientId, clientSecret, partnerApiKey, marketoLimitIntervalMilis, readTimeoutMilis, retryHelper);
+        super(identityEndPoint, clientId, clientSecret, accountId, partnerApiKey, marketoLimitIntervalMilis, readTimeoutMilis, retryHelper);
         this.endPoint = endPoint;
         this.batchSize = batchSize;
         this.maxReturn = maxReturn;
@@ -621,5 +627,20 @@ public class MarketoRestClient extends MarketoBaseRestClient
     public InputStream getProgramMemberBulkExtractResult(String exportId, BulkExtractRangeHeader bulkExtractRangeHeader)
     {
         return getBulkExtractResult(MarketoRESTEndpoint.GET_PROGRAM_MEMBERS_EXPORT_RESULT, exportId, bulkExtractRangeHeader);
+    }
+
+    public RecordPagingIterable<ObjectNode> getFolders(Optional<String> root, int maxDepth, Optional<String> workspace)
+    {
+        ImmutableListMultimap.Builder<String, String> builder = new ImmutableListMultimap
+                .Builder<String, String>()
+                .put("maxDepth", String.valueOf(maxDepth))
+                .put(MAX_RETURN, DEFAULT_MAX_RETURN);
+        if (root.isPresent()) {
+            builder.put("root", root.get());
+        }
+        if (workspace.isPresent()) {
+            builder.put("workSpace", workspace.get());
+        }
+        return getRecordWithOffsetPagination(endPoint + MarketoRESTEndpoint.GET_FOLDERS.getEndpoint(), builder.build(), ObjectNode.class);
     }
 }

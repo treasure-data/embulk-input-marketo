@@ -7,11 +7,15 @@ import org.embulk.base.restclient.record.ValueLocator;
 import org.embulk.util.json.JsonParser;
 import org.embulk.util.timestamp.TimestampFormatter;
 import org.msgpack.value.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 
 public class AllStringJacksonServiceRecord extends JacksonServiceRecord
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AllStringJacksonServiceRecord.class);
+
     public AllStringJacksonServiceRecord(ObjectNode record)
     {
         super(record);
@@ -50,19 +54,37 @@ public class AllStringJacksonServiceRecord extends JacksonServiceRecord
         @Override
         public double doubleValue()
         {
-            return Double.parseDouble(textValue);
+            try {
+                return Double.parseDouble(textValue);
+            }
+            catch (Exception e) {
+                LOGGER.info("skipped to parse Double: " + textValue);
+                return Double.NaN;
+            }
         }
 
         @Override
         public Value jsonValue(JsonParser jsonParser)
         {
-            return jsonParser.parse(textValue);
+            try {
+                return jsonParser.parse(textValue);
+            }
+            catch (Exception e) {
+                LOGGER.info("skipped to parse JSON: " + textValue);
+                return jsonParser.parse("{}");
+            }
         }
 
         @Override
         public long longValue()
         {
-            return Long.parseLong(textValue);
+            try {
+                return Long.parseLong(textValue);
+            }
+            catch (Exception e) {
+                LOGGER.info("skipped to parse Long: " + textValue);
+                return Long.MIN_VALUE;
+            }
         }
 
         @Override
@@ -74,7 +96,13 @@ public class AllStringJacksonServiceRecord extends JacksonServiceRecord
         @Override
         public Instant timestampValue(TimestampFormatter timestampFormatter)
         {
-            return timestampFormatter.parse(textValue);
+            try {
+                return timestampFormatter.parse(textValue);
+            }
+            catch (Exception e) {
+                LOGGER.info("skipped to parse Timestamp: " + textValue);
+                return null;
+            }
         }
     }
 }

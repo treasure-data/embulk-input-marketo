@@ -1,8 +1,9 @@
 package org.embulk.input.marketo.delegate;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Function;
-import com.google.common.collect.Iterators;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.embulk.base.restclient.record.RecordImporter;
 import org.embulk.base.restclient.record.ServiceRecord;
 import org.embulk.config.ConfigDiff;
@@ -13,18 +14,25 @@ import org.embulk.input.marketo.MarketoService;
 import org.embulk.input.marketo.MarketoServiceImpl;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.bulk_extract.AllStringJacksonServiceRecord;
-import org.embulk.input.marketo.bulk_extract.CsvRecordIterator;
 import org.embulk.input.marketo.rest.MarketoRestClient;
 import org.embulk.spi.Exec;
 import org.embulk.spi.PageBuilder;
 import org.embulk.spi.Schema;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
+import org.embulk.util.file.FileInputInputStream;
 import org.embulk.util.file.InputStreamFileInput;
 import org.embulk.util.text.LineDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
@@ -33,7 +41,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -45,6 +52,8 @@ import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
 public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBulkExtractInputPlugin.PluginTask> extends MarketoBaseInputPluginDelegate<T>
 {
     private static final String FROM_DATE = "from_date";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MarketoBaseBulkExtractInputPlugin.class);
 
     private static final int MARKETO_MAX_RANGE_EXTRACT = 30;
 
@@ -145,22 +154,37 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         }
         else {
             try (LineDecoderIterator decoderIterator = getLineDecoderIterator(task)) {
-                Iterator<Map<String, String>> csvRecords = Iterators.concat(Iterators.transform(decoderIterator,
-                        (Function<LineDecoder, Iterator<Map<String, String>>>) input -> new CsvRecordIterator(input, task)));
-                //Keep the preview code here when we can enable real preview
-                if (Exec.isPreview()) {
-                    csvRecords = Iterators.limit(csvRecords, PREVIEW_RECORD_LIMIT);
-                }
                 int imported = 0;
-                while (csvRecords.hasNext()) {
-                    Map<String, String> csvRecord = csvRecords.next();
-                    ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
-                    recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
+                while (decoderIterator.hasNext()) {
+                    try {
+                        CSVParser csvParser = getCsvParser(decoderIterator);
+                        System.gc();
+                        while (csvParser.iterator().hasNext()) {
+                            CSVRecord csvRecord = csvParser.iterator().next();
+                            ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord.toMap());
+                            recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
+                            if (csvParser.getRecordNumber() % 10000 == 0) {
+                                LOGGER.info("transfer record count: " + csvParser.getRecordNumber());
+                            }
+                        }
+                        LOGGER.info("transfer record count: " + csvParser.getRecordNumber());
+                        csvParser.close();
+                    }
+                    catch (CsvTokenizer.InvalidValueException | IllegalArgumentException | IOException ex) {
+                        LOGGER.warn("skipped csv line: " + ExceptionUtils.getStackTrace(ex));
+                    }
                     imported = imported + 1;
                 }
                 return taskReport;
             }
         }
+    }
+
+    private CSVParser getCsvParser(LineDecoderIterator decoderIterator) throws IOException
+    {
+        Reader inputStream = decoderIterator.next();
+        CsvTokenizer csvTokenizer = new CsvTokenizer(inputStream);
+        return csvTokenizer.csvParse();
     }
 
     private LineDecoderIterator getLineDecoderIterator(T task)
@@ -182,7 +206,7 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
 
     protected abstract InputStream getExtractedStream(MarketoService service, T task, OffsetDateTime fromDate, OffsetDateTime toDate);
 
-    private final class LineDecoderIterator implements Iterator<LineDecoder>, AutoCloseable
+    private final class LineDecoderIterator implements Iterator<Reader>, AutoCloseable
     {
         private LineDecoder currentLineDecoder;
 
@@ -218,13 +242,20 @@ public abstract class MarketoBaseBulkExtractInputPlugin<T extends MarketoBaseBul
         }
 
         @Override
-        public LineDecoder next()
+        public Reader next()
         {
             if (hasNext()) {
                 MarketoUtils.DateRange next = dateRangeIterator.next();
                 InputStream extractedStream = getExtractedStream(marketoService, task, next.fromDate, next.toDate);
-                currentLineDecoder = LineDecoder.of(new InputStreamFileInput(Exec.getBufferAllocator(), extractedStream), StandardCharsets.UTF_8, null);
-                return currentLineDecoder;
+                InputStreamFileInput in = new InputStreamFileInput(Exec.getBufferAllocator(), extractedStream);
+                FileInputInputStream fileInputInputStream = new FileInputInputStream(in);
+
+                CharsetDecoder decoder = task.getCharset().newDecoder().onMalformedInput(CodingErrorAction.REPLACE)
+                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
+                BufferedReader b = new BufferedReader(new InputStreamReader(fileInputInputStream, decoder));
+                fileInputInputStream.nextFile();
+
+                return b;
             }
             throw new NoSuchElementException();
         }

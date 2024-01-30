@@ -5,6 +5,7 @@ plugins {
     id "jacoco"
     id "signing"
     id "org.embulk.embulk-plugins" version "0.5.5"
+    id "com.palantir.git-version" version "0.12.3"
 }
 
 repositories {
@@ -13,7 +14,20 @@ repositories {
 
 group = "com.treasuredata.embulk.plugins"
 description = "Loads records from Marketo."
-version = "0.6.26"
+version = {
+    def baseVersion = "0.6.26"
+    def troccoVersion = "0.1.1"
+    def tag = "${baseVersion}-trocco-${troccoVersion}"
+    def vd = versionDetails()
+    if (vd.lastTag != "${tag}") {
+        logger.warn "lastTag '${vd.lastTag}' is not '${tag}'"
+    }
+    if (vd.commitDistance == 0 && vd.lastTag ==~ /^[0-9]+\.[0-9]+\.[0-9]+([.-][.a-zA-Z0-9-]+)?/) {
+        vd.lastTag
+    } else {
+        "0.0.0.${vd.gitHash}"
+    }
+}()
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -59,6 +73,11 @@ dependencies {
     implementation "com.sun.xml.bind:jaxb-core:2.2.11"
     implementation "com.sun.xml.bind:jaxb-impl:2.2.11"
     implementation "javax.activation:activation:1.1.1"
+
+    compile 'com.google.guava:guava:18.0'
+    compile  "com.google.code.findbugs:annotations:3.0.1"
+    compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'org.apache.commons:commons-csv:1.8'
 
     testImplementation "junit:junit:4.+"
     testImplementation "org.embulk:embulk-core:$embulkVersion:tests"

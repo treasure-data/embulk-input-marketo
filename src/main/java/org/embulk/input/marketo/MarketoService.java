@@ -1,11 +1,13 @@
 package org.embulk.input.marketo;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.embulk.input.marketo.delegate.FolderInputPlugin.RootType;
 import org.embulk.input.marketo.model.MarketoField;
 
 import java.io.File;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -48,4 +50,6 @@ public interface MarketoService
     ObjectNode describeProgramMembers();
 
     File extractProgramMembers(String exportID);
+
+    Iterable<ObjectNode> getFolders(Optional<Long> rootId, RootType rootType, Integer maxDepth, Optional<String> workspace);
 }

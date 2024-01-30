@@ -55,6 +55,7 @@ import static org.embulk.input.marketo.MarketoInputPlugin.CONFIG_MAPPER_FACTORY;
 public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPluginDelegate<ProgramMembersBulkExtractInputPlugin.PluginTask>
 {
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Object pageBuilderLock = new Object();
 
     public interface PluginTask extends MarketoBaseInputPluginDelegate.PluginTask, CsvTokenizer.PluginTask
     {
@@ -214,7 +215,10 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                 while (csvRecords.hasNext()) {
                     Map<String, String> csvRecord = csvRecords.next();
                     ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
-                    recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
+                    // MEMO: pageBuilderがスレッドアンセーフなために排他制御を利用する
+                    synchronized (pageBuilderLock) {
+                        recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
+                    }
                     imported = imported + 1;
                 }
 
