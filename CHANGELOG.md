@@ -1,3 +1,6 @@
+## 0.6.27
+- Fix issue response header Marketo change from text/csv to text/csv;charset=UTF-8
+
 ## 0.6.26
 - Catch up to Java 11
 

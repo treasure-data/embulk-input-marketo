@@ -48,7 +48,7 @@ public class MarketoInputStreamResponseEntityReader implements Jetty94ResponseRe
     @Override
     public InputStream readResponseContent() throws Exception
     {
-        if (!getResponse().getHeaders().getField(HttpHeader.CONTENT_TYPE).getValue().equals("text/csv")) {
+        if (!getResponse().getHeaders().getField(HttpHeader.CONTENT_TYPE).getValue().contains("text/csv")) {
             String errorString = readResponseContentInString();
 
             MarketoResponse<ObjectNode> errorResponse = OBJECT_READER.readValue(errorString);
