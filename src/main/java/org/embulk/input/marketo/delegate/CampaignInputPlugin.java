@@ -40,6 +40,8 @@ public class CampaignInputPlugin extends MarketoBaseInputPluginDelegate<Campaign
                 .add("description", Types.STRING)
                 .add("type", Types.STRING)
                 .add("workspaceName", Types.STRING)
+                .add("programId", Types.LONG)
+                .add("programName", Types.STRING)
                 .add("createdAt", Types.TIMESTAMP, MarketoUtils.MARKETO_DATE_TIME_FORMAT)
                 .add("updatedAt", Types.TIMESTAMP, MarketoUtils.MARKETO_DATE_TIME_FORMAT)
                 .add("active", Types.BOOLEAN);
