@@ -56,6 +56,10 @@ public class CsvTokenizer
         @ConfigDefault("\"\\\"\"")
         Optional<QuoteCharacter> getQuoteChar();
 
+        @Config("quotes_in_quoted_fields")
+        @ConfigDefault("\"NONE\"")
+        QuotesInQuotedFields getQuotesInQuotedFields();
+
         @Config("escape")
         @ConfigDefault("\"\\\\\"")
         Optional<EscapeCharacter> getEscapeChar();
@@ -89,6 +93,7 @@ public class CsvTokenizer
     private final String commentLineMarker;
     private final LineDecoder input;
     private final String nullStringOrNull;
+    private final QuotesInQuotedFields quotesInQuotedFields;
 
     private RecordState recordState = RecordState.END;  // initial state is end of a record. nextRecord() must be called first
     private long lineNumber = 0;
@@ -103,10 +108,10 @@ public class CsvTokenizer
     {
         this(task.getDelimiter(), task.getQuoteChar().orElse(QuoteCharacter.noQuote()).getCharacter(),
                 task.getEscapeChar().orElse(EscapeCharacter.noEscape()).getCharacter(), task.getNewline().getString(),
-                task.getTrimIfNotQuoted(), task.getMaxQuotedSizeLimit(), task.getCommentLineMarker().orElse(null), input, task.getNullString().orElse(null));
+                task.getTrimIfNotQuoted(), task.getQuotesInQuotedFields(), task.getMaxQuotedSizeLimit(), task.getCommentLineMarker().orElse(null), input, task.getNullString().orElse(null));
     }
 
-    public CsvTokenizer(String delimiter, char quote, char escape, String newline, boolean trimIfNotQuoted, long maxQuotedSizeLimit, String commentLineMarker, LineDecoder input, String nullStringOrNull)
+    public CsvTokenizer(String delimiter, char quote, char escape, String newline, boolean trimIfNotQuoted, QuotesInQuotedFields quotesInQuotedFields, long maxQuotedSizeLimit, String commentLineMarker, LineDecoder input, String nullStringOrNull)
     {
         if (delimiter.length() == 0) {
             throw new ConfigException("Empty delimiter is not allowed");
@@ -120,14 +125,23 @@ public class CsvTokenizer
                 delimiterFollowingString = null;
             }
         }
+
         this.quote = quote;
         this.escape = escape;
         this.newline = newline;
         this.trimIfNotQuoted = trimIfNotQuoted;
+        this.quotesInQuotedFields = quotesInQuotedFields;
         this.maxQuotedSizeLimit = maxQuotedSizeLimit;
         this.commentLineMarker = commentLineMarker;
         this.input = input;
         this.nullStringOrNull = nullStringOrNull;
+
+        if (this.trimIfNotQuoted && this.quotesInQuotedFields == QuotesInQuotedFields.ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS) {
+            // The combination makes some syntax very ambiguous such as:
+            //     val1,  \"\"val2\"\"  ,val3
+            throw new IllegalStateException(
+                    "[quotes_in_quoted_fields == ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS] is not allowed to specify with [trim_if_not_quoted = true]");
+        }
     }
 
     public long getCurrentLineNumber()
@@ -245,7 +259,6 @@ public class CsvTokenizer
 
         while (true) {
             final char c = nextChar();
-
             switch (columnState) {
                 case BEGIN:
                     // TODO optimization: state is BEGIN only at the first character of a column.
@@ -381,13 +394,38 @@ public class CsvTokenizer
                     }
                     else if (isQuote(c)) {
                         char next = peekNextChar();
-                        if (isQuote(next)) { // escaped quote
-                            quotedValue.append(line.substring(valueStartPos, linePos));
-                            valueStartPos = ++linePos;
+                        if (this.quotesInQuotedFields == QuotesInQuotedFields.NONE) {
+                            if (isQuote(next)) {
+                                quotedValue.append(line.substring(valueStartPos, linePos));
+                                valueStartPos = ++linePos;
+                            }
+                            else {
+                                quotedValue.append(line.substring(valueStartPos, linePos - 1));
+                                columnState = ColumnState.AFTER_QUOTED_VALUE;
+                            }
                         }
                         else {
-                            quotedValue.append(line.substring(valueStartPos, linePos - 1));
-                            columnState = ColumnState.AFTER_QUOTED_VALUE;
+                            final char nextNext = this.peekNextNextChar();
+                            if (this.isQuote(next)
+                                    && (this.quotesInQuotedFields != QuotesInQuotedFields.ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS
+                                    || (!this.isDelimiter(nextNext) && !this.isEndOfLine(nextNext)))) {
+                                // Escaped by preceding it with another quote.
+                                // A quote just before a delimiter or an end of line is recognized as a functional quote,
+                                // not just as a non-escaped stray "quote character" included the field, even if
+                                // ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS is specified.
+                                quotedValue.append(this.line.substring(valueStartPos, this.linePos));
+                                valueStartPos = ++this.linePos;
+                            } else if (this.quotesInQuotedFields == QuotesInQuotedFields.ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS
+                                    && !(this.isDelimiter(next) || this.isEndOfLine(next))) {
+                                // A non-escaped stray "quote character" in the field is processed as a regular character
+                                // if ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS is specified,
+                                if ((this.linePos - valueStartPos) + quotedValue.length() > this.maxQuotedSizeLimit) {
+                                    throw new QuotedSizeLimitExceededException("The size of the quoted value exceeds the limit size (" + maxQuotedSizeLimit + ")");
+                                }
+                            } else {
+                                quotedValue.append(this.line.substring(valueStartPos, this.linePos - 1));
+                                columnState = ColumnState.AFTER_QUOTED_VALUE;
+                            }
                         }
                     }
                     else if (isEscape(c)) {  // isQuote must be checked first in case of quote == escape
@@ -496,6 +534,18 @@ public class CsvTokenizer
         }
         else {
             return line.charAt(linePos);
+        }
+    }
+
+    private char peekNextNextChar() {
+        if (this.line == null) {
+            throw new IllegalStateException("peekNextNextChar is called after end of file");
+        }
+
+        if (this.linePos + 1 >= this.line.length()) {
+            return END_OF_LINE;
+        } else {
+            return this.line.charAt(this.linePos + 1);
         }
     }
 
@@ -701,6 +751,24 @@ public class CsvTokenizer
             int result = 1;
             result = prime * result + character;
             return result;
+        }
+    }
+
+    public enum QuotesInQuotedFields
+    {
+        NONE,
+        ACCEPT_ONLY_RFC4180_ESCAPED,
+        ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS;
+
+        @JsonCreator
+        public static QuotesInQuotedFields ofString(final String string)
+        {
+            for (final QuotesInQuotedFields value : values()) {
+                if (string.equals(value.toString())) {
+                    return value;
+                }
+            }
+            throw new ConfigException("\"quotes_in_quoted_fields\" must be one of [NONE, ACCEPT_ONLY_RFC4180_ESCAPED, ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS].");
         }
     }
 }

@@ -9,6 +9,7 @@ import org.embulk.config.ConfigDiff;
 import org.embulk.config.ConfigLoader;
 import org.embulk.config.ConfigSource;
 import org.embulk.config.TaskReport;
+import org.embulk.input.marketo.CsvTokenizer;
 import org.embulk.input.marketo.MarketoUtils;
 import org.embulk.input.marketo.model.BulkExtractRangeHeader;
 import org.embulk.input.marketo.model.MarketoField;
@@ -104,5 +105,128 @@ public class LeadBulkExtractInputPluginTest
         DateFormat df = new SimpleDateFormat(MarketoUtils.MARKETO_DATE_SIMPLE_DATE_FORMAT);
         Assert.assertEquals(df.format(Date.from(startDate.plusDays(task.getFetchDays()).toInstant())), configDiff.get(String.class, "from_date"));
         Assert.assertArrayEquals(new Long[]{102488L, 102456L, 102445L, 102439L, 102471L, 102503L, 102424L, 102473L, 102505L, 102492L, 102495L, 102452L, 102435L, 102467L, 102420L, 102496L, 102448L, 102499L, 102431L}, leadIds.toArray());
+    }
+
+    @Test
+    public void testImportWithoutQuotesInQuotedFieldsConfig() throws IOException
+    {
+        ConfigSource cfg = configSource.deepCopy().set("included_fields", Arrays.asList("firstName", "lastName"));
+        LeadBulkExtractInputPlugin.PluginTask task = CONFIG_MAPPER.map(cfg, LeadBulkExtractInputPlugin.PluginTask.class);
+        PageBuilder pageBuilder = mock(PageBuilder.class);
+        String exportId1 = "exportId1";
+
+        JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
+        List<MarketoField> marketoFields = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/lead_describe_marketo_fields_full.json"), javaType);
+        when(mockMarketoRestclient.describeLead()).thenReturn(marketoFields);
+        when(mockMarketoRestclient.createLeadBulkExtract(any(Date.class), any(Date.class), any(List.class), any(String.class))).thenReturn(exportId1).thenReturn(null);
+        when(mockMarketoRestclient.getLeadBulkExtractResult(eq(exportId1), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/lead_extract_with_quote_in_quote_field.csv"));
+        ServiceResponseMapper<? extends ValueLocator> mapper = bulkExtractInputPlugin.buildServiceResponseMapper(task);
+        bulkExtractInputPlugin.validateInputTask(task);
+        try {
+            bulkExtractInputPlugin.ingestServiceData(task, mapper.createRecordImporter(), 1, pageBuilder);
+            Assert.fail("Expected exception due to quote chạr in quoted fields");
+        }
+        catch (Exception e) {
+            Assert.assertTrue(e.getCause() instanceof CsvTokenizer.InvalidValueException);
+            Assert.assertTrue(e.getCause().getMessage().contains("Unexpected extra character 'N' after a value quoted by '\"'"));
+        }
+    }
+
+    @Test
+    public void testImportWithQuotesRFC4180EscapedInvalid() throws IOException
+    {
+        ConfigSource cfg = configSource.deepCopy()
+                .set("fetch_days", 1)
+                .set("quotes_in_quoted_fields", "ACCEPT_ONLY_RFC4180_ESCAPED")
+                .set("included_fields", Arrays.asList("firstName", "lastName"));
+        LeadBulkExtractInputPlugin.PluginTask task = CONFIG_MAPPER.map(cfg, LeadBulkExtractInputPlugin.PluginTask.class);
+        PageBuilder pageBuilder = mock(PageBuilder.class);
+        String exportId1 = "exportId1";
+
+        JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
+        List<MarketoField> marketoFields = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/lead_describe_marketo_fields_full.json"), javaType);
+        when(mockMarketoRestclient.describeLead()).thenReturn(marketoFields);
+        when(mockMarketoRestclient.createLeadBulkExtract(any(Date.class), any(Date.class), any(List.class), any(String.class))).thenReturn(exportId1).thenReturn(null);
+        when(mockMarketoRestclient.getLeadBulkExtractResult(eq(exportId1), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/lead_extract_with_quote_in_quote_field.csv"));
+        ServiceResponseMapper<? extends ValueLocator> mapper = bulkExtractInputPlugin.buildServiceResponseMapper(task);
+        bulkExtractInputPlugin.validateInputTask(task);
+        try {
+            bulkExtractInputPlugin.ingestServiceData(task, mapper.createRecordImporter(), 1, pageBuilder);
+            Assert.fail("Expected exception due to quote chạr in quoted fields");
+        }
+        catch (Exception e) {
+            Assert.assertTrue(e.getCause() instanceof CsvTokenizer.InvalidValueException);
+            Assert.assertTrue(e.getCause().getMessage().contains("Unexpected extra character 'N' after a value quoted by '\"'"));
+        }
+    }
+
+    @Test
+    public void testImportWithQuotesRFC4180EscapedValid() throws IOException
+    {
+        ConfigSource cfg = configSource.deepCopy()
+                .set("fetch_days", 1)
+                .set("quotes_in_quoted_fields", "ACCEPT_ONLY_RFC4180_ESCAPED")
+                .set("included_fields", Arrays.asList("firstName", "lastName"));
+        LeadBulkExtractInputPlugin.PluginTask task = CONFIG_MAPPER.map(cfg, LeadBulkExtractInputPlugin.PluginTask.class);
+        PageBuilder pageBuilder = mock(PageBuilder.class);
+        String exportId1 = "exportId1";
+
+        JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
+        List<MarketoField> marketoFields = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/lead_describe_marketo_fields_full.json"), javaType);
+        when(mockMarketoRestclient.describeLead()).thenReturn(marketoFields);
+        when(mockMarketoRestclient.createLeadBulkExtract(any(Date.class), any(Date.class), any(List.class), any(String.class))).thenReturn(exportId1).thenReturn(null);
+        when(mockMarketoRestclient.getLeadBulkExtractResult(eq(exportId1), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/lead_extract_with_quote_RFC4180.csv"));
+        ServiceResponseMapper<? extends ValueLocator> mapper = bulkExtractInputPlugin.buildServiceResponseMapper(task);
+        bulkExtractInputPlugin.validateInputTask(task);
+        try {
+            bulkExtractInputPlugin.ingestServiceData(task, mapper.createRecordImporter(), 1, pageBuilder);
+            ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+            Column firstNameColumn = mapper.getEmbulkSchema().lookupColumn("mk_firstName");
+            Column lastNameColumn = mapper.getEmbulkSchema().lookupColumn("mk_lastName");
+            verify(pageBuilder, times(1)).setString(eq(firstNameColumn), argumentCaptor.capture());
+            verify(pageBuilder, times(1)).setString(eq(lastNameColumn), argumentCaptor.capture());
+            List<String> values = argumentCaptor.getAllValues();
+            Assert.assertEquals(2, values.size());
+            Assert.assertEquals("first\"Name1", values.get(0));
+            Assert.assertEquals("lastName1", values.get(1));
+        }
+        catch (Exception e) {
+            Assert.fail("Expected no exception due to quote chạr in quoted fields but got " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testImportWithStrayQuotes() throws IOException
+    {
+        ConfigSource cfg = configSource.deepCopy()
+                .set("fetch_days", 1)
+                .set("quotes_in_quoted_fields", "ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS")
+                .set("included_fields", Arrays.asList("firstName", "lastName"));
+        LeadBulkExtractInputPlugin.PluginTask task = CONFIG_MAPPER.map(cfg, LeadBulkExtractInputPlugin.PluginTask.class);
+        PageBuilder pageBuilder = mock(PageBuilder.class);
+        String exportId1 = "exportId1";
+
+        JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructParametrizedType(List.class, List.class, MarketoField.class);
+        List<MarketoField> marketoFields = OBJECT_MAPPER.readValue(this.getClass().getResourceAsStream("/fixtures/lead_describe_marketo_fields_full.json"), javaType);
+        when(mockMarketoRestclient.describeLead()).thenReturn(marketoFields);
+        when(mockMarketoRestclient.createLeadBulkExtract(any(Date.class), any(Date.class), any(List.class), any(String.class))).thenReturn(exportId1).thenReturn(null);
+        when(mockMarketoRestclient.getLeadBulkExtractResult(eq(exportId1), any(BulkExtractRangeHeader.class))).thenReturn(this.getClass().getResourceAsStream("/fixtures/lead_extract_with_quote_in_quote_field.csv"));
+        ServiceResponseMapper<? extends ValueLocator> mapper = bulkExtractInputPlugin.buildServiceResponseMapper(task);
+        bulkExtractInputPlugin.validateInputTask(task);
+        try {
+            bulkExtractInputPlugin.ingestServiceData(task, mapper.createRecordImporter(), 1, pageBuilder);
+            ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+            Column firstNameColumn = mapper.getEmbulkSchema().lookupColumn("mk_firstName");
+            Column lastNameColumn = mapper.getEmbulkSchema().lookupColumn("mk_lastName");
+            verify(pageBuilder, times(1)).setString(eq(firstNameColumn), argumentCaptor.capture());
+            verify(pageBuilder, times(1)).setString(eq(lastNameColumn), argumentCaptor.capture());
+            List<String> values = argumentCaptor.getAllValues();
+            Assert.assertEquals(2, values.size());
+            Assert.assertEquals("first\"Name1", values.get(0));
+            Assert.assertEquals("lastName1", values.get(1));
+        }
+        catch (Exception e) {
+            Assert.fail("Expected no exception due to quote chạr in quoted fields but got " + e.getMessage());
+        }
     }
 }
