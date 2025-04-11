@@ -124,7 +124,7 @@ public class LeadBulkExtractInputPluginTest
         bulkExtractInputPlugin.validateInputTask(task);
         try {
             bulkExtractInputPlugin.ingestServiceData(task, mapper.createRecordImporter(), 1, pageBuilder);
-            Assert.fail("Expected exception due to quote chạr in quoted fields");
+            Assert.fail("Expected exception due to quote char in quoted fields");
         }
         catch (Exception e) {
             Assert.assertTrue(e.getCause() instanceof CsvTokenizer.InvalidValueException);
@@ -191,7 +191,7 @@ public class LeadBulkExtractInputPluginTest
             Assert.assertEquals("lastName1", values.get(1));
         }
         catch (Exception e) {
-            Assert.fail("Expected no exception due to quote chạr in quoted fields but got " + e.getMessage());
+            Assert.fail("Expected no exception due to quote char in quoted fields but got " + e.getMessage());
         }
     }
 
