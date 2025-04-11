@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
@@ -136,6 +137,8 @@ public class CsvTokenizer
         this.input = input;
         this.nullStringOrNull = nullStringOrNull;
 
+        //even trim_if_not_quoted is always false and cannot be set to true. But we add this check to the same with https://github.com/embulk/embulk-util-csv/blob/main/src/main/java/org/embulk/util/csv/CsvTokenizer.java#L308
+        //Due to this config can be set to true in the future, we need to check this here
         if (this.trimIfNotQuoted && this.quotesInQuotedFields == QuotesInQuotedFields.ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS) {
             // The combination makes some syntax very ambiguous such as:
             //     val1,  \"\"val2\"\"  ,val3
@@ -415,14 +418,16 @@ public class CsvTokenizer
                                 // ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS is specified.
                                 quotedValue.append(this.line.substring(valueStartPos, this.linePos));
                                 valueStartPos = ++this.linePos;
-                            } else if (this.quotesInQuotedFields == QuotesInQuotedFields.ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS
+                            }
+                            else if (this.quotesInQuotedFields == QuotesInQuotedFields.ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS
                                     && !(this.isDelimiter(next) || this.isEndOfLine(next))) {
                                 // A non-escaped stray "quote character" in the field is processed as a regular character
                                 // if ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS is specified,
                                 if ((this.linePos - valueStartPos) + quotedValue.length() > this.maxQuotedSizeLimit) {
                                     throw new QuotedSizeLimitExceededException("The size of the quoted value exceeds the limit size (" + maxQuotedSizeLimit + ")");
                                 }
-                            } else {
+                            }
+                            else {
                                 quotedValue.append(this.line.substring(valueStartPos, this.linePos - 1));
                                 columnState = ColumnState.AFTER_QUOTED_VALUE;
                             }
@@ -537,14 +542,16 @@ public class CsvTokenizer
         }
     }
 
-    private char peekNextNextChar() {
+    private char peekNextNextChar()
+    {
         if (this.line == null) {
             throw new IllegalStateException("peekNextNextChar is called after end of file");
         }
 
         if (this.linePos + 1 >= this.line.length()) {
             return END_OF_LINE;
-        } else {
+        }
+        else {
             return this.line.charAt(this.linePos + 1);
         }
     }
@@ -761,14 +768,14 @@ public class CsvTokenizer
         ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS;
 
         @JsonCreator
-        public static QuotesInQuotedFields ofString(final String string)
+        public static QuotesInQuotedFields from(final String str)
         {
-            for (final QuotesInQuotedFields value : values()) {
-                if (string.equals(value.toString())) {
-                    return value;
-                }
+            try {
+                return QuotesInQuotedFields.valueOf(str == null ? "" : str.trim().toUpperCase());
             }
-            throw new ConfigException("\"quotes_in_quoted_fields\" must be one of [NONE, ACCEPT_ONLY_RFC4180_ESCAPED, ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS].");
+            catch (Exception e) {
+                throw new ConfigException("Unsupported quotes_in_quoted_fields: '" + str + "', supported values: " + Arrays.toString(QuotesInQuotedFields.values()));
+            }
         }
     }
 }
