@@ -1,3 +1,6 @@
+## 0.6.28
+- support quotes_in_quoted_fields option for CSV parser
+
 ## 0.6.27
 - Fix issue response header Marketo change from text/csv to text/csv;charset=UTF-8
 

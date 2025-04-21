@@ -66,6 +66,15 @@ All bulk extract target use this configuration parameter
 | **incremental**             | false    | true          | If incremental is set to true, next run will have from_date set to the previous to_date(calculated by from_date + fetch_days) |
 | **incremental_column**      | false    | createdAt     | Column use to filter from_date and to_date                                                                                    |
 
+
+Csv parser use this configuration parameter
+
+| name                        | required  | default value | description                                                                                                                                                                                |
+|-----------------------------|-----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **escape**                  | false     | \"            | Escape character for bulk extract                                                                                                                                                          |
+| **quote**                   | false     | \"            | Quote character for bulk extract                                                                                                                                                           |
+| **quotes_in_quoted_fields** | false     | NONE          | Specify how to deal with irregular unescaped quote characters in quoted fields. Supported values: NONE, ACCEPT_ONLY_RFC4180_ESCAPED, ACCEPT_STRAY_QUOTES_ASSUMING_NO_DELIMITERS_IN_FIELDS. |
+
 ### Lead
 
 Lead target extract all Marketo leads, it use Marketo bulk extract feature. Configuration include bulk extract configuration. 
