@@ -179,6 +179,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
     public List<MarketoField> describeLead()
     {
         MarketoResponse<ObjectNode> jsonResponse = doGet(endPoint + MarketoRESTEndpoint.DESCRIBE_LEAD.getEndpoint(), null, null, new MarketoResponseJettyEntityReader<>(this.readTimeoutMillis));
+        logger.info(">> Describe Lead Response with [requestId] : {} and [status]: {}", jsonResponse.getRequestId(), jsonResponse.isSuccess() ? "Success" : "Failed");
         List<MarketoField> marketoFields = new ArrayList<>();
         List<ObjectNode> fields = jsonResponse.getResult();
         for (ObjectNode field : fields) {
@@ -230,6 +231,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
         try {
             logger.info("Send bulk extract request [{}]", request);
             marketoResponse = doPost(endPoint + endpoint.getEndpoint(), null, null, OBJECT_MAPPER.writeValueAsString(request), new MarketoResponseJettyEntityReader<>(readTimeoutMillis));
+            logger.info(">> Created Bulk Extract Response with [requestId] : {} and [status]: {}", marketoResponse.getRequestId(), marketoResponse.isSuccess() ? "Success" : "Failed");
         }
         catch (JsonProcessingException e) {
             logger.error("Encounter exception when deserialize bulk extract request", e);
@@ -258,6 +260,7 @@ public class MarketoRestClient extends MarketoBaseRestClient
         MarketoResponse<ObjectNode> marketoResponse = doPost(endPoint + marketoRESTEndpoint.getEndpoint(
                 new ImmutableMap.Builder<String, String>().put("export_id", exportId).build()), null, null, null,
                 new MarketoResponseJettyEntityReader<>(readTimeoutMillis));
+        logger.info(">> Start Bulk Extract Response with [requestId] : {} and [status]: {}", marketoResponse.getRequestId(), marketoResponse.isSuccess() ? "Success" : "Failed");
         if (!marketoResponse.isSuccess()) {
             MarketoError error = marketoResponse.getErrors().get(0);
             throw new DataException(String.format("Can't start job for export Job id : %s, error code: %s, error message: %s", exportId, error.getCode(), error.getMessage()));
