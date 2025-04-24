@@ -1,3 +1,6 @@
+## 0.6.29
+- support logging of the requestId
+
 ## 0.6.28
 - support quotes_in_quoted_fields option for CSV parser
 
