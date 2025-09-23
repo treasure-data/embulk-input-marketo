@@ -38,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -153,14 +154,13 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
             }
             final ThreadPoolExecutor executor = createExecutor(task);
             final MarketoRestClient restClient = createMarketoRestClient(task);
-
+            final List<JsonNode> exportResults = Collections.synchronizedList(new ArrayList<>());
             try {
                 final List<String> fieldNames = new ArrayList<>(task.getProgramMemberFields().get().keySet());
 
                 List<Future> listFutureExportIDs = task.getExtractedProgramIds().get().stream()
-                                                       .map(programId -> createFutureTask(task, recordImporter, pageBuilder, executor, restClient, fieldNames, programId))
+                                                       .map(programId -> createFutureTask(task, exportResults, executor, restClient, fieldNames, programId))
                                                        .collect(Collectors.toList());
-
                 for (Future future : listFutureExportIDs) {
                     try {
                         future.get();
@@ -169,6 +169,7 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                         throw new RuntimeException(ex);
                     }
                 }
+                importExtractResult(task, recordImporter, pageBuilder, restClient, exportResults);
             }
             finally {
                 restClient.close();
@@ -186,24 +187,44 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(task.getNumberConcurrentExportJob());
     }
 
-    private Future<?> createFutureTask(PluginTask task, RecordImporter recordImporter, PageBuilder pageBuilder, ThreadPoolExecutor executor, MarketoRestClient restClient, List<String> fieldNames, Integer programId)
+    private Future<?> createFutureTask(PluginTask task, List<JsonNode> exportResult, ThreadPoolExecutor executor, MarketoRestClient restClient, List<String> fieldNames, Integer programId)
     {
         Runnable exportTask = () -> {
             String exportJobID = restClient.createProgramMembersBulkExtract(fieldNames, programId);
             restClient.startProgramMembersBulkExtract(exportJobID);
-            int numberRecord;
             try {
-                ObjectNode status = restClient.waitProgramMembersExportJobComplete(exportJobID, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
-                numberRecord = status.get("numberOfRecords").asInt();
+                ObjectNode exportStatus = restClient.waitProgramMembersExportJobComplete(exportJobID, task.getPollingIntervalSecond(), task.getBulkJobTimeoutSecond());
+                int numberRecord = exportStatus.get("numberOfRecords").asInt();
+                if (numberRecord > 0) {
+                    ObjectNode result = MarketoUtils.OBJECT_MAPPER.createObjectNode();
+                    result.put("exportId", exportJobID);
+                    result.put("numberOfRecords", numberRecord);
+                    result.put("programId", programId);
+                    exportResult.add(result);
+                }
+                else {
+                    logger.info("Skip import data for program [{}], exportId [{}]. No record to import.", programId, exportJobID);
+                }
             }
             catch (InterruptedException e) {
                 logger.error("Exception when waiting for export program [{}], job id [{}]", programId, exportJobID, e);
                 throw new DataException(e);
             }
-            if (numberRecord == 0) {
-                logger.info("Export program [{}], job [{}] have no record.", programId, exportJobID);
-                return;
-            }
+        };
+
+        Thread exportThread = new Thread(exportTask);
+        exportThread.setDaemon(true);
+        return executor.submit(exportThread);
+    }
+
+    private void importExtractResult(PluginTask task, RecordImporter recordImporter, PageBuilder pageBuilder, MarketoRestClient restClient, List<JsonNode> exportResults)
+    {
+        long totalRecords = 0;
+        for (JsonNode result : exportResults) {
+            String exportJobID = result.get("exportId").asText();
+            int programId = result.get("programId").asInt();
+            int numberRecord = result.get("numberOfRecords").asInt();
+            logger.info("Start import data for program [{}], job_id [{}].", programId, exportJobID);
             MarketoService marketoService = new MarketoServiceImpl(restClient);
             LineDecoder lineDecoder = null;
             try {
@@ -215,7 +236,8 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                     Map<String, String> csvRecord = csvRecords.next();
                     ObjectNode objectNode = MarketoUtils.OBJECT_MAPPER.valueToTree(csvRecord);
                     recordImporter.importRecord(new AllStringJacksonServiceRecord(objectNode), pageBuilder);
-                    imported = imported + 1;
+                    imported++;
+                    totalRecords++;
                 }
 
                 logger.info("Import data for program [{}], job_id [{}] finish.[{}] records imported/total [{}]", programId, exportJobID, imported, numberRecord);
@@ -228,12 +250,8 @@ public class ProgramMembersBulkExtractInputPlugin extends MarketoBaseInputPlugin
                     lineDecoder.close();
                 }
             }
-        };
-
-        Thread exportThread = new Thread(exportTask);
-        exportThread.setDaemon(true);
-
-        return executor.submit(exportThread);
+        }
+        logger.info("All program import finish. Total {} files/ {} records imported.",  exportResults.size(), totalRecords);
     }
 
     @Override
